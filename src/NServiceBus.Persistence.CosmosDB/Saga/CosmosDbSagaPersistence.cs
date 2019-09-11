@@ -13,7 +13,11 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            context.Container.RegisterSingleton<ISagaPersister>(new SagaPersister());
+            // TODO: we need a CosmosClient cached once and forever. Should it be injected rather than the connection string?
+            
+            var connectionString = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasConnectionString);
+
+            context.Container.RegisterSingleton<ISagaPersister>(new SagaPersister(connectionString));
         }
     }
 }

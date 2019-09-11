@@ -8,6 +8,13 @@
 
     class SagaPersister : ISagaPersister
     {
+        string connectionString;
+
+        public SagaPersister(string connectionString)
+        {
+            this.connectionString = connectionString;
+        }
+
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             throw new NotImplementedException();
