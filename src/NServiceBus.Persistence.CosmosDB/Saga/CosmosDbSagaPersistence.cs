@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.Features
 {
+    using NServiceBus.Sagas;
+
     class CosmosDbSagaPersistence : Feature
     {
         internal CosmosDbSagaPersistence()
@@ -9,7 +11,7 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            context.Container.ConfigureComponent(b => new CosmosDbSagaPersister(), DependencyLifecycle.SingleInstance);
+            context.Container.RegisterSingleton<ISagaPersister>(new SagaPersister());
         }
     }
 }

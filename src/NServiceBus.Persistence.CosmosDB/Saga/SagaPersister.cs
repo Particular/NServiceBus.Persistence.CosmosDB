@@ -6,7 +6,7 @@
     using NServiceBus.Sagas;
     using Persistence;
 
-    class CosmosDbSagaPersister : ISagaPersister
+    class SagaPersister : ISagaPersister
     {
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
