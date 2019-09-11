@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Features
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
     using System.Threading.Tasks;
