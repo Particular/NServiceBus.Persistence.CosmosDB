@@ -17,7 +17,7 @@
             return Generate(context.SagaMetadata.SagaEntityType, context.CorrelationProperty.Value);
         }
 
-        static Guid Generate(Type sagaEntityType, object correlationPropertyValue)
+        public static Guid Generate(Type sagaEntityType, object correlationPropertyValue)
         {
             // assumes single correlated sagas since v6 doesn't allow more than one corr prop
             // will still have to use a GUID since moving to a string id will have to wait since its a breaking change

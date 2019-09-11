@@ -3,6 +3,7 @@
     using System;
     using System.Threading.Tasks;
     using Extensibility;
+    using NServiceBus.Persistence.CosmosDB;
     using NServiceBus.Sagas;
     using Persistence;
 
@@ -32,7 +33,7 @@
 
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
-            throw new NotImplementedException();
+            return Get<TSagaData>(SagaIdGenerator.Generate(typeof(TSagaData), propertyValue), session, context);
         }
 
         public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
