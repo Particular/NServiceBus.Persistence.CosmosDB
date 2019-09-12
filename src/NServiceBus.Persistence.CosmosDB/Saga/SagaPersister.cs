@@ -6,6 +6,7 @@
     using Microsoft.Azure.Cosmos;
     using Sagas;
     using Persistence;
+    using System.Collections.Generic;
 
     class SagaPersister : ISagaPersister
     {
@@ -18,40 +19,54 @@
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
-            // TODO: Is this the right way to access saga metadata?
-            var partitionKey = SagaIdGenerator.Generate(context.Get<SagaMetadata>().SagaEntityType, correlationProperty.Value);
-            return container.CreateItemAsync(sagaData, new PartitionKey(partitionKey.ToString()));
+            var partitionKey = sagaData.Id.ToString();
+            var document = WrapInDocument(sagaData, partitionKey);
+            return container.CreateItemAsync(document, new PartitionKey(partitionKey));
         }
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
-            var partitionKey = SagaIdGenerator.Generate(context.Get<SagaMetadata>().SagaEntityType, /*correlationProperty.Value*/"");
-            return container.ReplaceItemAsync(sagaData, sagaData.Id.ToString(), new PartitionKey(partitionKey.ToString()));
+            var partitionKey = sagaData.Id.ToString();
+            var document = WrapInDocument(sagaData, partitionKey);
+            return container.ReplaceItemAsync(document, sagaData.Id.ToString(), new PartitionKey(partitionKey));
+        }
+
+        private static CosmosDbSagaDocument WrapInDocument(IContainSagaData sagaData, string partitionKey)
+        {
+            var document = new CosmosDbSagaDocument
+            {
+                PartitionKey = partitionKey,
+                SagaId = sagaData.Id,
+                SagaType = sagaData.GetType().FullName,
+                SagaData = sagaData,
+                MetaData = new CosmosDbSagaMetadata
+                {
+                    PersisterVersion = "0.0.0.1", // todo: decided how to compute this
+                    SagaDataVersion = "0.0.0.1" // todo: decided how to compute this
+                }
+            };
+            return document;
         }
 
         public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
-            var sagaEntityType = typeof(TSagaData);
-            var partitionKey = SagaIdGenerator.Generate(sagaEntityType, /*correlationProperty.Value*/"");
-            var itemResponse = await container.ReadItemAsync<TSagaData>(sagaId.ToString(), new PartitionKey(partitionKey.ToString())).ConfigureAwait(false);
+            var partitionKey = sagaId.ToString();
+            var itemResponse = await container.ReadItemAsync<CosmosDbSagaDocument>(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
 
-            return itemResponse.Resource;
+            return (TSagaData) itemResponse.Resource.SagaData;
         }
 
-        public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
+        public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
             var sagaEntityType = typeof(TSagaData);
-            var partitionKey = SagaIdGenerator.Generate(sagaEntityType, propertyValue);
-            var itemResponse = await container.ReadItemAsync<TSagaData>(propertyValue.ToString(), new PartitionKey(partitionKey.ToString())).ConfigureAwait(false);
-
-            return itemResponse.Resource;
+            var sagaId = SagaIdGenerator.Generate(sagaEntityType, propertyValue); // core computes sagaId this way
+            return Get<TSagaData>(sagaId, session, context);
         }
 
         public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
-            var sagaEntityType = context.Get<SagaMetadata>().SagaEntityType;
-            var partitionKey = SagaIdGenerator.Generate(sagaEntityType, /*correlationProperty.Value*/"");
-            return container.DeleteItemAsync<dynamic>(sagaData.Id.ToString(), new PartitionKey(partitionKey.ToString()));
+            var partitionKey = sagaData.Id.ToString();
+            return container.DeleteItemAsync<dynamic>(sagaData.Id.ToString(), new PartitionKey(partitionKey));
         }
     }
 }
