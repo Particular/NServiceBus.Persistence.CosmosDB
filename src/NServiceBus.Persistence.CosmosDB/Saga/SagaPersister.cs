@@ -34,12 +34,12 @@
         {
             var document = new CosmosDbSagaDocument
             {
-                
                 PartitionKey = partitionKey,
-                SagaId = sagaData.Id,
-                SagaType = sagaData.GetType().FullName, //TODO: incorrect type assigned
+                SagaId = sagaData.Id, // same as partitionKey
+                SagaType = "sagaType.GetType().FullName", //TODO: incorrect type assigned
                 SagaData = sagaData,
-                MetaData = new CosmosDbSagaMetadata
+                EntityType = sagaData.GetType().FullName,
+                Metadata = new CosmosDbSagaMetadata
                 {
                     PersisterVersion = "0.0.0.1", // todo: decided how to compute this
                     SagaDataVersion = "0.0.0.1" // todo: decided how to compute this

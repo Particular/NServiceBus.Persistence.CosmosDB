@@ -11,13 +11,13 @@
         [JsonProperty(PropertyName = "id")]
         public Guid SagaId { get; set; }
 
-        public string EntityType { get; set; } = "Saga";
+        public string EntityType { get; set; }
 
         public string SagaType { get; set; }
 
         public object SagaData { get; set; }
 
-        public CosmosDbSagaMetadata MetaData { get; set; } = new CosmosDbSagaMetadata();
+        public CosmosDbSagaMetadata Metadata { get; set; } = new CosmosDbSagaMetadata();
            
     }
 }
