@@ -15,7 +15,7 @@
 
         public string SagaType { get; set; }
 
-        public IContainSagaData SagaData { get; set; }
+        public object SagaData { get; set; }
 
         public CosmosDbSagaMetadata MetaData { get; set; } = new CosmosDbSagaMetadata();
            
