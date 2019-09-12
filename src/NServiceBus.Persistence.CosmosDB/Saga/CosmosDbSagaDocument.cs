@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using Newtonsoft.Json;
 
-    class CosmosDbSagaDocument<T>
+    class CosmosDbSagaDocument<TSagaData>
     {
         [JsonProperty(PropertyName = "partitionKey")]
         public string PartitionKey { get; set; }
@@ -16,7 +16,7 @@
 
         public string SagaType { get; set; }
 
-        public T SagaData { get; set; }
+        public TSagaData SagaData { get; set; }
 
         public Dictionary<string, string> Metadata { get; set; }
            
