@@ -11,6 +11,8 @@ using NServiceBus.Unicast.Subscriptions.MessageDrivenSubscriptions;
 
 namespace NServiceBus.Persistence.ComponentTests
 {
+    using Microsoft.Azure.Cosmos;
+
     public partial class PersistenceTestsConfiguration
     {
         public string DatabaseName { get; }
@@ -23,7 +25,7 @@ namespace NServiceBus.Persistence.ComponentTests
             CollectionNamingConvention = collectionNamingConvention;
 
             SagaIdGenerator = new SagaIdGenerator();
-            SagaStorage = new SagaPersister("TODO");
+            SagaStorage = new SagaPersister(new CosmosClient("TODO-connection-string-here"));
         }
 
         public PersistenceTestsConfiguration() : this("_version", t => t.Name.ToLower())
