@@ -25,7 +25,7 @@ namespace NServiceBus.Persistence.ComponentTests
             CollectionNamingConvention = collectionNamingConvention;
 
             SagaIdGenerator = new SagaIdGenerator();
-            SagaStorage = new SagaPersister(new CosmosClient("TODO-connection-string-here"));
+           
         }
 
         public PersistenceTestsConfiguration() : this("_version", t => t.Name.ToLower())
@@ -48,7 +48,7 @@ namespace NServiceBus.Persistence.ComponentTests
 
         public ISagaIdGenerator SagaIdGenerator { get; }
 
-        public ISagaPersister SagaStorage { get; }
+        public ISagaPersister SagaStorage { get; internal set;  }
 
         public ISynchronizedStorage SynchronizedStorage { get; }
 
@@ -66,17 +66,33 @@ namespace NServiceBus.Persistence.ComponentTests
 
         public Task Configure()
         {
-            throw new NotImplementedException();
+            var environmentVartiableName = "CosmosDBPersistence_ConnectionString";
+            var connectionString = GetEnvironmentVariable(environmentVartiableName);
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new Exception($"Oh no! We couldn't find an environment variable '{environmentVartiableName}' with Cosmos DB connection string.");
+            }
+
+            SagaStorage = new SagaPersister(new CosmosClient(connectionString));
+
+            return Task.FromResult(0);
         }
 
         public Task Cleanup()
         {
-            throw new NotImplementedException();
+
+            return Task.FromResult(0);
         }
 
         public Task CleanupMessagesOlderThan(DateTimeOffset beforeStore)
         {
             return Task.FromResult(0);
+        }
+
+        static string GetEnvironmentVariable(string variable)
+        {
+            var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
+            return string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
         }
     }
 }
