@@ -3,17 +3,17 @@
     using System;
     using System.Threading.Tasks;
     using Extensibility;
-    using NServiceBus.Persistence.CosmosDB;
+    using Microsoft.Azure.Cosmos;
     using NServiceBus.Sagas;
     using Persistence;
 
     class SagaPersister : ISagaPersister
     {
-        string connectionString;
+        CosmosClient cosmosClient;
 
-        public SagaPersister(string connectionString)
+        public SagaPersister(CosmosClient cosmosClient)
         {
-            this.connectionString = connectionString;
+            this.cosmosClient = cosmosClient;
         }
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
