@@ -30,13 +30,14 @@
             return container.ReplaceItemAsync(document, sagaData.Id.ToString(), new PartitionKey(partitionKey));
         }
 
-        private static CosmosDbSagaDocument WrapInDocument(IContainSagaData sagaData, string partitionKey)
+        static CosmosDbSagaDocument WrapInDocument(IContainSagaData sagaData, string partitionKey)
         {
             var document = new CosmosDbSagaDocument
             {
+                
                 PartitionKey = partitionKey,
                 SagaId = sagaData.Id,
-                SagaType = sagaData.GetType().FullName,
+                SagaType = sagaData.GetType().FullName, //TODO: incorrect type assigned
                 SagaData = sagaData,
                 MetaData = new CosmosDbSagaMetadata
                 {
@@ -57,8 +58,11 @@
 
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
-            var sagaEntityType = typeof(TSagaData);
-            var sagaId = SagaIdGenerator.Generate(sagaEntityType, propertyValue); // core computes sagaId this way
+            // Saga ID needs to be calculated the same way as in SagaIdGenerator does
+            var activeSagaInstance = context.Get<ActiveSagaInstance>();
+            var sagaType = activeSagaInstance.Instance.GetType();
+            var sagaId = SagaIdGenerator.Generate(sagaType, propertyValue);
+
             return Get<TSagaData>(sagaId, session, context);
         }
 
