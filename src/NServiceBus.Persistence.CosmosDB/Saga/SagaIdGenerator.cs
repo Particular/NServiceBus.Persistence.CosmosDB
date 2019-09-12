@@ -14,14 +14,14 @@
                 throw new Exception("The CosmosDB saga persister doesn't support custom saga finders.");
             }
 
-            return Generate(context.SagaMetadata.SagaEntityType, context.CorrelationProperty.Value);
+            return Generate(context.SagaMetadata.SagaType, context.CorrelationProperty.Value);
         }
 
-        public static Guid Generate(Type sagaEntityType, object correlationPropertyValue)
+        public static Guid Generate(Type sagaType, object correlationPropertyValue)
         {
             // assumes single correlated sagas since v6 doesn't allow more than one corr prop
             // will still have to use a GUID since moving to a string id will have to wait since its a breaking change
-            return DeterministicGuid($"{sagaEntityType}_{correlationPropertyValue}");
+            return DeterministicGuid($"{sagaType}_{correlationPropertyValue}");
         }
 
         static Guid DeterministicGuid(string src)

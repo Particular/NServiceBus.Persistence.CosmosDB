@@ -6,7 +6,6 @@
     using Microsoft.Azure.Cosmos;
     using Sagas;
     using Persistence;
-    using System.Collections.Generic;
 
     class SagaPersister : ISagaPersister
     {
