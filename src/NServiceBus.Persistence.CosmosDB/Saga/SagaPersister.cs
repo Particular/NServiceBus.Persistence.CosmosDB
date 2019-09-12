@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -39,10 +40,10 @@
                 SagaType = "sagaType.GetType().FullName", //TODO: incorrect type assigned
                 SagaData = sagaData,
                 EntityType = sagaData.GetType().FullName,
-                Metadata = new CosmosDbSagaMetadata
+                Metadata = new Dictionary<string, string>
                 {
-                    PersisterVersion = "0.0.0.1", // todo: decided how to compute this
-                    SagaDataVersion = "0.0.0.1" // todo: decided how to compute this
+                    { "PersisterVersion", "0.0.0.1"}, // todo: decided how to compute this
+                    { "SagaDataVersion", "0.0.0.1"} // todo: decided how to compute this
                 }
             };
             return document;

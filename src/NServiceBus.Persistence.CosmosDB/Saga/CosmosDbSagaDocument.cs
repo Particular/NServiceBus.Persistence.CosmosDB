@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Collections.Generic;
     using Newtonsoft.Json;
 
     class CosmosDbSagaDocument
@@ -17,7 +18,7 @@
 
         public object SagaData { get; set; }
 
-        public CosmosDbSagaMetadata Metadata { get; set; } = new CosmosDbSagaMetadata();
+        public Dictionary<string, string> Metadata { get; set; }
            
     }
 }
