@@ -50,7 +50,7 @@ namespace NServiceBus.Persistence.ComponentTests
 
         public ISagaPersister SagaStorage { get; internal set;  }
 
-        public ISynchronizedStorage SynchronizedStorage { get; }
+        public ISynchronizedStorage SynchronizedStorage { get; internal set; }
 
         public ISynchronizedStorageAdapter SynchronizedStorageAdapter { get; }
 
@@ -72,8 +72,10 @@ namespace NServiceBus.Persistence.ComponentTests
             {
                 throw new Exception($"Oh no! We couldn't find an environment variable '{environmentVartiableName}' with Cosmos DB connection string.");
             }
+            SynchronizedStorage = new SynchronizedStorageForTesting();
 
             SagaStorage = new SagaPersister(new CosmosClient(connectionString));
+
 
             return Task.FromResult(0);
         }
