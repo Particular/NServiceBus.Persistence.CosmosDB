@@ -53,17 +53,22 @@
 
         static CosmosDbSagaDocument<TSagaData> WrapInDocument<TSagaData>(IContainSagaData sagaData, string partitionKey, ContextBag context) where TSagaData : IContainSagaData
         {
+            var sagaType = context.GetSagaType();
+            var sagaDataType = sagaData.GetType();
+
             var document = new CosmosDbSagaDocument<TSagaData>();
             document.PartitionKey = partitionKey;
             document.SagaId = sagaData.Id;
-            document.SagaType = context.GetSagaType().FullName;
             document.SagaData = (TSagaData)sagaData;
-            document.EntityType = sagaData.GetType().FullName;
             document.Metadata = new Dictionary<string, string>
             {
-                { "PersisterVersion", "0.0.0.1"}, // todo: decided how to compute this
-                { "SagaDataVersion", "0.0.0.1"} // todo: decided how to compute this
+                { "PersisterVersion", FileVersionRetriever.GetFileVersion(typeof(SagaPersister))},
+                { "SagaType", sagaType.FullName }, 
+                { "SagaTypeVersion",  FileVersionRetriever.GetFileVersion(sagaType)},
+                { "SagaDataType",  sagaDataType.FullName},
+                { "SagaDataTypeVersion",  FileVersionRetriever.GetFileVersion(sagaDataType)}
             };
+
             return document;
         }
 
@@ -113,4 +118,5 @@
             return container.DeleteItemAsync<dynamic>(sagaData.Id.ToString(), new PartitionKey(partitionKey), options);
         }
     }
+
 }
