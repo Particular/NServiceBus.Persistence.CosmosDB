@@ -77,6 +77,13 @@
         {
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
             var sagaType = context.GetSagaType();
+
+            var propertyInfo = sagaType.GetProperty(propertyName, BindingFlags.Public);
+            if (propertyInfo == null)
+            {
+                throw new Exception($"// TODO: what should be the exception here? Correlation property '{propertyName}' is not defined?");
+            }
+
             var sagaId = SagaIdGenerator.Generate(sagaType, propertyValue);
 
             return Get<TSagaData>(sagaId, session, context);
