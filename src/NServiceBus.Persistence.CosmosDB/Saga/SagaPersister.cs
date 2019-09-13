@@ -69,21 +69,20 @@
             }
             catch (CosmosException exception) when(exception.StatusCode == HttpStatusCode.NotFound)
             {
-                return null;
+                return default;
             }
         }
 
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
-            // Saga ID needs to be calculated the same way as in SagaIdGenerator does
-            var sagaType = context.GetSagaType();
-
-            var propertyInfo = sagaType.GetProperty(propertyName, BindingFlags.Public);
+            var propertyInfo = typeof(TSagaData).GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
             if (propertyInfo == null)
             {
                 throw new Exception($"// TODO: what should be the exception here? Correlation property '{propertyName}' is not defined?");
             }
 
+            // Saga ID needs to be calculated the same way as in SagaIdGenerator does
+            var sagaType = context.GetSagaType();
             var sagaId = SagaIdGenerator.Generate(sagaType, propertyValue);
 
             return Get<TSagaData>(sagaId, session, context);
