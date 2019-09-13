@@ -15,9 +15,9 @@
         Container container;
         static MethodInfo wrapInDocumentMethod;
 
-        public SagaPersister(CosmosClient cosmosClient)
+        public SagaPersister(CosmosClient cosmosClient, string databaseName, string containerName)
         {
-            container = cosmosClient.GetContainer("mydb", "Sagas");
+            container = cosmosClient.GetContainer(databaseName, containerName);
             wrapInDocumentMethod = GetType().GetMethod(nameof(WrapInDocument), BindingFlags.Static | BindingFlags.NonPublic);
         }
 

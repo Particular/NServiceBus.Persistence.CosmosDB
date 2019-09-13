@@ -26,14 +26,23 @@
         }
 
         /// <summary>
-        /// Default collection name to be used
+        /// Database name to be used
         /// </summary>
-        public void DefaultCollectionName(string collectionName)
+        public void DatabaseName(string databaseName)
         {
-            Guard.AgainstNullAndEmpty(nameof(collectionName), collectionName);
+            Guard.AgainstNullAndEmpty(nameof(databaseName), databaseName);
 
-            // TODO: extract into well known configuration keys
-            settings.Set("CosmosDB.Sagas.DefaultCollectionName", collectionName);
+            settings.Set(WellKnownConfigurationKeys.SagasDatabaseName, databaseName);
+        }
+
+        /// <summary>
+        /// Container name to be used
+        /// </summary>
+        public void ContainerName(string containerName)
+        {
+            Guard.AgainstNullAndEmpty(nameof(containerName), containerName);
+
+            settings.Set(WellKnownConfigurationKeys.SagasContainerName, containerName);
         }
     }
 }

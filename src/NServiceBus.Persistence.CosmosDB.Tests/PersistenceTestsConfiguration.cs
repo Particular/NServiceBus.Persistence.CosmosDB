@@ -15,27 +15,7 @@ namespace NServiceBus.Persistence.ComponentTests
 
     public partial class PersistenceTestsConfiguration
     {
-        public string DatabaseName { get; }
-
-        public Func<Type, string> CollectionNamingConvention { get; }
-
-        public PersistenceTestsConfiguration(string versionElementName, Func<Type, string> collectionNamingConvention)
-        {
-            DatabaseName = "Test_" + DateTime.Now.Ticks.ToString(CultureInfo.InvariantCulture);
-            CollectionNamingConvention = collectionNamingConvention;
-
-            SagaIdGenerator = new SagaIdGenerator();
-           
-        }
-
-        public PersistenceTestsConfiguration() : this("_version", t => t.Name.ToLower())
-        {
-        }
-
-        public PersistenceTestsConfiguration(string versionElementName) : this(versionElementName, t => t.Name.ToLower())
-        {
-        }
-
+      
         public bool SupportsDtc { get; } = false;
 
         public bool SupportsOutbox { get; } = false;
@@ -46,7 +26,7 @@ namespace NServiceBus.Persistence.ComponentTests
 
         public bool SupportsTimeouts { get; } = false;
 
-        public ISagaIdGenerator SagaIdGenerator { get; }
+        public ISagaIdGenerator SagaIdGenerator { get; } = new SagaIdGenerator();
 
         public ISagaPersister SagaStorage { get; internal set;  }
 
@@ -66,15 +46,30 @@ namespace NServiceBus.Persistence.ComponentTests
 
         public Task Configure()
         {
-            var environmentVartiableName = "CosmosDBPersistence_ConnectionString";
-            var connectionString = GetEnvironmentVariable(environmentVartiableName);
+            var connectionStringEnvironmentVartiableName = "CosmosDBPersistence_ConnectionString";
+            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVartiableName);
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new Exception($"Oh no! We couldn't find an environment variable '{environmentVartiableName}' with Cosmos DB connection string.");
+                throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVartiableName}' with Cosmos DB connection string.");
             }
+
+            var databaseEnvironmentVartiableName = "CosmosDBPersistence_DatabaseName";
+            var databaseName = GetEnvironmentVariable(databaseEnvironmentVartiableName);
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new Exception($"Oh no! We couldn't find an environment variable '{databaseEnvironmentVartiableName}' with Cosmos DB database name.");
+            }
+
+            var containerEnvironmentVartiableName = "CosmosDBPersistence_ContainerName";
+            var containerName = GetEnvironmentVariable(containerEnvironmentVartiableName);
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new Exception($"Oh no! We couldn't find an environment variable '{containerEnvironmentVartiableName}' with Cosmos DB container name.");
+            }
+
             SynchronizedStorage = new SynchronizedStorageForTesting();
 
-            SagaStorage = new SagaPersister(new CosmosClient(connectionString));
+            SagaStorage = new SagaPersister(new CosmosClient(connectionString), databaseName, containerName);
 
 
             return Task.FromResult(0);
