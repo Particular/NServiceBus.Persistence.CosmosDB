@@ -12,34 +12,33 @@
     class SagaPersister : ISagaPersister
     {
         Container container;
+        static MethodInfo wrapInDocumentMethod;
 
         public SagaPersister(CosmosClient cosmosClient)
         {
             container = cosmosClient.GetContainer("mydb", "Sagas");
+            wrapInDocumentMethod = GetType().GetMethod(nameof(WrapInDocument), BindingFlags.Static | BindingFlags.NonPublic);
         }
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
-            // TODO: Save and Update methods require generic method to be executed. Reflection part could be cached.
-            var method = GetType().GetMethod(nameof(WrapInDocument), BindingFlags.Static | BindingFlags.NonPublic);
-            var sagaDataType = sagaData.GetType();
-            var genericMethod = method.MakeGenericMethod(sagaDataType);
-
-            var partitionKey = sagaData.Id.ToString();
-            var document = genericMethod.Invoke(null, new object[] { sagaData, partitionKey} );
-            return container.CreateItemAsync(document, new PartitionKey(partitionKey));
+            return InvokeWrapInDocumentAsGenericMethod(sagaData, (document, sagaId, partitionKey) => container.CreateItemAsync(document, partitionKey));
         }
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
-            // TODO: Save and Update methods require generic method to be executed. Reflection part could be cached.
-            var method = GetType().GetMethod(nameof(WrapInDocument), BindingFlags.Static | BindingFlags.NonPublic);
+            return InvokeWrapInDocumentAsGenericMethod(sagaData, (document, sagaId, partitionKey) => container.ReplaceItemAsync(document, sagaId, partitionKey));
+        }
+
+        static Task InvokeWrapInDocumentAsGenericMethod(IContainSagaData sagaData, Func<object, string, PartitionKey, Task<ItemResponse<object>>> operation)
+        {
+            // Save and Update methods require generic method to be executed - build a generic method 
             var sagaDataType = sagaData.GetType();
-            var genericMethod = method.MakeGenericMethod(sagaDataType);
+            var genericMethod = wrapInDocumentMethod.MakeGenericMethod(sagaDataType);
 
             var partitionKey = sagaData.Id.ToString();
             var document = genericMethod.Invoke(null, new object[] { sagaData, partitionKey });
-            return container.ReplaceItemAsync(document, sagaData.Id.ToString(), new PartitionKey(partitionKey));
+            return operation(document, sagaData.Id.ToString(), new PartitionKey(partitionKey));
         }
 
         static CosmosDbSagaDocument<TSagaData> WrapInDocument<TSagaData>(IContainSagaData sagaData, string partitionKey) where TSagaData : IContainSagaData
