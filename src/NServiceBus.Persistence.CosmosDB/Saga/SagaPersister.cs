@@ -31,12 +31,14 @@
             return InvokeWrapInDocumentAsGenericMethod(sagaData, context, (document, sagaId, partitionKey) =>
             {
                 // only delete if we have the same version as in CosmosDB
-                var options = new ItemRequestOptions { IfMatchEtag = "" };
+                context.TryGet<string>("etag", out var etag);
+                var options = new ItemRequestOptions { IfMatchEtag = etag };
+
                 return container.ReplaceItemAsync(document, sagaId, partitionKey, options);
             });
         }
 
-        static Task InvokeWrapInDocumentAsGenericMethod(IContainSagaData sagaData, ContextBag context, Func<object, string, PartitionKey?, Task<ItemResponse<object>>> operation)
+        static async Task InvokeWrapInDocumentAsGenericMethod(IContainSagaData sagaData, ContextBag context, Func<object, string, PartitionKey?, Task<ItemResponse<object>>> operation)
         {
             // Save and Update methods require generic method to be executed - build a generic method
             var sagaDataType = sagaData.GetType();
@@ -44,7 +46,9 @@
 
             var partitionKey = sagaData.Id.ToString();
             var document = genericMethod.Invoke(null, new object[] { sagaData, partitionKey, context });
-            return operation(document, sagaData.Id.ToString(), new PartitionKey(partitionKey));
+            var response = await operation(document, sagaData.Id.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
+
+            context.Set("etag", response.ETag);
         }
 
         static CosmosDbSagaDocument<TSagaData> WrapInDocument<TSagaData>(IContainSagaData sagaData, string partitionKey, ContextBag context) where TSagaData : IContainSagaData
@@ -69,6 +73,8 @@
             try
             {
                 var itemResponse = await container.ReadItemAsync<CosmosDbSagaDocument<TSagaData>>(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
+
+                context.Set("etag", itemResponse.ETag);
 
                 return itemResponse.Resource.SagaData;
             }
@@ -99,8 +105,11 @@
             // TODO: this will allow developers to see that saga will be removed rather than not find it and wonder what happened.
 
             var partitionKey = sagaData.Id.ToString();
+
             // only delete if we have the same version as in CosmosDB
-            var options = new ItemRequestOptions { IfMatchEtag = "" };
+            context.TryGet<string>("etag", out var etag);
+            var options = new ItemRequestOptions { IfMatchEtag = etag };
+
             return container.DeleteItemAsync<dynamic>(sagaData.Id.ToString(), new PartitionKey(partitionKey), options);
         }
     }
