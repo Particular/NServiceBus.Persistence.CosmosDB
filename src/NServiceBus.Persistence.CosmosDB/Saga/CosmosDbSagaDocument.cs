@@ -12,8 +12,10 @@
         [JsonProperty(PropertyName = "id")]
         public Guid SagaId { get; set; }
 
+        [JsonProperty(PropertyName = "sagaData")]
         public TSagaData SagaData { get; set; }
 
+        [JsonProperty(PropertyName = "metaData")]
         public Dictionary<string, string> Metadata { get; set; }
            
     }

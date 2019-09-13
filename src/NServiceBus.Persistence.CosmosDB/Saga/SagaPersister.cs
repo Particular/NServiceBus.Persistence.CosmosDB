@@ -31,7 +31,7 @@
             return InvokeWrapInDocumentAsGenericMethod(sagaData, context, (document, sagaId, partitionKey) =>
             {
                 // only delete if we have the same version as in CosmosDB
-                context.TryGet<string>("etag", out var etag);
+                context.TryGet<string>("cosmosdb_etag", out var etag);
                 var options = new ItemRequestOptions { IfMatchEtag = etag };
 
                 return container.ReplaceItemAsync(document, sagaId, partitionKey, options);
@@ -48,7 +48,7 @@
             var document = genericMethod.Invoke(null, new object[] { sagaData, partitionKey, context });
             var response = await operation(document, sagaData.Id.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
 
-            context.Set("etag", response.ETag);
+            context.Set("cosmosdb_etag", response.ETag);
         }
 
         static CosmosDbSagaDocument<TSagaData> WrapInDocument<TSagaData>(IContainSagaData sagaData, string partitionKey, ContextBag context) where TSagaData : IContainSagaData
@@ -79,7 +79,7 @@
             {
                 var itemResponse = await container.ReadItemAsync<CosmosDbSagaDocument<TSagaData>>(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
 
-                context.Set("etag", itemResponse.ETag);
+                context.Set("cosmosdb_etag", itemResponse.ETag);
 
                 return itemResponse.Resource.SagaData;
             }
@@ -112,7 +112,7 @@
             var partitionKey = sagaData.Id.ToString();
 
             // only delete if we have the same version as in CosmosDB
-            context.TryGet<string>("etag", out var etag);
+            context.TryGet<string>("cosmosdb_etag", out var etag);
             var options = new ItemRequestOptions { IfMatchEtag = etag };
 
             return container.DeleteItemAsync<dynamic>(sagaData.Id.ToString(), new PartitionKey(partitionKey), options);
