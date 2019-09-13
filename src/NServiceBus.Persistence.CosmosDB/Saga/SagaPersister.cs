@@ -28,7 +28,12 @@
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
-            return InvokeWrapInDocumentAsGenericMethod(sagaData, context, (document, sagaId, partitionKey) => container.ReplaceItemAsync(document, sagaId, partitionKey));
+            return InvokeWrapInDocumentAsGenericMethod(sagaData, context, (document, sagaId, partitionKey) =>
+            {
+                // only delete if we have the same version as in CosmosDB
+                var options = new ItemRequestOptions { IfMatchEtag = "" };
+                return container.ReplaceItemAsync(document, sagaId, partitionKey, options);
+            });
         }
 
         static Task InvokeWrapInDocumentAsGenericMethod(IContainSagaData sagaData, ContextBag context, Func<object, string, PartitionKey?, Task<ItemResponse<object>>> operation)
@@ -91,7 +96,9 @@
         public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
             var partitionKey = sagaData.Id.ToString();
-            return container.DeleteItemAsync<dynamic>(sagaData.Id.ToString(), new PartitionKey(partitionKey));
+            // only delete if we have the same version as in CosmosDB
+            var options = new ItemRequestOptions { IfMatchEtag = "" };
+            return container.DeleteItemAsync<dynamic>(sagaData.Id.ToString(), new PartitionKey(partitionKey), options);
         }
     }
 }
