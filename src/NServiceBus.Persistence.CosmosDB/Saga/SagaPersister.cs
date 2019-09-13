@@ -22,31 +22,31 @@
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
-            return InvokeWrapInDocumentAsGenericMethod(sagaData, (document, sagaId, partitionKey) => container.CreateItemAsync(document, partitionKey));
+            return InvokeWrapInDocumentAsGenericMethod(sagaData, context, (document, sagaId, partitionKey) => container.CreateItemAsync(document, partitionKey));
         }
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
-            return InvokeWrapInDocumentAsGenericMethod(sagaData, (document, sagaId, partitionKey) => container.ReplaceItemAsync(document, sagaId, partitionKey));
+            return InvokeWrapInDocumentAsGenericMethod(sagaData, context, (document, sagaId, partitionKey) => container.ReplaceItemAsync(document, sagaId, partitionKey));
         }
 
-        static Task InvokeWrapInDocumentAsGenericMethod(IContainSagaData sagaData, Func<object, string, PartitionKey, Task<ItemResponse<object>>> operation)
+        static Task InvokeWrapInDocumentAsGenericMethod(IContainSagaData sagaData, ContextBag context, Func<object, string, PartitionKey?, Task<ItemResponse<object>>> operation)
         {
-            // Save and Update methods require generic method to be executed - build a generic method 
+            // Save and Update methods require generic method to be executed - build a generic method
             var sagaDataType = sagaData.GetType();
             var genericMethod = wrapInDocumentMethod.MakeGenericMethod(sagaDataType);
 
             var partitionKey = sagaData.Id.ToString();
-            var document = genericMethod.Invoke(null, new object[] { sagaData, partitionKey });
+            var document = genericMethod.Invoke(null, new object[] { sagaData, partitionKey, context });
             return operation(document, sagaData.Id.ToString(), new PartitionKey(partitionKey));
         }
 
-        static CosmosDbSagaDocument<TSagaData> WrapInDocument<TSagaData>(IContainSagaData sagaData, string partitionKey) where TSagaData : IContainSagaData
+        static CosmosDbSagaDocument<TSagaData> WrapInDocument<TSagaData>(IContainSagaData sagaData, string partitionKey, ContextBag context) where TSagaData : IContainSagaData
         {
             var document = new CosmosDbSagaDocument<TSagaData>();
             document.PartitionKey = partitionKey;
             document.SagaId = sagaData.Id;
-            document.SagaType = "sagaType.GetType().FullName";
+            document.SagaType = context.GetSagaType().FullName;
             document.SagaData = (TSagaData)sagaData;
             document.EntityType = sagaData.GetType().FullName;
             document.Metadata = new Dictionary<string, string>
@@ -68,8 +68,7 @@
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
-            var activeSagaInstance = context.Get<ActiveSagaInstance>();
-            var sagaType = activeSagaInstance.Instance.GetType();
+            var sagaType = context.GetSagaType();
             var sagaId = SagaIdGenerator.Generate(sagaType, propertyValue);
 
             return Get<TSagaData>(sagaId, session, context);
