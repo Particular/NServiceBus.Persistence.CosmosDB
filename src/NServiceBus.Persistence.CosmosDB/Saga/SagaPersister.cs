@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Reflection;
     using System.Threading.Tasks;
     using Extensibility;
@@ -60,9 +61,16 @@
         public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
             var partitionKey = sagaId.ToString();
-            var itemResponse = await container.ReadItemAsync<CosmosDbSagaDocument<TSagaData>>(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
+            try
+            {
+                var itemResponse = await container.ReadItemAsync<CosmosDbSagaDocument<TSagaData>>(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
 
-            return itemResponse.Resource.SagaData;
+                return itemResponse.Resource.SagaData;
+            }
+            catch (CosmosException exception) when(exception.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
         }
 
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
