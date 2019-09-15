@@ -41,7 +41,7 @@
             var batchCounter = 0;
             var waitFor = new List<Task>();
 
-            for (int i = 0; i < numberOfSagas; i++)
+            for (var i = 0; i < numberOfSagas; i++)
             {
                 waitFor.Add(Task.Run(async() =>
                 {

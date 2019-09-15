@@ -29,7 +29,7 @@
         {
             var iterations = 100;
 
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var correlationPropertyData = Guid.NewGuid().ToString();
 
