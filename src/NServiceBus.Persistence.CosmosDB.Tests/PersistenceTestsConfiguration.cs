@@ -10,7 +10,11 @@ using NServiceBus.Unicast.Subscriptions.MessageDrivenSubscriptions;
 
 namespace NServiceBus.Persistence.ComponentTests
 {
+    using System.Net;
+    using System.Threading;
+    using Logging;
     using Microsoft.Azure.Cosmos;
+    using Microsoft.Azure.Cosmos.Fluent;
 
     public partial class PersistenceTestsConfiguration
     {
@@ -68,7 +72,10 @@ namespace NServiceBus.Persistence.ComponentTests
 
             SynchronizedStorage = new SynchronizedStorageForTesting();
 
-            SagaStorage = new SagaPersister(new CosmosClient(connectionString), databaseName, containerName);
+            var builder = new CosmosClientBuilder(connectionString);
+            builder.AddCustomHandlers(new LoggingHandler());
+
+            SagaStorage = new SagaPersister(builder.Build(), databaseName, containerName);
 
 
             return Task.FromResult(0);
@@ -89,6 +96,22 @@ namespace NServiceBus.Persistence.ComponentTests
         {
             var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
             return string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
+        }
+    }
+
+    class LoggingHandler : RequestHandler
+    {
+        ILog logger = LogManager.GetLogger<LoggingHandler>();
+
+        public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken)
+        {
+            var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                logger.Info("Request throttled");
+            }
+
+            return response;
         }
     }
 }
