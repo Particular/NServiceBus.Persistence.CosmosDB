@@ -49,6 +49,9 @@
 
                     var saga = new TestSagaData { SomeId = correlationPropertyData, DateTimeProperty = DateTime.UtcNow };
 
+                    // mimic what Core is doing - save is always preceded by an attempt to load
+                    await GetById(Guid.Empty);
+
                     await SaveSaga(saga);
 
                     await GetByIdAndComplete(saga.Id);
