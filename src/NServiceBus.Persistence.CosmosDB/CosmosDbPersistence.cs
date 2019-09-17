@@ -11,6 +11,7 @@
         internal CosmosDbPersistence()
         {
             Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<CosmosDbSagaPersistence>());
+            Supports<StorageType.Subscriptions>(s => s.EnableFeatureByDefault<CosmosDbSubscriptionsPersistence>());
         }
     }
 }

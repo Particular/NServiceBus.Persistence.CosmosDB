@@ -1,22 +1,21 @@
 ﻿namespace NServiceBus.Features
 {
     using Microsoft.Azure.Cosmos;
-    using NServiceBus.Sagas;
     using Persistence.CosmosDB;
 
-    class CosmosDbSagaPersistence : Feature
+    class CosmosDbSubscriptionsPersistence : Feature
     {
-        internal CosmosDbSagaPersistence()
+        public CosmosDbSubscriptionsPersistence()
         {
-            DependsOn<Sagas>();
-            Defaults(s => s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator()));
+            DependsOn<MessageDrivenSubscriptions>();
         }
 
         protected override void Setup(FeatureConfigurationContext context)
         {
+            // should have an API to share the connection string and the database name
             var connectionString = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasConnectionString);
             var databaseName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasDatabaseName);
-            var containerName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasContainerName);
+            var containerName = context.Settings.Get<string>(WellKnownConfigurationKeys.SubscriptionsContainerName);
 
             // TODO: should we allow customers to override the default CosmosClientOptions?
             //MaxRetryAttemptsOnRateLimitedRequests = 9,
@@ -24,7 +23,8 @@
             var cosmosClient = new CosmosClient(connectionString);
 
             // TODO: CosmosClient is IDisposable, will it be disposed properly from the container?
-            context.Container.RegisterSingleton(new SagaPersister(cosmosClient, databaseName, containerName));
+            context.Container.RegisterSingleton(new SubscriptionPersister(cosmosClient, databaseName, containerName));
+
         }
     }
 }

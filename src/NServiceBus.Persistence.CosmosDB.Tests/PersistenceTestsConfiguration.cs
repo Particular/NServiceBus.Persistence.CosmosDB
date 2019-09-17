@@ -12,6 +12,7 @@ namespace NServiceBus.Persistence.ComponentTests
 {
     using System.Net;
     using System.Threading;
+    using Features;
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
@@ -25,7 +26,7 @@ namespace NServiceBus.Persistence.ComponentTests
 
         public bool SupportsFinders { get; } = false;
 
-        public bool SupportsSubscriptions { get; } = false;
+        public bool SupportsSubscriptions { get; } = true;
 
         public bool SupportsTimeouts { get; } = false;
 
@@ -37,7 +38,7 @@ namespace NServiceBus.Persistence.ComponentTests
 
         public ISynchronizedStorageAdapter SynchronizedStorageAdapter { get; }
 
-        public ISubscriptionStorage SubscriptionStorage { get; }
+        public ISubscriptionStorage SubscriptionStorage { get; set; }
 
         public IPersistTimeouts TimeoutStorage { get; }
 
@@ -75,8 +76,11 @@ namespace NServiceBus.Persistence.ComponentTests
             var builder = new CosmosClientBuilder(connectionString);
             builder.AddCustomHandlers(new LoggingHandler());
 
-            SagaStorage = new SagaPersister(builder.Build(), databaseName, containerName);
+            var cosmosClient = builder.Build();
 
+            SagaStorage = new SagaPersister(cosmosClient, databaseName, containerName);
+
+            SubscriptionStorage = new SubscriptionPersister(cosmosClient, databaseName, "Subscriptions");
 
             return Task.FromResult(0);
         }

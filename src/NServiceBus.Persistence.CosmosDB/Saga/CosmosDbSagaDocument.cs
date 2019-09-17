@@ -17,6 +17,5 @@
 
         [JsonProperty(PropertyName = "metaData")]
         public Dictionary<string, string> Metadata { get; set; }
-           
     }
 }
