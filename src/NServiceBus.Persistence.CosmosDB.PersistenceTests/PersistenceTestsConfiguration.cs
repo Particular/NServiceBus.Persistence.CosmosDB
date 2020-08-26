@@ -1,51 +1,36 @@
-﻿using System;
-using System.Threading.Tasks;
-using NServiceBus.Gateway.Deduplication;
-using NServiceBus.Outbox;
-using NServiceBus.Persistence.CosmosDB;
-using NServiceBus.Sagas;
-
-using NServiceBus.Timeout.Core;
-using NServiceBus.Unicast.Subscriptions.MessageDrivenSubscriptions;
-
-namespace NServiceBus.Persistence.ComponentTests
+﻿namespace NServiceBus.PersistenceTesting
 {
-    using System.Net;
+    using System;
     using System.Threading;
+    using System.Threading.Tasks;
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
+    using NServiceBus.Outbox;
+    using NServiceBus.Sagas;
+    using Persistence;
+    using Persistence.ComponentTests;
+    using Persistence.CosmosDB;
 
     public partial class PersistenceTestsConfiguration
     {
-      
-        public bool SupportsDtc { get; } = false;
+        public bool SupportsDtc => false;
 
-        public bool SupportsOutbox { get; } = false;
+        public bool SupportsOutbox => false;
 
-        public bool SupportsFinders { get; } = false;
+        public bool SupportsFinders => false;
 
-        public bool SupportsSubscriptions { get; } = false;
-
-        public bool SupportsTimeouts { get; } = false;
+        public bool SupportsPessimisticConcurrency => false;
 
         public ISagaIdGenerator SagaIdGenerator { get; } = new SagaIdGenerator();
 
-        public ISagaPersister SagaStorage { get; internal set;  }
+        public ISagaPersister SagaStorage { get; private set; }
 
-        public ISynchronizedStorage SynchronizedStorage { get; internal set; }
+        public ISynchronizedStorage SynchronizedStorage { get; private set; }
 
-        public ISynchronizedStorageAdapter SynchronizedStorageAdapter { get; }
+        public ISynchronizedStorageAdapter SynchronizedStorageAdapter { get; private set; }
 
-        public ISubscriptionStorage SubscriptionStorage { get; }
-
-        public IPersistTimeouts TimeoutStorage { get; }
-
-        public IQueryTimeouts TimeoutQuery { get; }
-
-        public IOutboxStorage OutboxStorage { get; }
-
-        public IDeduplicateMessages GatewayStorage { get; }
+        public IOutboxStorage OutboxStorage { get; private set; }
 
         public Task Configure()
         {
@@ -77,19 +62,12 @@ namespace NServiceBus.Persistence.ComponentTests
 
             SagaStorage = new SagaPersister(builder.Build(), databaseName, containerName);
 
-
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         public Task Cleanup()
         {
-
-            return Task.FromResult(0);
-        }
-
-        public Task CleanupMessagesOlderThan(DateTimeOffset beforeStore)
-        {
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         static string GetEnvironmentVariable(string variable)
@@ -97,21 +75,21 @@ namespace NServiceBus.Persistence.ComponentTests
             var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
             return string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
         }
-    }
 
-    class LoggingHandler : RequestHandler
-    {
-        ILog logger = LogManager.GetLogger<LoggingHandler>();
-
-        public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken)
+        class LoggingHandler : RequestHandler
         {
-            var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            if (response.StatusCode == HttpStatusCode.TooManyRequests)
-            {
-                logger.Info("Request throttled");
-            }
+            ILog logger = LogManager.GetLogger<LoggingHandler>();
 
-            return response;
+            public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken)
+            {
+                var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                if ((int)response.StatusCode == 429)
+                {
+                    logger.Info("Request throttled");
+                }
+
+                return response;
+            }
         }
     }
 }
