@@ -41,10 +41,10 @@
             jObject.Add("SagaDataTypeVersion", FileVersionRetriever.GetFileVersion(sagaDataType));
 
             using (var stream = new MemoryStream())
-            using (StreamWriter sw = new StreamWriter(stream))
-            using (JsonWriter writer = new JsonTextWriter(sw))
+            using (var streamWriter = new StreamWriter(stream))
+            using (JsonWriter jsonWriter = new JsonTextWriter(streamWriter))
             {
-                await jObject.WriteToAsync(writer).ConfigureAwait(false);
+                await jObject.WriteToAsync(jsonWriter).ConfigureAwait(false);
 
                 await container.CreateItemStreamAsync(stream, new PartitionKey(partitionKey)).ConfigureAwait(false);
             }
