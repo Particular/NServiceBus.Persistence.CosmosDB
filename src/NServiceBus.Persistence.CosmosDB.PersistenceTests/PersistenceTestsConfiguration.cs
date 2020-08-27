@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.PersistenceTesting
 {
     using System;
+    using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
@@ -34,25 +35,11 @@
 
         public Task Configure()
         {
-            var connectionStringEnvironmentVartiableName = "CosmosDBPersistence_ConnectionString";
-            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVartiableName);
+            var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
+            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVartiableName}' with Cosmos DB connection string.");
-            }
-
-            var databaseEnvironmentVartiableName = "CosmosDBPersistence_DatabaseName";
-            var databaseName = GetEnvironmentVariable(databaseEnvironmentVartiableName);
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new Exception($"Oh no! We couldn't find an environment variable '{databaseEnvironmentVartiableName}' with Cosmos DB database name.");
-            }
-
-            var containerEnvironmentVartiableName = "CosmosDBPersistence_ContainerName";
-            var containerName = GetEnvironmentVariable(containerEnvironmentVartiableName);
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new Exception($"Oh no! We couldn't find an environment variable '{containerEnvironmentVartiableName}' with Cosmos DB container name.");
+                throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVariableName}' with Cosmos DB connection string.");
             }
 
             SynchronizedStorage = new SynchronizedStorageForTesting();
@@ -60,14 +47,16 @@
             var builder = new CosmosClientBuilder(connectionString);
             builder.AddCustomHandlers(new LoggingHandler());
 
-            SagaStorage = new SagaPersister(builder.Build(), databaseName, containerName);
+            cosmosDbClient = builder.Build();
+            SagaStorage = new SagaPersister(cosmosDbClient, databaseName, containerName);
 
             return Task.CompletedTask;
         }
 
-        public Task Cleanup()
+        public async Task Cleanup()
         {
-            return Task.CompletedTask;
+            var container = cosmosDbClient.GetContainer(databaseName, containerName);
+            await container.DeleteContainerAsync();
         }
 
         static string GetEnvironmentVariable(string variable)
@@ -91,5 +80,9 @@
                 return response;
             }
         }
+
+        const string databaseName = "CosmosDBPersistence";
+        readonly string containerName = $"Test_{DateTime.Now.Ticks.ToString(CultureInfo.InvariantCulture)}";
+        CosmosClient cosmosDbClient;
     }
 }
