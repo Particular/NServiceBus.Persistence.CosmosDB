@@ -28,10 +28,8 @@
         public async Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             var partitionKey = sagaData.Id.ToString();
-
             var sagaType = context.GetSagaType();
             var sagaDataType = sagaData.GetType();
-
             var jObject = JObject.FromObject(sagaData);
 
             jObject.Add("PersisterVersion", FileVersionRetriever.GetFileVersion(typeof(SagaPersister)));
@@ -52,14 +50,20 @@
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
-            return InvokeWrapInDocumentAsGenericMethod(sagaData, context, (document, sagaId, partitionKey) =>
-            {
-                // only delete if we have the same version as in CosmosDB
-                context.TryGet<string>("cosmosdb_etag", out var etag);
-                var options = new ItemRequestOptions { IfMatchEtag = etag };
+            var partitionKey = sagaData.Id.ToString();
 
-                return container.ReplaceItemAsync(document, sagaId, partitionKey, options);
-            });
+            // only update if we have the same version as in CosmosDB
+            context.TryGet<string>("cosmosdb_etag", out var etag);
+            var options = new ItemRequestOptions { IfMatchEtag = etag };
+
+            using (var stream = new MemoryStream())
+            using (var streamWriter = new StreamWriter(stream))
+            using (JsonWriter jsonWriter = new JsonTextWriter(streamWriter))
+            {
+                serializer.Serialize(jsonWriter, sagaData);
+
+                return container.ReplaceItemStreamAsync(stream, partitionKey, new PartitionKey(partitionKey), options);
+            }
         }
 
         static async Task InvokeWrapInDocumentAsGenericMethod(IContainSagaData sagaData, ContextBag context, Func<object, string, PartitionKey?, Task<ItemResponse<object>>> operation)
