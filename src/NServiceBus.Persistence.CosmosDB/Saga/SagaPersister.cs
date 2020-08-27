@@ -9,11 +9,15 @@
     using Microsoft.Azure.Cosmos;
     using Sagas;
     using Persistence;
+    using Newtonsoft.Json;
+    using System.IO;
+    using Newtonsoft.Json.Linq;
 
     class SagaPersister : ISagaPersister
     {
         Container container;
         static MethodInfo wrapInDocumentMethod;
+        static JsonSerializer serializer = new JsonSerializer();
 
         public SagaPersister(CosmosClient cosmosClient, string databaseName, string containerName)
         {
@@ -21,9 +25,29 @@
             wrapInDocumentMethod = GetType().GetMethod(nameof(WrapInDocument), BindingFlags.Static | BindingFlags.NonPublic);
         }
 
-        public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
+        public async Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
-            return InvokeWrapInDocumentAsGenericMethod(sagaData, context, (document, sagaId, partitionKey) => container.CreateItemAsync(document, partitionKey));
+            var partitionKey = sagaData.Id.ToString();
+
+            var sagaType = context.GetSagaType();
+            var sagaDataType = sagaData.GetType();
+
+            var jObject = JObject.FromObject(sagaData);
+
+            jObject.Add("PersisterVersion", FileVersionRetriever.GetFileVersion(typeof(SagaPersister)));
+            jObject.Add("SagaType", sagaType.FullName);
+            jObject.Add("SagaTypeVersion", FileVersionRetriever.GetFileVersion(sagaType));
+            jObject.Add("SagaDataType", sagaDataType.FullName);
+            jObject.Add("SagaDataTypeVersion", FileVersionRetriever.GetFileVersion(sagaDataType));
+
+            using (var stream = new MemoryStream())
+            using (StreamWriter sw = new StreamWriter(stream))
+            using (JsonWriter writer = new JsonTextWriter(sw))
+            {
+                await jObject.WriteToAsync(writer).ConfigureAwait(false);
+
+                await container.CreateItemStreamAsync(stream, new PartitionKey(partitionKey)).ConfigureAwait(false);
+            }
         }
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
@@ -63,7 +87,7 @@
             document.Metadata = new Dictionary<string, string>
             {
                 { "PersisterVersion", FileVersionRetriever.GetFileVersion(typeof(SagaPersister))},
-                { "SagaType", sagaType.FullName }, 
+                { "SagaType", sagaType.FullName },
                 { "SagaTypeVersion",  FileVersionRetriever.GetFileVersion(sagaType)},
                 { "SagaDataType",  sagaDataType.FullName},
                 { "SagaDataTypeVersion",  FileVersionRetriever.GetFileVersion(sagaDataType)}
@@ -77,11 +101,19 @@
             var partitionKey = sagaId.ToString();
             try
             {
-                var itemResponse = await container.ReadItemAsync<CosmosDbSagaDocument<TSagaData>>(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
+                var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
 
-                context.Set("cosmosdb_etag", itemResponse.ETag);
+                using (var streamReader = new StreamReader(responseMessage.Content))
+                {
+                    using (var jsonReader = new JsonTextReader(streamReader))
+                    {
+                        var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
 
-                return itemResponse.Resource.SagaData;
+                        context.Set("cosmosdb_etag", responseMessage.Headers.ETag);
+
+                        return sagaData;
+                    }
+                }
             }
             catch (CosmosException exception) when(exception.StatusCode == HttpStatusCode.NotFound)
             {
