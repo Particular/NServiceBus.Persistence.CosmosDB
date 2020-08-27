@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
-    using System.Collections.Generic;
     using System.Net;
     using System.Reflection;
     using System.Threading.Tasks;
@@ -16,13 +15,11 @@
     class SagaPersister : ISagaPersister
     {
         Container container;
-        static MethodInfo wrapInDocumentMethod;
-        static JsonSerializer serializer = new JsonSerializer();
+        JsonSerializer serializer = new JsonSerializer();
 
         public SagaPersister(CosmosClient cosmosClient, string databaseName, string containerName)
         {
             container = cosmosClient.GetContainer(databaseName, containerName);
-            wrapInDocumentMethod = GetType().GetMethod(nameof(WrapInDocument), BindingFlags.Static | BindingFlags.NonPublic);
         }
 
         public async Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
@@ -64,40 +61,6 @@
 
                 return container.ReplaceItemStreamAsync(stream, partitionKey, new PartitionKey(partitionKey), options);
             }
-        }
-
-        static async Task InvokeWrapInDocumentAsGenericMethod(IContainSagaData sagaData, ContextBag context, Func<object, string, PartitionKey?, Task<ItemResponse<object>>> operation)
-        {
-            // Save and Update methods require generic method to be executed - build a generic method
-            var sagaDataType = sagaData.GetType();
-            var genericMethod = wrapInDocumentMethod.MakeGenericMethod(sagaDataType);
-
-            var partitionKey = sagaData.Id.ToString();
-            var document = genericMethod.Invoke(null, new object[] { sagaData, partitionKey, context });
-            var response = await operation(document, sagaData.Id.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
-
-            context.Set("cosmosdb_etag", response.ETag);
-        }
-
-        static CosmosDbSagaDocument<TSagaData> WrapInDocument<TSagaData>(IContainSagaData sagaData, string partitionKey, ContextBag context) where TSagaData : IContainSagaData
-        {
-            var sagaType = context.GetSagaType();
-            var sagaDataType = sagaData.GetType();
-
-            var document = new CosmosDbSagaDocument<TSagaData>();
-            document.PartitionKey = partitionKey;
-            document.SagaId = sagaData.Id;
-            document.SagaData = (TSagaData)sagaData;
-            document.Metadata = new Dictionary<string, string>
-            {
-                { "PersisterVersion", FileVersionRetriever.GetFileVersion(typeof(SagaPersister))},
-                { "SagaType", sagaType.FullName },
-                { "SagaTypeVersion",  FileVersionRetriever.GetFileVersion(sagaType)},
-                { "SagaDataType",  sagaDataType.FullName},
-                { "SagaDataTypeVersion",  FileVersionRetriever.GetFileVersion(sagaDataType)}
-            };
-
-            return document;
         }
 
         public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
