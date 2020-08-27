@@ -147,7 +147,7 @@
             context.TryGet<string>("cosmosdb_etag", out var etag);
             var options = new ItemRequestOptions { IfMatchEtag = etag };
 
-            return container.DeleteItemAsync<dynamic>(sagaData.Id.ToString(), new PartitionKey(partitionKey), options);
+            return container.DeleteItemStreamAsync(sagaData.Id.ToString(), new PartitionKey(partitionKey), options);
         }
     }
 
