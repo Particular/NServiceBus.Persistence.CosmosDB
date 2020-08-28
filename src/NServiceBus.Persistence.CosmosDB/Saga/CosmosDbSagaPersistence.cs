@@ -1,6 +1,9 @@
 ﻿namespace NServiceBus.Features
 {
+    using System;
+    using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
+    using Newtonsoft.Json;
     using NServiceBus.Sagas;
     using Persistence.CosmosDB;
 
@@ -8,24 +11,48 @@
     {
         internal CosmosDbSagaPersistence()
         {
-            DependsOn<Sagas>();
             Defaults(s => s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator()));
+            DependsOn<Sagas>();
         }
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-          
-            var connectionString = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasConnectionString);
-            var databaseName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasDatabaseName);
-            var containerName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasContainerName);
+            var clientFactory = context.Settings.Get<Func<CosmosClient>>(SettingsKeys.CosmosClient);
+            var databaseName = context.Settings.Get<string>(SettingsKeys.Sagas.DatabaseName);
+            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
+            var sagaMetadataCollection = context.Settings.Get<SagaMetadataCollection>();
 
-            // TODO: should we allow customers to override the default CosmosClientOptions?
-            //MaxRetryAttemptsOnRateLimitedRequests = 9,
-            //MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30)
-            var cosmosClient = new CosmosClient(connectionString);
+            var cosmosClient = clientFactory();
 
-            // TODO: CosmosClient is IDisposable, will it be disposed properly from the container?
-            context.Container.ConfigureComponent(builder => new SagaPersister(cosmosClient, databaseName, containerName), DependencyLifecycle.SingleInstance);
+            context.RegisterStartupTask(new InitializeContainers(cosmosClient, databaseName, sagaMetadataCollection));
+
+            context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings, cosmosClient, databaseName), DependencyLifecycle.SingleInstance);
+        }
+
+        class InitializeContainers : FeatureStartupTask
+        {
+            CosmosClient cosmosClient;
+            SagaMetadataCollection sagaMetadataCollection;
+            string databaseName;
+
+            public InitializeContainers(CosmosClient cosmosClient, string databaseName, SagaMetadataCollection sagaMetadataCollection)
+            {
+                this.databaseName = databaseName;
+                this.sagaMetadataCollection = sagaMetadataCollection;
+                this.cosmosClient = cosmosClient;
+            }
+
+            protected override Task OnStart(IMessageSession session)
+            {
+                return cosmosClient.PopulateContainers(databaseName, sagaMetadataCollection);
+            }
+
+            protected override Task OnStop(IMessageSession session)
+            {
+                // for now here
+                cosmosClient.Dispose();
+                return Task.CompletedTask;
+            }
         }
     }
 }

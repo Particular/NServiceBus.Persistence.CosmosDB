@@ -1,12 +1,13 @@
 ﻿namespace NServiceBus.PersistenceTesting
 {
     using System;
-    using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
+    using Features;
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
+    using Newtonsoft.Json;
     using NServiceBus.Outbox;
     using NServiceBus.Sagas;
     using Persistence;
@@ -33,7 +34,7 @@
 
         public IOutboxStorage OutboxStorage { get; private set; }
 
-        public Task Configure()
+        public async Task Configure()
         {
             var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
             var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
@@ -48,15 +49,26 @@
             builder.AddCustomHandlers(new LoggingHandler());
 
             cosmosDbClient = builder.Build();
-            SagaStorage = new SagaPersister(cosmosDbClient, databaseName, containerName);
+            SagaStorage = new SagaPersister(new JsonSerializerSettings(), cosmosDbClient, databaseName);
 
-            return Task.CompletedTask;
+            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
+            await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection);
         }
 
         public async Task Cleanup()
         {
-            var container = cosmosDbClient.GetContainer(databaseName, containerName);
-            await container.DeleteContainerAsync();
+            // not really good because it prevents us from running concurrent builds but for now good enough
+            // techniqually we could override the convention and prefix things uniquely
+            // in addition this might be very slow
+            var database = cosmosDbClient.GetDatabase(databaseName);
+            foreach (var sagaMetadata in SagaMetadataCollection)
+            {
+                // TODO: use convention
+                var containerName = sagaMetadata.SagaEntityType.Name;
+
+                var container = database.GetContainer(containerName);
+                await container.DeleteContainerAsync();
+            }
         }
 
         static string GetEnvironmentVariable(string variable)
@@ -82,7 +94,6 @@
         }
 
         const string databaseName = "CosmosDBPersistence";
-        readonly string containerName = $"Test_{DateTime.Now.Ticks.ToString(CultureInfo.InvariantCulture)}";
         CosmosClient cosmosDbClient;
     }
 }
