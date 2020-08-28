@@ -14,20 +14,20 @@
     class SagaPersister : ISagaPersister
     {
         Container container;
-        JsonSerializer serializer = new JsonSerializer();
+        JsonSerializer serializer;
 
-        public SagaPersister(CosmosClient cosmosClient, string databaseName, string containerName)
+        public SagaPersister(JsonSerializerSettings jsonSerializerSettings, CosmosClient cosmosClient, string databaseName, string containerName)
         {
             container = cosmosClient.GetContainer(databaseName, containerName);
+            serializer = JsonSerializer.Create(jsonSerializerSettings);
         }
 
         public async Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             var partitionKey = sagaData.Id.ToString();
-            var jObject = JObject.FromObject(sagaData);
+            var jObject = JObject.FromObject(sagaData, serializer);
 
             jObject.Add("id", partitionKey);
-            jObject.Add("partitionkey", partitionKey);
             var metaData = new JObject
             {
                 { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
@@ -46,9 +46,16 @@
             }
         }
 
-        public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
+        public async Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
             var partitionKey = sagaData.Id.ToString();
+            var jObject = JObject.FromObject(sagaData, serializer);
+
+            var metaData = new JObject
+            {
+                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
+            };
+            jObject.Add(MetadataExtensions.MetadataKey,metaData);
 
             // only update if we have the same version as in CosmosDB
             context.TryGet<string>("cosmosdb_etag", out var etag);
@@ -58,9 +65,14 @@
             using (var streamWriter = new StreamWriter(stream))
             using (JsonWriter jsonWriter = new JsonTextWriter(streamWriter))
             {
-                serializer.Serialize(jsonWriter, sagaData);
+                await jObject.WriteToAsync(jsonWriter).ConfigureAwait(false);
+                await jsonWriter.FlushAsync().ConfigureAwait(false);
 
-                return container.ReplaceItemStreamAsync(stream, partitionKey, new PartitionKey(partitionKey), options);
+                // ReSharper disable once UnusedVariable
+                var responseMessage = await container.ReplaceItemStreamAsync(stream, partitionKey, new PartitionKey(partitionKey), options)
+                    .ConfigureAwait(false);
+
+                // check for conflict etc.
             }
         }
 

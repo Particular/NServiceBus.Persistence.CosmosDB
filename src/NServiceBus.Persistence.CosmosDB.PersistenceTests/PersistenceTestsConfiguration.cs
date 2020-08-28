@@ -7,6 +7,7 @@
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
+    using Newtonsoft.Json;
     using NServiceBus.Outbox;
     using NServiceBus.Sagas;
     using Persistence;
@@ -48,7 +49,7 @@
             builder.AddCustomHandlers(new LoggingHandler());
 
             cosmosDbClient = builder.Build();
-            SagaStorage = new SagaPersister(cosmosDbClient, databaseName, containerName);
+            SagaStorage = new SagaPersister(new JsonSerializerSettings(), cosmosDbClient, databaseName, containerName);
 
             await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
             var database = cosmosDbClient.GetDatabase(databaseName);

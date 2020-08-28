@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Features
 {
     using Microsoft.Azure.Cosmos;
+    using Newtonsoft.Json;
     using NServiceBus.Sagas;
     using Persistence.CosmosDB;
 
@@ -17,6 +18,7 @@
             var connectionString = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasConnectionString);
             var databaseName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasDatabaseName);
             var containerName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasContainerName);
+            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(WellKnownConfigurationKeys.SagasJsonSerializerSettings);
 
             // TODO: should we allow customers to override the default CosmosClientOptions?
             //MaxRetryAttemptsOnRateLimitedRequests = 9,
@@ -24,7 +26,7 @@
             var cosmosClient = new CosmosClient(connectionString);
 
             // TODO: CosmosClient is IDisposable, will it be disposed properly from the container?
-            context.Container.ConfigureComponent(builder => new SagaPersister(cosmosClient, databaseName, containerName), DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings, cosmosClient, databaseName, containerName), DependencyLifecycle.SingleInstance);
         }
     }
 }

@@ -5,7 +5,7 @@
     /// <summary>
     /// Configuration options for Saga persistence.
     /// </summary>
-    public class SagaSettings
+    public partial class SagaSettings
     {
         SettingsHolder settings;
 
@@ -20,7 +20,7 @@
         public void ConnectionString(string connectionString)
         {
             Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
-            
+
             // TODO: should we assume a single connection string rather than multiple connection strings (per persistence type?)
             settings.Set(WellKnownConfigurationKeys.SagasConnectionString, connectionString);
         }
