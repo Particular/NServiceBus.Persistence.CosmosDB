@@ -67,30 +67,23 @@
         public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
             var partitionKey = sagaId.ToString();
-            try
-            {
-                var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
+            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
 
-                if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
-                {
-                    return default;
-                }
-
-                using (var streamReader = new StreamReader(responseMessage.Content))
-                {
-                    using (var jsonReader = new JsonTextReader(streamReader))
-                    {
-                        var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
-
-                        context.Set("cosmosdb_etag", responseMessage.Headers.ETag);
-
-                        return sagaData;
-                    }
-                }
-            }
-            catch (CosmosException exception) when(exception.StatusCode == HttpStatusCode.NotFound)
+            if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {
                 return default;
+            }
+
+            using (var streamReader = new StreamReader(responseMessage.Content))
+            {
+                using (var jsonReader = new JsonTextReader(streamReader))
+                {
+                    var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
+
+                    context.Set("cosmosdb_etag", responseMessage.Headers.ETag);
+
+                    return sagaData;
+                }
             }
         }
 
