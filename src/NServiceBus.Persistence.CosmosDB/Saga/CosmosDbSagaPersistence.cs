@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Features
 {
+    using System;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
     using NServiceBus.Sagas;
@@ -15,17 +16,14 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var connectionString = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasConnectionString);
-            var databaseName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasDatabaseName);
-            var containerName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasContainerName);
-            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(WellKnownConfigurationKeys.SagasJsonSerializerSettings);
+            var clientFactory = context.Settings.Get<Func<CosmosClient>>(SettingsKeys.CosmosClient);
+            var databaseName = context.Settings.Get<string>(SettingsKeys.Sagas.DatabaseName);
+            var containerName = context.Settings.Get<string>(SettingsKeys.Sagas.ContainerName);
+            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
+            var sagaMetadataCollection = context.Settings.Get<SagaMetadataCollection>();
 
-            // TODO: should we allow customers to override the default CosmosClientOptions?
-            //MaxRetryAttemptsOnRateLimitedRequests = 9,
-            //MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30)
-            var cosmosClient = new CosmosClient(connectionString);
+            var cosmosClient = clientFactory();
 
-            // TODO: CosmosClient is IDisposable, will it be disposed properly from the container?
             context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings, cosmosClient, databaseName, containerName), DependencyLifecycle.SingleInstance);
         }
     }

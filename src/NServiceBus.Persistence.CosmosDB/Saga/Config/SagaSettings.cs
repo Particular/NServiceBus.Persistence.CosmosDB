@@ -15,24 +15,13 @@
         }
 
         /// <summary>
-        /// Connection string to use for sagas storage.
-        /// </summary>
-        public void ConnectionString(string connectionString)
-        {
-            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
-
-            // TODO: should we assume a single connection string rather than multiple connection strings (per persistence type?)
-            settings.Set(WellKnownConfigurationKeys.SagasConnectionString, connectionString);
-        }
-
-        /// <summary>
         /// Database name to be used
         /// </summary>
         public void DatabaseName(string databaseName)
         {
             Guard.AgainstNullAndEmpty(nameof(databaseName), databaseName);
 
-            settings.Set(WellKnownConfigurationKeys.SagasDatabaseName, databaseName);
+            settings.Set(SettingsKeys.Sagas.DatabaseName, databaseName);
         }
 
         /// <summary>
@@ -42,7 +31,7 @@
         {
             Guard.AgainstNullAndEmpty(nameof(containerName), containerName);
 
-            settings.Set(WellKnownConfigurationKeys.SagasContainerName, containerName);
+            settings.Set(SettingsKeys.Sagas.ContainerName, containerName);
         }
     }
 }

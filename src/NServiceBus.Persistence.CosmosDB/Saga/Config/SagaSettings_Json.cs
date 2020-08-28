@@ -10,12 +10,12 @@
         /// </summary>
         public void JsonSettings(JsonSerializerSettings jsonSerializerSettings)
         {
-            settings.Set(WellKnownConfigurationKeys.SagasJsonSerializerSettings, jsonSerializerSettings);
+            settings.Set(SettingsKeys.Sagas.JsonSerializerSettings, jsonSerializerSettings);
         }
 
         internal static JsonSerializerSettings GetJsonSerializerSettings(ReadOnlySettings settings)
         {
-            return settings.GetOrDefault<JsonSerializerSettings>(WellKnownConfigurationKeys.SagasJsonSerializerSettings);
+            return settings.GetOrDefault<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
         }
     }
 }
