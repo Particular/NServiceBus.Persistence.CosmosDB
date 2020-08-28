@@ -8,13 +8,12 @@
     {
         internal CosmosDbSagaPersistence()
         {
-            DependsOn<Sagas>();
             Defaults(s => s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator()));
+            DependsOn<Sagas>();
         }
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-          
             var connectionString = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasConnectionString);
             var databaseName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasDatabaseName);
             var containerName = context.Settings.Get<string>(WellKnownConfigurationKeys.SagasContainerName);

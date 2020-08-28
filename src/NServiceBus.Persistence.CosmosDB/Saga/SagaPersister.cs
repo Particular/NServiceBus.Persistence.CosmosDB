@@ -25,13 +25,12 @@
         public async Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             var partitionKey = sagaData.Id.ToString();
-            var sagaType = context.GetSagaType();
             var sagaDataType = sagaData.GetType();
             var jObject = JObject.FromObject(sagaData);
 
+            jObject.Add("id", partitionKey);
+            jObject.Add("partitionkey", partitionKey);
             jObject.Add("PersisterVersion", FileVersionRetriever.GetFileVersion(typeof(SagaPersister)));
-            jObject.Add("SagaType", sagaType.FullName);
-            jObject.Add("SagaTypeVersion", FileVersionRetriever.GetFileVersion(sagaType));
             jObject.Add("SagaDataType", sagaDataType.FullName);
             jObject.Add("SagaDataTypeVersion", FileVersionRetriever.GetFileVersion(sagaDataType));
 
@@ -40,8 +39,10 @@
             using (JsonWriter jsonWriter = new JsonTextWriter(streamWriter))
             {
                 await jObject.WriteToAsync(jsonWriter).ConfigureAwait(false);
+                await jsonWriter.FlushAsync().ConfigureAwait(false);
 
-                await container.CreateItemStreamAsync(stream, new PartitionKey(partitionKey)).ConfigureAwait(false);
+                var responseMessage = await container.CreateItemStreamAsync(stream, new PartitionKey(partitionKey)).ConfigureAwait(false);
+                context.Set("cosmosdb_etag", responseMessage.Headers.ETag);
             }
         }
 
@@ -70,6 +71,11 @@
             {
                 var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
 
+                if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+                {
+                    return default;
+                }
+
                 using (var streamReader = new StreamReader(responseMessage.Content))
                 {
                     using (var jsonReader = new JsonTextReader(streamReader))
@@ -90,15 +96,8 @@
 
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
-            var propertyInfo = typeof(TSagaData).GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-            if (propertyInfo == null)
-            {
-                throw new Exception($"// TODO: what should be the exception here? Correlation property '{propertyName}' is not defined?");
-            }
-
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
-            var sagaType = context.GetSagaType();
-            var sagaId = SagaIdGenerator.Generate(sagaType, propertyValue);
+            var sagaId = SagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
 
             return Get<TSagaData>(sagaId, session, context);
         }
