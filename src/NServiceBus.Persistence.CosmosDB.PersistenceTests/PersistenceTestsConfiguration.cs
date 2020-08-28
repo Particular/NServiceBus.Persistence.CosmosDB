@@ -33,7 +33,7 @@
 
         public IOutboxStorage OutboxStorage { get; private set; }
 
-        public Task Configure()
+        public async Task Configure()
         {
             var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
             var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
@@ -50,7 +50,9 @@
             cosmosDbClient = builder.Build();
             SagaStorage = new SagaPersister(cosmosDbClient, databaseName, containerName);
 
-            return Task.CompletedTask;
+            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
+            var database = cosmosDbClient.GetDatabase(databaseName);
+            await database.CreateContainerIfNotExistsAsync(new ContainerProperties(containerName, "/Id"));
         }
 
         public async Task Cleanup()
