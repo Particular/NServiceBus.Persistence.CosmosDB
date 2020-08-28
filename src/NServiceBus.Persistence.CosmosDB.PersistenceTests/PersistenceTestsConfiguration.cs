@@ -55,10 +55,20 @@
             await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection);
         }
 
-        public  Task Cleanup()
+        public async Task Cleanup()
         {
-            // TODO: Delete again
-            return Task.CompletedTask;
+            // not really good because it prevents us from running concurrent builds but for now good enough
+            // techniqually we could override the convention and prefix things uniquely
+            // in addition this might be very slow
+            var database = cosmosDbClient.GetDatabase(databaseName);
+            foreach (var sagaMetadata in SagaMetadataCollection)
+            {
+                // TODO: use convention
+                var containerName = sagaMetadata.SagaEntityType.Name;
+
+                var container = database.GetContainer(containerName);
+                await container.DeleteContainerAsync();
+            }
         }
 
         static string GetEnvironmentVariable(string variable)
