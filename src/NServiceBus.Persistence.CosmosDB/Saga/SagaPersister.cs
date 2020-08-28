@@ -2,7 +2,6 @@
 {
     using System;
     using System.Net;
-    using System.Reflection;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -25,14 +24,15 @@
         public async Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             var partitionKey = sagaData.Id.ToString();
-            var sagaDataType = sagaData.GetType();
             var jObject = JObject.FromObject(sagaData);
 
             jObject.Add("id", partitionKey);
             jObject.Add("partitionkey", partitionKey);
-            jObject.Add("PersisterVersion", FileVersionRetriever.GetFileVersion(typeof(SagaPersister)));
-            jObject.Add("SagaDataType", sagaDataType.FullName);
-            jObject.Add("SagaDataTypeVersion", FileVersionRetriever.GetFileVersion(sagaDataType));
+            var metaData = new JObject
+            {
+                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
+            };
+            jObject.Add(MetadataExtensions.MetadataKey,metaData);
 
             using (var stream = new MemoryStream())
             using (var streamWriter = new StreamWriter(stream))
@@ -115,6 +115,7 @@
 
             return container.DeleteItemStreamAsync(sagaData.Id.ToString(), new PartitionKey(partitionKey), options);
         }
-    }
 
+        internal static readonly string SchemaVersion = "1.0.0";
+    }
 }
