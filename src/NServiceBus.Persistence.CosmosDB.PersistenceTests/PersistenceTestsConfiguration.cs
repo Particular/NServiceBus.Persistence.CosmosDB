@@ -1,9 +1,9 @@
 ﻿namespace NServiceBus.PersistenceTesting
 {
     using System;
-    using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
+    using Features;
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
@@ -49,17 +49,16 @@
             builder.AddCustomHandlers(new LoggingHandler());
 
             cosmosDbClient = builder.Build();
-            SagaStorage = new SagaPersister(new JsonSerializerSettings(), cosmosDbClient, databaseName, containerName);
+            SagaStorage = new SagaPersister(new JsonSerializerSettings(), cosmosDbClient, databaseName);
 
             await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
-            var database = cosmosDbClient.GetDatabase(databaseName);
-            await database.CreateContainerIfNotExistsAsync(new ContainerProperties(containerName, "/Id"));
+            await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection);
         }
 
-        public async Task Cleanup()
+        public  Task Cleanup()
         {
-            var container = cosmosDbClient.GetContainer(databaseName, containerName);
-            await container.DeleteContainerAsync();
+            // TODO: Delete again
+            return Task.CompletedTask;
         }
 
         static string GetEnvironmentVariable(string variable)
@@ -85,7 +84,6 @@
         }
 
         const string databaseName = "CosmosDBPersistence";
-        readonly string containerName = $"Test_{DateTime.Now.Ticks.ToString(CultureInfo.InvariantCulture)}";
         CosmosClient cosmosDbClient;
     }
 }
