@@ -51,6 +51,11 @@
             cosmosDbClient = builder.Build();
             SagaStorage = new SagaPersister(new JsonSerializerSettings(), cosmosDbClient, databaseName);
 
+            // TODO: Finish
+            // var routingSettings = new RoutingSettings(new SettingsHolder());
+            // var config = new PartitionAwareConfiguration(routingSettings);
+            // config.MapMessageToContainer()
+
             await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
             await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection);
         }
