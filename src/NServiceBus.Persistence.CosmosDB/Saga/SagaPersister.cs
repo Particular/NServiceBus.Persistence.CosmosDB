@@ -15,15 +15,14 @@
     {
         JsonSerializer serializer;
 
-        public SagaPersister(JsonSerializerSettings jsonSerializerSettings, CosmosClient cosmosClient, string databaseName)
+        public SagaPersister(JsonSerializerSettings jsonSerializerSettings)
         {
-            this.databaseName = databaseName;
-            this.cosmosClient = cosmosClient;
             serializer = JsonSerializer.Create(jsonSerializerSettings);
         }
 
         public async Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
+            var storageSession = (StorageSession)session;
             var partitionKey = sagaData.Id.ToString();
             var jObject = JObject.FromObject(sagaData, serializer);
 
@@ -41,19 +40,14 @@
                 await jObject.WriteToAsync(jsonWriter).ConfigureAwait(false);
                 await jsonWriter.FlushAsync().ConfigureAwait(false);
 
-                // TODO use some kind of convention
-                var container = cosmosClient.GetContainer(databaseName, sagaData.GetType().Name);
-                var responseMessage = await container.CreateItemStreamAsync(stream, new PartitionKey(partitionKey)).ConfigureAwait(false);
-                if(responseMessage.StatusCode == HttpStatusCode.Conflict || responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
-                {
-                    throw new Exception("TODO");
-                }
-                context.Set($"cosmos_etag:{partitionKey}", responseMessage.Headers.ETag);
+                var options = new TransactionalBatchItemRequestOptions();
+                storageSession.TransactionalBatch.CreateItemStream(stream, options);
             }
         }
 
         public async Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
+            var storageSession = (StorageSession)session;
             var partitionKey = sagaData.Id.ToString();
             var jObject = JObject.FromObject(sagaData, serializer);
 
@@ -66,8 +60,12 @@
 
             // only update if we have the same version as in CosmosDB
             context.TryGet<string>($"cosmos_etag:{partitionKey}", out var etag);
-            var options = new ItemRequestOptions { IfMatchEtag = etag };
+            var options = new TransactionalBatchItemRequestOptions
+            {
+                IfMatchEtag = etag,
+            };
 
+            // TODO: Do we need to keep the stream around?
             using (var stream = new MemoryStream())
             using (var streamWriter = new StreamWriter(stream))
             using (JsonWriter jsonWriter = new JsonTextWriter(streamWriter))
@@ -75,25 +73,17 @@
                 await jObject.WriteToAsync(jsonWriter).ConfigureAwait(false);
                 await jsonWriter.FlushAsync().ConfigureAwait(false);
 
-                // TODO use some kind of convention
-                var container = cosmosClient.GetContainer(databaseName, sagaData.GetType().Name);
-                // ReSharper disable once UnusedVariable
-                var responseMessage = await container.ReplaceItemStreamAsync(stream, partitionKey, new PartitionKey(partitionKey), options)
-                    .ConfigureAwait(false);
-
-                if (responseMessage.StatusCode == HttpStatusCode.Conflict || responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
-                {
-                    throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' was updated by another process or no longer exists.");
-                }
+                storageSession.TransactionalBatch.ReplaceItemStream(partitionKey, stream, options);
             }
         }
 
         public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
+            var storageSession = (StorageSession)session;
             var partitionKey = sagaId.ToString();
 
-            // TODO use some kind of convention
-            var container = cosmosClient.GetContainer(databaseName, typeof(TSagaData).Name);
+            // reads need to go directly
+            var container = storageSession.Container;
             var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
 
             if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
@@ -122,30 +112,23 @@
             return Get<TSagaData>(sagaId, session, context);
         }
 
-        public async Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
+        public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
             // TODO: currently we delete the item by ID. The idea is to use a document TTL to let CosmosDB remove the item.
             // TODO: this will allow developers to see that saga will be removed rather than not find it and wonder what happened.
+
+            var storageSession = (StorageSession)session;
 
             var partitionKey = sagaData.Id.ToString();
 
             // only delete if we have the same version as in CosmosDB
             context.TryGet<string>($"cosmos_etag:{partitionKey}", out var etag);
-            var options = new ItemRequestOptions { IfMatchEtag = etag };
+            var options = new TransactionalBatchItemRequestOptions { IfMatchEtag = etag };
 
-            // TODO use some kind of convention
-            var container = cosmosClient.GetContainer(databaseName, sagaData.GetType().Name);
-            var responseMessage = await container.DeleteItemStreamAsync(sagaData.Id.ToString(), new PartitionKey(partitionKey), options)
-                .ConfigureAwait(false);
-
-            if(responseMessage.StatusCode == HttpStatusCode.Conflict || responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
-            {
-                throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed because it was updated by another process.");
-            }
+            storageSession.TransactionalBatch.DeleteItem(partitionKey, options);
+            return Task.CompletedTask;
         }
 
         internal static readonly string SchemaVersion = "1.0.0";
-        CosmosClient cosmosClient;
-        string databaseName;
     }
 }

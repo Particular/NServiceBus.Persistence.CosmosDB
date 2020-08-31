@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System;
+    using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
 
@@ -25,7 +27,14 @@
             {
                 if (!batchOutcomeResponse.IsSuccessStatusCode)
                 {
-                    // TODO
+                    foreach (var result in batchOutcomeResponse)
+                    {
+                        if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
+                        {
+                            // technically would could somehow map back to what we wrote if we store extra info in the session
+                            throw new Exception("Concurrent updates lead to write conflicts.");
+                        }
+                    }
                 }
             }
         }
