@@ -2,8 +2,7 @@
 {
     using System;
     using System.Threading;
-    using System.Threading.Tasks;
-    using Features;
+    using System.Threading.Tasks;P
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
@@ -11,8 +10,8 @@
     using NServiceBus.Outbox;
     using NServiceBus.Sagas;
     using Persistence;
-    using Persistence.ComponentTests;
     using Persistence.CosmosDB;
+    using Settings;
 
     public partial class PersistenceTestsConfiguration
     {
@@ -43,21 +42,21 @@
                 throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVariableName}' with Cosmos DB connection string.");
             }
 
-            SynchronizedStorage = new SynchronizedStorageForTesting();
+            // TODO: Finish
+            var routingSettings = new RoutingSettings(new SettingsHolder());
+            var config = new PartitionAwareConfiguration(routingSettings);
+            // config.MapMessageToContainer()
+
+            SynchronizedStorage = new StorageSessionFactory(databaseName, cosmosDbClient, config);
 
             var builder = new CosmosClientBuilder(connectionString);
             builder.AddCustomHandlers(new LoggingHandler());
 
             cosmosDbClient = builder.Build();
-            SagaStorage = new SagaPersister(new JsonSerializerSettings(), cosmosDbClient, databaseName);
-
-            // TODO: Finish
-            // var routingSettings = new RoutingSettings(new SettingsHolder());
-            // var config = new PartitionAwareConfiguration(routingSettings);
-            // config.MapMessageToContainer()
+            SagaStorage = new SagaPersister(new JsonSerializerSettings());
 
             await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
-            await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection);
+            //await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection);
         }
 
         public async Task Cleanup()
