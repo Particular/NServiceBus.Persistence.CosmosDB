@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using Configuration.AdvancedExtensibility;
-    using Transport;
 
     /// <summary>
     ///
@@ -11,19 +10,18 @@
         /// <summary>
         ///
         /// </summary>
-        /// <param name="routingSettings"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="persistenceSettings"></param>
         /// <returns></returns>
-        public static PartitionAwareConfiguration Partition<T>(this RoutingSettings<T> routingSettings) where T : TransportDefinition
+        public static PartitionAwareConfiguration Partition(this PersistenceExtensions<CosmosDbPersistence> persistenceSettings)
         {
-            var settings = routingSettings.GetSettings();
+            var settings = persistenceSettings.GetSettings();
 
             if (settings.TryGet(out PartitionAwareConfiguration config))
             {
                 return config;
             }
 
-            config = new PartitionAwareConfiguration(routingSettings);
+            config = new PartitionAwareConfiguration(persistenceSettings);
             settings.Set(config);
 
             return config;

@@ -8,13 +8,23 @@
     {
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var clientFactory = context.Settings.Get<Func<CosmosClient>>(SettingsKeys.CosmosClient);
-            // TODO: Should not be a saga config
-            var databaseName = context.Settings.Get<string>(SettingsKeys.Sagas.DatabaseName);
-            // TODO: would throw if the extension is not called, make better
+            var client = context.Settings.Get<CosmosClient>(SettingsKeys.CosmosClient);
+
+            if (client is null)
+            {
+                throw new Exception("You must configure a CosmosClient or provide a connection string");
+            }
+
+            var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
+
             var partitionConfig = context.Settings.Get<PartitionAwareConfiguration>();
 
-            context.Container.ConfigureComponent(() => new StorageSessionFactory(databaseName, clientFactory(), partitionConfig), DependencyLifecycle.SingleInstance);
+            if (partitionConfig is null)
+            {
+                throw new Exception("No message partition mappings were found. Use transport.Partition() to configure mappings.");
+            }
+
+            context.Container.ConfigureComponent(() => new StorageSessionFactory(databaseName, client, partitionConfig), DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionAdapter>(DependencyLifecycle.SingleInstance);
         }
     }

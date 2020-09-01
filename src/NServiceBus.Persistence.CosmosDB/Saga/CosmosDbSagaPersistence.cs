@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Features
 {
-    using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
@@ -17,16 +16,14 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var clientFactory = context.Settings.Get<Func<CosmosClient>>(SettingsKeys.CosmosClient);
-            var databaseName = context.Settings.Get<string>(SettingsKeys.Sagas.DatabaseName);
+            var cosmosClient = context.Settings.Get<CosmosClient>(SettingsKeys.CosmosClient);
+            var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
             var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
             var sagaMetadataCollection = context.Settings.Get<SagaMetadataCollection>();
 
-            var cosmosClient = clientFactory();
-
             context.RegisterStartupTask(new InitializeContainers(cosmosClient, databaseName, sagaMetadataCollection));
 
-            context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings, cosmosClient, databaseName), DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings), DependencyLifecycle.SingleInstance);
         }
 
         class InitializeContainers : FeatureStartupTask
