@@ -15,6 +15,11 @@
                 var containerName = sagaMetadata.SagaEntityType.Name;
                 var containerProperties = new ContainerProperties(containerName, "/Id");
 
+                //foreach (var associatedMessage in sagaMetadata.AssociatedMessages)
+                //{
+                //    associatedMessage.MessageType
+                //}
+
                 if (sagaMetadata.TryGetCorrelationProperty(out var property) && property.Name != "Id")
                 {
                     containerProperties.UniqueKeyPolicy = new UniqueKeyPolicy

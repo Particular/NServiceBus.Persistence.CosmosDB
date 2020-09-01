@@ -5,7 +5,7 @@
     /// <summary>
     ///
     /// </summary>
-    public static class PartitionAwareRoutingExtensions
+    public static class PartitionAwarePersistenceExtensions
     {
         /// <summary>
         ///

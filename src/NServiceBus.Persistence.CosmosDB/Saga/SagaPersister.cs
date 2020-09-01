@@ -9,49 +9,57 @@
     using Persistence;
     using Newtonsoft.Json;
     using System.IO;
+    using System.Text;
     using Newtonsoft.Json.Linq;
 
     class SagaPersister : ISagaPersister
     {
         JsonSerializer serializer;
+        JsonSerializerSettings jsonSerializerSettings;
 
         public SagaPersister(JsonSerializerSettings jsonSerializerSettings)
         {
+            this.jsonSerializerSettings = jsonSerializerSettings;
             serializer = JsonSerializer.Create(jsonSerializerSettings);
         }
 
-        public async Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
+        public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             var storageSession = (StorageSession)session;
-            var partitionKey = sagaData.Id.ToString();
+
+            var partitionKey = JArray.Parse(storageSession.PartitionKey.ToString());
             var jObject = JObject.FromObject(sagaData, serializer);
 
-            jObject.Add("id", partitionKey);
+            jObject.Add("id", sagaData.Id.ToString());
+            jObject.Add("partitionKey", partitionKey[0]);
             var metaData = new JObject
             {
                 { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
             };
             jObject.Add(MetadataExtensions.MetadataKey,metaData);
 
-            using (var stream = new MemoryStream())
-            using (var streamWriter = new StreamWriter(stream))
-            using (JsonWriter jsonWriter = new JsonTextWriter(streamWriter))
-            {
-                await jObject.WriteToAsync(jsonWriter).ConfigureAwait(false);
-                await jsonWriter.FlushAsync().ConfigureAwait(false);
+            // has to be kept open, implement tracking
+            // couldn't get the stream writer to work properly
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject, jsonSerializerSettings)));
 
-                var options = new TransactionalBatchItemRequestOptions();
-                storageSession.TransactionalBatch.CreateItemStream(stream, options);
-            }
+            var options = new TransactionalBatchItemRequestOptions
+            {
+                EnableContentResponseOnWrite = false
+            };
+            storageSession.TransactionalBatch.CreateItemStream(stream, options);
+            // need to figure out how to get back the ETag for creations
+            return Task.CompletedTask;
         }
 
-        public async Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
+        public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
             var storageSession = (StorageSession)session;
-            var partitionKey = sagaData.Id.ToString();
+
+            var partitionKey = storageSession.PartitionKey.ToString();
             var jObject = JObject.FromObject(sagaData, serializer);
 
-            jObject.Add("id", partitionKey);
+            jObject.Add("id", sagaData.Id.ToString());
+            jObject.Add("partitionKey", partitionKey);
             var metaData = new JObject
             {
                 { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
@@ -59,32 +67,27 @@
             jObject.Add(MetadataExtensions.MetadataKey,metaData);
 
             // only update if we have the same version as in CosmosDB
-            context.TryGet<string>($"cosmos_etag:{partitionKey}", out var etag);
+            context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var etag);
             var options = new TransactionalBatchItemRequestOptions
             {
                 IfMatchEtag = etag,
+                EnableContentResponseOnWrite = false,
             };
 
-            // TODO: Do we need to keep the stream around?
-            using (var stream = new MemoryStream())
-            using (var streamWriter = new StreamWriter(stream))
-            using (JsonWriter jsonWriter = new JsonTextWriter(streamWriter))
-            {
-                await jObject.WriteToAsync(jsonWriter).ConfigureAwait(false);
-                await jsonWriter.FlushAsync().ConfigureAwait(false);
-
-                storageSession.TransactionalBatch.ReplaceItemStream(partitionKey, stream, options);
-            }
+            // has to be kept open, implement tracking
+            // couldn't get the stream writer to work properly
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject, jsonSerializerSettings)));
+            storageSession.TransactionalBatch.ReplaceItemStream(sagaData.Id.ToString(), stream, options);
+            return Task.CompletedTask;
         }
 
         public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
             var storageSession = (StorageSession)session;
-            var partitionKey = sagaId.ToString();
 
             // reads need to go directly
             var container = storageSession.Container;
-            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), new PartitionKey(partitionKey)).ConfigureAwait(false);
+            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), storageSession.PartitionKey).ConfigureAwait(false);
 
             if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {
@@ -97,7 +100,7 @@
                 {
                     var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
 
-                    context.Set($"cosmos_etag:{partitionKey}", responseMessage.Headers.ETag);
+                    context.Set($"cosmos_etag:{sagaId}", responseMessage.Headers.ETag);
 
                     return sagaData;
                 }
@@ -119,13 +122,11 @@
 
             var storageSession = (StorageSession)session;
 
-            var partitionKey = sagaData.Id.ToString();
-
             // only delete if we have the same version as in CosmosDB
-            context.TryGet<string>($"cosmos_etag:{partitionKey}", out var etag);
+            context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var etag);
             var options = new TransactionalBatchItemRequestOptions { IfMatchEtag = etag };
 
-            storageSession.TransactionalBatch.DeleteItem(partitionKey, options);
+            storageSession.TransactionalBatch.DeleteItem(sagaData.Id.ToString(), options);
             return Task.CompletedTask;
         }
 

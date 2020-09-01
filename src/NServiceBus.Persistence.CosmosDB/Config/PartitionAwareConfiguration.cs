@@ -10,7 +10,7 @@
     /// </summary>
     public class PartitionAwareConfiguration : ExposeSettings
     {
-        Dictionary<Type, Map> typeToPartitionMappers = new Dictionary<Type, Map>();
+        Dictionary<Type, MapUntyped> typeToPartitionMappers = new Dictionary<Type, MapUntyped>();
         Dictionary<Type, string> typeToContainerMappers = new Dictionary<Type, string>();
 
         internal PartitionAwareConfiguration(PersistenceExtensions<CosmosDbPersistence> persistenceSettings) : base(persistenceSettings.GetSettings())
@@ -23,7 +23,7 @@
         /// <param name="map"></param>
         /// <param name="containerName"></param>
         /// <typeparam name="T"></typeparam>
-        public void AddPartitionMappingForMessageType<T>(Map map, string containerName)
+        public void AddPartitionMappingForMessageType<T>(Map<T> map, string containerName)
         {
             typeToPartitionMappers[typeof(T)] = (headers, messageId, message) => map(headers, messageId, (T)message);
             typeToContainerMappers[typeof(T)] = containerName;

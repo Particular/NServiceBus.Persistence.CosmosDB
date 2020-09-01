@@ -1,8 +1,11 @@
 ﻿namespace NServiceBus.PersistenceTesting
 {
     using System;
+    using System.Collections.Generic;
+    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using Extensibility;
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
@@ -11,7 +14,10 @@
     using NServiceBus.Sagas;
     using Persistence;
     using Persistence.CosmosDB;
+    using Pipeline;
     using Settings;
+    using Transport;
+    using Unicast.Messages;
 
     public partial class PersistenceTestsConfiguration
     {
@@ -42,37 +48,46 @@
                 throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVariableName}' with Cosmos DB connection string.");
             }
 
-            // TODO: Finish
+            containerName = $"{databaseName}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
+            partitionKey = Guid.NewGuid().ToString();
             var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
             var config = new PartitionAwareConfiguration(persistenceSettings);
-            // config.MapMessageToContainer()
-
-            SynchronizedStorage = new StorageSessionFactory(databaseName, cosmosDbClient, config);
+            // very big cheat!
+            config.AddPartitionMappingForMessageType<object>((headers, id, message) => new PartitionKey(partitionKey), containerName);
 
             var builder = new CosmosClientBuilder(connectionString);
             builder.AddCustomHandlers(new LoggingHandler());
 
             cosmosDbClient = builder.Build();
+
+            SynchronizedStorage = new StorageSessionFactory(databaseName, cosmosDbClient, config);
+
             SagaStorage = new SagaPersister(new JsonSerializerSettings());
 
             await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
-            //await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection);
+            var database = cosmosDbClient.GetDatabase(databaseName);
+            // TODO do we need to map PartitionKeyPath as well because it seems we have to.
+            await database.CreateContainerAsync(new ContainerProperties
+            {
+                Id = containerName,
+                PartitionKeyPath = "/partitionKey"
+            });
+
+            GetContextBagForSagaStorage = () =>
+            {
+                var contextBag = new ContextBag();
+                // dummy data
+                contextBag.Set(new IncomingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>()));
+                contextBag.Set(new LogicalMessage(new MessageMetadata(typeof(object)), null));
+                return contextBag;
+            };
         }
 
         public async Task Cleanup()
         {
-            // not really good because it prevents us from running concurrent builds but for now good enough
-            // techniqually we could override the convention and prefix things uniquely
-            // in addition this might be very slow
             var database = cosmosDbClient.GetDatabase(databaseName);
-            foreach (var sagaMetadata in SagaMetadataCollection)
-            {
-                // TODO: use convention
-                var containerName = sagaMetadata.SagaEntityType.Name;
-
-                var container = database.GetContainer(containerName);
-                await container.DeleteContainerAsync();
-            }
+            var container = database.GetContainer(containerName);
+            await container.DeleteContainerAsync();
         }
 
         static string GetEnvironmentVariable(string variable)
@@ -99,5 +114,7 @@
 
         const string databaseName = "CosmosDBPersistence";
         CosmosClient cosmosDbClient;
+        string containerName;
+        string partitionKey;
     }
 }
