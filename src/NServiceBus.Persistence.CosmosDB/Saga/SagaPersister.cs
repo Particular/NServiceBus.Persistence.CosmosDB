@@ -48,7 +48,7 @@
                 {
                     throw new Exception("TODO");
                 }
-                context.Set("cosmosdb_etag", responseMessage.Headers.ETag);
+                context.Set($"cosmos_etag:{partitionKey}", responseMessage.Headers.ETag);
             }
         }
 
@@ -65,7 +65,7 @@
             jObject.Add(MetadataExtensions.MetadataKey,metaData);
 
             // only update if we have the same version as in CosmosDB
-            context.TryGet<string>("cosmosdb_etag", out var etag);
+            context.TryGet<string>($"cosmos_etag:{partitionKey}", out var etag);
             var options = new ItemRequestOptions { IfMatchEtag = etag };
 
             using (var stream = new MemoryStream())
@@ -107,7 +107,7 @@
                 {
                     var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
 
-                    context.Set("cosmosdb_etag", responseMessage.Headers.ETag);
+                    context.Set($"cosmos_etag:{partitionKey}", responseMessage.Headers.ETag);
 
                     return sagaData;
                 }
@@ -130,7 +130,7 @@
             var partitionKey = sagaData.Id.ToString();
 
             // only delete if we have the same version as in CosmosDB
-            context.TryGet<string>("cosmosdb_etag", out var etag);
+            context.TryGet<string>($"cosmos_etag:{partitionKey}", out var etag);
             var options = new ItemRequestOptions { IfMatchEtag = etag };
 
             // TODO use some kind of convention
