@@ -8,14 +8,12 @@
     /// <summary>
     ///
     /// </summary>
-    public class PartitionAwareConfiguration :
-        ExposeSettings
+    public class PartitionAwareConfiguration : ExposeSettings
     {
         Dictionary<Type, Map> typeToPartitionMappers = new Dictionary<Type, Map>();
         Dictionary<Type, string> typeToContainerMappers = new Dictionary<Type, string>();
 
-        internal PartitionAwareConfiguration(RoutingSettings routingSettings)
-            : base(routingSettings.GetSettings())
+        internal PartitionAwareConfiguration(PersistenceExtensions<CosmosDbPersistence> persistenceSettings) : base(persistenceSettings.GetSettings())
         {
         }
 

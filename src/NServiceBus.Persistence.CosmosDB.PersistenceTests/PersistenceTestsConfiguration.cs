@@ -2,7 +2,7 @@
 {
     using System;
     using System.Threading;
-    using System.Threading.Tasks;P
+    using System.Threading.Tasks;
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
@@ -43,8 +43,8 @@
             }
 
             // TODO: Finish
-            var routingSettings = new RoutingSettings(new SettingsHolder());
-            var config = new PartitionAwareConfiguration(routingSettings);
+            var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
+            var config = new PartitionAwareConfiguration(persistenceSettings);
             // config.MapMessageToContainer()
 
             SynchronizedStorage = new StorageSessionFactory(databaseName, cosmosDbClient, config);
