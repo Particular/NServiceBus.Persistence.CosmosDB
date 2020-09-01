@@ -13,25 +13,5 @@
         {
             this.settings = settings;
         }
-
-        /// <summary>
-        /// Database name to be used
-        /// </summary>
-        public void DatabaseName(string databaseName)
-        {
-            Guard.AgainstNullAndEmpty(nameof(databaseName), databaseName);
-
-            settings.Set(SettingsKeys.Sagas.DatabaseName, databaseName);
-        }
-
-        /// <summary>
-        /// Container name to be used
-        /// </summary>
-        public void ContainerName(string containerName)
-        {
-            Guard.AgainstNullAndEmpty(nameof(containerName), containerName);
-
-            settings.Set(SettingsKeys.Sagas.ContainerName, containerName);
-        }
     }
 }
