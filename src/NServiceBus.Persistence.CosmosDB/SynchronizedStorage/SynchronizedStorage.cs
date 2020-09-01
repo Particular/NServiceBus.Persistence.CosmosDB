@@ -21,7 +21,7 @@
 
             if (partitionConfig is null)
             {
-                throw new Exception("No message partition mappings were found. Use transport.Partition() to configure mappings.");
+                throw new Exception("No message partition mappings were found. Use persistence.Partition() to configure mappings.");
             }
 
             context.Container.ConfigureComponent(() => new StorageSessionFactory(databaseName, client, partitionConfig), DependencyLifecycle.SingleInstance);
