@@ -13,6 +13,7 @@
     using Newtonsoft.Json;
     using NServiceBus.Outbox;
     using NServiceBus.Sagas;
+    using NUnit.Framework;
     using Persistence;
     using Persistence.CosmosDB;
     using Pipeline;
@@ -84,6 +85,8 @@
             // var database = cosmosDbClient.GetDatabase(databaseName);
             // var container = database.GetContainer(containerName);
             // await container.DeleteContainerAsync();
+            var logger = LogManager.GetLogger("ChargeTracker");
+            logger.Info($"Total charge: {totalCharge} RUs");
             return Task.CompletedTask;
         }
 
@@ -101,7 +104,10 @@
             {
                 var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
-                logger.Info($"Charged RUs:{response.Headers["x-ms-request-charge"]} for {request.Method.Method} {request.RequestUri} IsBatch:{request.Headers["x-ms-cosmos-is-batch-request"]}");
+                var requestCharge = response.Headers["x-ms-request-charge"];
+                logger.Info($"Charged RUs:{requestCharge} for {request.Method.Method} {request.RequestUri} IsBatch:{request.Headers["x-ms-cosmos-is-batch-request"]}");
+                totalCharge += Convert.ToDouble(requestCharge);
+                logger.Info($"Total charge: {totalCharge} RUs");
 
                 if ((int)response.StatusCode == 429)
                 {
@@ -116,5 +122,6 @@
         CosmosClient cosmosDbClient;
         string containerName;
         string partitionKey;
+        public static double totalCharge;
     }
 }
