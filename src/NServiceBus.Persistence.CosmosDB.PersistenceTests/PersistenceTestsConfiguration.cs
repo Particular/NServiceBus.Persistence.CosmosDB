@@ -100,7 +100,7 @@
                 var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 if ((int)response.StatusCode == 429)
                 {
-                    logger.Info("Request throttled");
+                    logger.Info($"Request throttled. Charged RUs:{response.Headers["x-ms-request-charge"]}");
                 }
 
                 return response;
