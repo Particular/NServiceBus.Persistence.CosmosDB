@@ -13,7 +13,6 @@
     using Newtonsoft.Json;
     using NServiceBus.Outbox;
     using NServiceBus.Sagas;
-    using NUnit.Framework;
     using Persistence;
     using Persistence.CosmosDB;
     using Pipeline;
