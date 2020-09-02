@@ -11,6 +11,7 @@
         public static async Task PopulateContainers(this CosmosClient cosmosClient, string databaseName, SagaMetadataCollection sagaMetadataCollection, PartitionAwareConfiguration partitionAwareConfiguration, bool cheat = false)
         {
             var database = cosmosClient.GetDatabase(databaseName);
+
             foreach (var sagaMetadata in sagaMetadataCollection)
             {
                 ContainerProperties containerProperties = null;
@@ -47,7 +48,9 @@
                     Paths = { "/Id" }
                 });
 
-                await database.CreateContainerIfNotExistsAsync(containerProperties).ConfigureAwait(false);
+                var maxThroughput = ThroughputProperties.CreateAutoscaleThroughput(1000);
+
+                await database.CreateContainerIfNotExistsAsync(containerProperties, maxThroughput).ConfigureAwait(false);
             }
         }
     }
