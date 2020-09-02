@@ -12,6 +12,7 @@
     {
         Dictionary<Type, MapUntyped> typeToPartitionMappers = new Dictionary<Type, MapUntyped>();
         Dictionary<Type, string> typeToContainerMappers = new Dictionary<Type, string>();
+        Dictionary<Type, string> typeToPartitionKeyPath = new Dictionary<Type, string>();
 
         internal PartitionAwareConfiguration(PersistenceExtensions<CosmosDbPersistence> persistenceSettings) : base(persistenceSettings.GetSettings())
         {
@@ -22,11 +23,13 @@
         /// </summary>
         /// <param name="map"></param>
         /// <param name="containerName"></param>
+        /// <param name="partitionKeyPath"></param>
         /// <typeparam name="T"></typeparam>
-        public void AddPartitionMappingForMessageType<T>(Map<T> map, string containerName)
+        public void AddPartitionMappingForMessageType<T>(Map<T> map, string containerName, string partitionKeyPath)
         {
             typeToPartitionMappers[typeof(T)] = (headers, messageId, message) => map(headers, messageId, (T)message);
             typeToContainerMappers[typeof(T)] = containerName;
+            typeToPartitionKeyPath[typeof(T)] = partitionKeyPath;
         }
 
         internal string MapMessageToContainer(Type messageType)
@@ -37,6 +40,16 @@
             }
 
             return containerName;
+        }
+
+        internal string MapMessageToPartitionKeyPath(Type messageType)
+        {
+            if (!typeToPartitionKeyPath.TryGetValue(messageType, out var partitionKeyPath))
+            {
+                throw new Exception($"No partition key path mapping is found for message type '{messageType}'.");
+            }
+
+            return partitionKeyPath;
         }
 
         internal PartitionKey MapMessageToPartition(IReadOnlyDictionary<string, string> headers, string messageId, Type messageType, object message)

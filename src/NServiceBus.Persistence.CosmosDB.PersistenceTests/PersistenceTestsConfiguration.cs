@@ -6,6 +6,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
+    using Features;
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
@@ -53,7 +54,7 @@
             var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
             var config = new PartitionAwareConfiguration(persistenceSettings);
             // very big cheat!
-            config.AddPartitionMappingForMessageType<object>((headers, id, message) => new PartitionKey(partitionKey), containerName);
+            config.AddPartitionMappingForMessageType<object>((headers, id, message) => new PartitionKey(partitionKey), containerName, "/partitionKey");
 
             var builder = new CosmosClientBuilder(connectionString);
             builder.AddCustomHandlers(new LoggingHandler());
@@ -65,13 +66,7 @@
             SagaStorage = new SagaPersister(new JsonSerializerSettings());
 
             await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
-            var database = cosmosDbClient.GetDatabase(databaseName);
-            // TODO do we need to map PartitionKeyPath as well because it seems we have to.
-            await database.CreateContainerAsync(new ContainerProperties
-            {
-                Id = containerName,
-                PartitionKeyPath = "/partitionKey"
-            });
+            await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection, config, cheat: true);
 
             GetContextBagForSagaStorage = () =>
             {

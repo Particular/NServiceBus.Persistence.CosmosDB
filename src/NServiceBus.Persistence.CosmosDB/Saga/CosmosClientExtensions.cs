@@ -1,37 +1,54 @@
 ﻿namespace NServiceBus.Features
 {
+    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
     using NServiceBus.Sagas;
+    using Persistence.CosmosDB;
 
     internal static class CosmosClientExtensions
     {
-        public static async Task PopulateContainers(this CosmosClient cosmosClient, string databaseName, SagaMetadataCollection sagaMetadataCollection)
+        public static async Task PopulateContainers(this CosmosClient cosmosClient, string databaseName, SagaMetadataCollection sagaMetadataCollection, PartitionAwareConfiguration partitionAwareConfiguration, bool cheat = false)
         {
             var database = cosmosClient.GetDatabase(databaseName);
             foreach (var sagaMetadata in sagaMetadataCollection)
             {
-                // TODO: make configurable
-                var containerName = sagaMetadata.SagaEntityType.Name;
-                var containerProperties = new ContainerProperties(containerName, "/Id");
+                ContainerProperties containerProperties = null;
+                string containerName = null, partitionKeyPath = null;
+                foreach (var associatedMessage in sagaMetadata.AssociatedMessages.Where(m => m.IsAllowedToStartSaga))
+                {
+                    containerName = partitionAwareConfiguration.MapMessageToContainer(cheat ? typeof(object) : associatedMessage.MessageType);
+                    partitionKeyPath = partitionAwareConfiguration.MapMessageToPartitionKeyPath(cheat ? typeof(object) : associatedMessage.MessageType);
+                    var container = database.GetContainer(containerName);
+                    try
+                    {
+                        var response = await container.ReadContainerAsync().ConfigureAwait(false);
+                        containerProperties = response.Resource;
+                        // currently not checking if things are actually coherent. We probably should
+                        if (containerProperties != null)
+                        {
+                            break;
+                        }
+                    }
+                    catch (CosmosException)
+                    {
+                        break;
+                    }
 
-                //foreach (var associatedMessage in sagaMetadata.AssociatedMessages)
-                //{
-                //    associatedMessage.MessageType
-                //}
+                }
+
+                if (containerProperties == null)
+                {
+                    containerProperties = new ContainerProperties(containerName, partitionKeyPath);
+                }
 
                 if (sagaMetadata.TryGetCorrelationProperty(out var property) && property.Name != "Id")
                 {
-                    containerProperties.UniqueKeyPolicy = new UniqueKeyPolicy
+                    // cannot be longer than 60 chars! Need to figure out a unique way
+                    containerProperties.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey
                     {
-                        UniqueKeys =
-                        {
-                            new UniqueKey
-                            {
-                                Paths = {$"/{property.Name}"}
-                            }
-                        }
-                    };
+                        Paths = {$"/{property.Name}"}
+                    });
                 }
 
                 await database.CreateContainerIfNotExistsAsync(containerProperties).ConfigureAwait(false);
