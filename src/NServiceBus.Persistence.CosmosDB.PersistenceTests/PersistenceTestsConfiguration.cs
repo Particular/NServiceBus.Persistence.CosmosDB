@@ -49,7 +49,7 @@
                 throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVariableName}' with Cosmos DB connection string.");
             }
 
-            containerName = $"{databaseName}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
+            containerName = $"{DateTime.UtcNow.Ticks}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
             partitionKey = Guid.NewGuid().ToString();
             var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
             var config = new PartitionAwareConfiguration(persistenceSettings);
@@ -78,11 +78,13 @@
             };
         }
 
-        public async Task Cleanup()
+        public Task Cleanup()
         {
-            var database = cosmosDbClient.GetDatabase(databaseName);
-            var container = database.GetContainer(containerName);
-            await container.DeleteContainerAsync();
+            // Experimental to find out what's causing the throttling
+            // var database = cosmosDbClient.GetDatabase(databaseName);
+            // var container = database.GetContainer(containerName);
+            // await container.DeleteContainerAsync();
+            return Task.CompletedTask;
         }
 
         static string GetEnvironmentVariable(string variable)
