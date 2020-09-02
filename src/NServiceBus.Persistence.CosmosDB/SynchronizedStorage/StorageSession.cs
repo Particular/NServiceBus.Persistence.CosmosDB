@@ -4,28 +4,32 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-    using System.Threading;
+    using System.Text;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 
     class StorageSession : CompletableSynchronizedStorageSession
     {
-        TransactionalBatchDecorator transactionalBatch;
+        TransactionalBatchDecorator transactionalBatchDecorator;
         public Container Container { get; }
 
-        public TransactionalBatch TransactionalBatch
+        public TransactionalBatchDecorator TransactionalBatch
         {
             get
             {
-                if (transactionalBatch == null)
+                if (transactionalBatchDecorator == null)
                 {
-                    transactionalBatch = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(PartitionKey));
+                    transactionalBatchDecorator = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(PartitionKey));
                 }
 
-                return transactionalBatch;
+                return transactionalBatchDecorator;
             }
         }
         public PartitionKey PartitionKey { get; }
+
+        public List<SagaModification> Modifications { get; } = new List<SagaModification>();
 
         public StorageSession(Container container, PartitionKey partitionKey)
         {
@@ -35,107 +39,103 @@
 
         public async Task CompleteAsync()
         {
-            if (transactionalBatch == null)
+            var partitionKey = JArray.Parse(PartitionKey.ToString());
+            var mappingDictionary = new Dictionary<int, SagaModification>();
+            foreach (var modification in Modifications)
+            {
+                switch (modification)
+                {
+                    case SagaSave sagaSave:
+                        var createJObject = JObject.FromObject(sagaSave.SagaData);
+
+                        createJObject.Add("id", sagaSave.SagaData.Id.ToString());
+                        createJObject.Add("partitionKey", partitionKey[0]);
+                        // var metaData = new JObject
+                        // {
+                        //     { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
+                        // };
+                        // jObject.Add(MetadataExtensions.MetadataKey,metaData);
+
+                        // has to be kept open
+                        var createStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createJObject)));
+                        var createOptions = new TransactionalBatchItemRequestOptions
+                        {
+                            EnableContentResponseOnWrite = false
+                        };
+                        TransactionalBatch.CreateItemStream(createStream, createOptions);
+                        mappingDictionary[TransactionalBatch.Index] = sagaSave;
+                        break;
+                    case SagaUpdate sagaUpdate:
+                        var updateJObject = JObject.FromObject(sagaUpdate.SagaData);
+
+                        updateJObject.Add("id", sagaUpdate.SagaData.Id.ToString());
+                        updateJObject.Add("partitionKey", partitionKey[0]);
+                        // var metaData = new JObject
+                        // {
+                        //     { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
+                        // };
+                        // jObject.Add(MetadataExtensions.MetadataKey,metaData);
+
+                        // only update if we have the same version as in CosmosDB
+                        sagaUpdate.Context.TryGet<string>($"cosmos_etag:{sagaUpdate.SagaData.Id}", out var updateEtag);
+                        var updateOptions = new TransactionalBatchItemRequestOptions
+                        {
+                            IfMatchEtag = updateEtag,
+                            EnableContentResponseOnWrite = false,
+                        };
+
+                        // has to be kept open
+                        var updateStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(updateJObject)));
+                        TransactionalBatch.ReplaceItemStream(sagaUpdate.SagaData.Id.ToString(), updateStream, updateOptions);
+                        mappingDictionary[TransactionalBatch.Index] = sagaUpdate;
+                        break;
+                    case SagaDelete sagaDelete:
+
+                        // only delete if we have the same version as in CosmosDB
+                        sagaDelete.Context.TryGet<string>($"cosmos_etag:{sagaDelete.SagaData.Id}", out var deleteEtag);
+                        var deleteOptions = new TransactionalBatchItemRequestOptions { IfMatchEtag = deleteEtag };
+                        TransactionalBatch.DeleteItem(sagaDelete.SagaData.Id.ToString(), deleteOptions);
+                        mappingDictionary[TransactionalBatch.Index] = sagaDelete;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(modification));
+                }
+            }
+
+            if (!TransactionalBatch.CanBeExecuted)
             {
                 return;
             }
 
-            using (var batchOutcomeResponse = await TransactionalBatch.ExecuteAsync().ConfigureAwait(false))
+            using (var batchOutcomeResponse = await TransactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
             {
-                foreach (var result in batchOutcomeResponse)
+                for (var i = 0; i < batchOutcomeResponse.Count; i++)
                 {
+                    var result = batchOutcomeResponse[i];
+
+                    if (mappingDictionary.TryGetValue(i, out var modification))
+                    {
+                        if (result.IsSuccessStatusCode)
+                        {
+                            modification.Context.Set($"cosmos_etag:{modification.SagaData.Id}", result.ETag);
+                            continue;
+                        }
+
+                        // TODO: Provide more context in case of failure
+                    }
+
                     if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
                     {
                         // technically would could somehow map back to what we wrote if we store extra info in the session
                         throw new Exception("Concurrent updates lead to write conflicts.");
                     }
-
-                    // check retry after as well and implement retry if needed
                 }
             }
         }
 
         public void Dispose()
         {
-            transactionalBatch?.Dispose();
-        }
-
-        // Just a first version. Probably not even close to what we actually need to track etag etc.
-        sealed class TransactionalBatchDecorator : TransactionalBatch, IDisposable
-        {
-            TransactionalBatch decorated;
-            List<IDisposable> disposables = new List<IDisposable>();
-
-            public TransactionalBatchDecorator(TransactionalBatch decorated)
-            {
-                this.decorated = decorated;
-            }
-
-            public override TransactionalBatch CreateItem<T>(T item, TransactionalBatchItemRequestOptions requestOptions = null)
-            {
-                return decorated.CreateItem(item, requestOptions);
-            }
-
-            public override TransactionalBatch CreateItemStream(Stream streamPayload, TransactionalBatchItemRequestOptions requestOptions = null)
-            {
-                var result = decorated.CreateItemStream(streamPayload, requestOptions);
-                disposables.Add(streamPayload);
-                return result;
-            }
-
-            public override TransactionalBatch ReadItem(string id, TransactionalBatchItemRequestOptions requestOptions = null)
-            {
-                return decorated.ReadItem(id, requestOptions);
-            }
-
-            public override TransactionalBatch UpsertItem<T>(T item, TransactionalBatchItemRequestOptions requestOptions = null)
-            {
-                return decorated.UpsertItem(item, requestOptions);
-            }
-
-            public override TransactionalBatch UpsertItemStream(Stream streamPayload, TransactionalBatchItemRequestOptions requestOptions = null)
-            {
-                var result = decorated.UpsertItemStream(streamPayload, requestOptions);
-                disposables.Add(streamPayload);
-                return result;
-            }
-
-            public override TransactionalBatch ReplaceItem<T>(string id, T item, TransactionalBatchItemRequestOptions requestOptions = null)
-            {
-                return decorated.ReplaceItem(id, item, requestOptions);
-            }
-
-            public override TransactionalBatch ReplaceItemStream(string id, Stream streamPayload, TransactionalBatchItemRequestOptions requestOptions = null)
-            {
-                var result = decorated.ReplaceItemStream(id, streamPayload, requestOptions);
-                disposables.Add(streamPayload);
-                return result;
-            }
-
-            public override TransactionalBatch DeleteItem(string id, TransactionalBatchItemRequestOptions requestOptions = null)
-            {
-                return decorated.DeleteItem(id, requestOptions);
-            }
-
-            public override Task<TransactionalBatchResponse> ExecuteAsync(CancellationToken cancellationToken = new CancellationToken())
-            {
-                return decorated.ExecuteAsync(cancellationToken);
-            }
-
-            public override Task<TransactionalBatchResponse> ExecuteAsync(TransactionalBatchRequestOptions requestOptions, CancellationToken cancellationToken = new CancellationToken())
-            {
-                return decorated.ExecuteAsync(requestOptions, cancellationToken);
-            }
-
-            public void Dispose()
-            {
-                foreach (var disposable in disposables)
-                {
-                    disposable.Dispose();
-                }
-
-                disposables.Clear();
-            }
+            transactionalBatchDecorator?.Dispose();
         }
     }
 }
