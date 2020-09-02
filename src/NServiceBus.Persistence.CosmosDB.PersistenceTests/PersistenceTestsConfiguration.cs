@@ -43,7 +43,7 @@
         public async Task Configure()
         {
             var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
-            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
+            var connectionString = "AccountEndpoint=https://att-cosmosdb-2.documents.azure.com:443/;AccountKey=zx1ImY7rVOmAmpsZotH78KIp0LE3so99wInbmCB5NNHZoSmLiCgg7Tc0v6gDKPqI7P50A9dufXQI1yzBMbZPFA==;";//GetEnvironmentVariable(connectionStringEnvironmentVariableName);
             if (string.IsNullOrEmpty(connectionString))
             {
                 throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVariableName}' with Cosmos DB connection string.");
@@ -101,7 +101,7 @@
             {
                 var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
-                logger.Info($"Charged RUs:{response.Headers["x-ms-request-charge"]} for {request.Method.Method} {request.RequestUri} Operation:{request.Headers["x-ms-activity-id"]}");
+                logger.Info($"Charged RUs:{response.Headers["x-ms-request-charge"]} for {request.Method.Method} {request.RequestUri} IsBatch:{request.Headers["x-ms-cosmos-is-batch-request"]}");
 
                 if ((int)response.StatusCode == 429)
                 {
