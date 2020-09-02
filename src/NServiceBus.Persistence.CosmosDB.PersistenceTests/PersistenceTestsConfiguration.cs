@@ -78,13 +78,11 @@
             };
         }
 
-        public Task Cleanup()
+        public async Task Cleanup()
         {
-            // TODO: commented out to verify if deleting the container impacts the metrics we don't see
-            // var database = cosmosDbClient.GetDatabase(databaseName);
-            // var container = database.GetContainer(containerName);
-            // await container.DeleteContainerAsync();
-            return Task.CompletedTask;
+            var database = cosmosDbClient.GetDatabase(databaseName);
+            var container = database.GetContainer(containerName);
+            await container.DeleteContainerAsync();
         }
 
         static string GetEnvironmentVariable(string variable)
