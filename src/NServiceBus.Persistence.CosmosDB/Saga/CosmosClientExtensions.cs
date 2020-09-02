@@ -42,14 +42,10 @@
                     containerProperties = new ContainerProperties(containerName, partitionKeyPath);
                 }
 
-                if (sagaMetadata.TryGetCorrelationProperty(out var property) && property.Name != "Id")
+                containerProperties.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey
                 {
-                    // cannot be longer than 60 chars! Need to figure out a unique way
-                    containerProperties.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey
-                    {
-                        Paths = {$"/{property.Name}"}
-                    });
-                }
+                    Paths = { "/Id" }
+                });
 
                 await database.CreateContainerIfNotExistsAsync(containerProperties).ConfigureAwait(false);
             }

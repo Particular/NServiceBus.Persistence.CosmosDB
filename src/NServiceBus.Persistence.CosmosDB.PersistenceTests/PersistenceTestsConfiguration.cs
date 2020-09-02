@@ -54,7 +54,7 @@
             var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
             var config = new PartitionAwareConfiguration(persistenceSettings);
             // very big cheat!
-            config.AddPartitionMappingForMessageType<object>((headers, id, message) => new PartitionKey(partitionKey), containerName, "/_partition-key");
+            config.AddPartitionMappingForMessageType<object>((headers, id, message) => new PartitionKey(partitionKey), containerName, "/deep/down");
 
             var builder = new CosmosClientBuilder(connectionString);
             builder.AddCustomHandlers(new LoggingHandler());
