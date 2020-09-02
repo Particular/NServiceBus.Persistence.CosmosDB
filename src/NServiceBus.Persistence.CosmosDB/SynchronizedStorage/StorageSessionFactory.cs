@@ -26,9 +26,10 @@
 
             var partitionKey = partitionAwareConfiguration.MapMessageToPartition(incomingMessage.Headers, incomingMessage.MessageId, logicalMessage.MessageType, logicalMessage.Instance);
             var containerName = partitionAwareConfiguration.MapMessageToContainer(logicalMessage.MessageType);
+            var partitionKeyPath = partitionAwareConfiguration.MapMessageToPartitionKeyPath(logicalMessage.MessageType);
             var container = cosmosClient.GetContainer(databaseName, containerName);
 
-            return Task.FromResult<CompletableSynchronizedStorageSession>(new StorageSession(container, partitionKey));
+            return Task.FromResult<CompletableSynchronizedStorageSession>(new StorageSession(container, partitionKey, partitionKeyPath));
         }
     }
 }

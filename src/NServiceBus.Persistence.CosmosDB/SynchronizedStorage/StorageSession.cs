@@ -12,8 +12,9 @@
 
     class StorageSession : CompletableSynchronizedStorageSession
     {
-        public StorageSession(Container container, PartitionKey partitionKey)
+        public StorageSession(Container container, PartitionKey partitionKey, string partitionKeyPath)
         {
+            this.partitionKeyPath = partitionKeyPath;
             Container = container;
             PartitionKey = partitionKey;
         }
@@ -39,7 +40,29 @@
 
         public async Task CompleteAsync()
         {
-            var partitionKey = JArray.Parse(PartitionKey.ToString());
+            var partitionKey = JArray.Parse(PartitionKey.ToString())[0];
+
+            // we should probably optimize this a bit and the result might be cacheable but let's worry later
+            var pathToMatch = partitionKeyPath.Replace("/", ".");
+            var segments = pathToMatch.Split(new[]{ "." }, StringSplitOptions.RemoveEmptyEntries);
+
+            var start = new JObject();
+            var current = start;
+            for (var i = 0; i < segments.Length; i++)
+            {
+                var segmentName = segments[i];
+
+                if(i == segments.Length -1)
+                {
+                    current[segmentName] = partitionKey;
+                    continue;
+                }
+
+                current[segmentName] = new JObject();
+                current = current[segmentName] as JObject;
+            }
+
+
             var mappingDictionary = new Dictionary<int, SagaModification>();
             foreach (var modification in Modifications)
             {
@@ -49,12 +72,12 @@
                         var createJObject = JObject.FromObject(sagaSave.SagaData);
 
                         createJObject.Add("id", sagaSave.SagaData.Id.ToString());
-                        createJObject.Add("partitionKey", partitionKey[0]);
-                        // var metaData = new JObject
-                        // {
-                        //     { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
-                        // };
-                        // jObject.Add(MetadataExtensions.MetadataKey,metaData);
+                        var saveMetadata = new JObject
+                        {
+                            { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
+                        };
+                        createJObject.Add(MetadataExtensions.MetadataKey,saveMetadata);
+                        createJObject.Merge(start);
 
                         // has to be kept open
                         var createStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createJObject)));
@@ -69,12 +92,12 @@
                         var updateJObject = JObject.FromObject(sagaUpdate.SagaData);
 
                         updateJObject.Add("id", sagaUpdate.SagaData.Id.ToString());
-                        updateJObject.Add("partitionKey", partitionKey[0]);
-                        // var metaData = new JObject
-                        // {
-                        //     { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SchemaVersion }
-                        // };
-                        // jObject.Add(MetadataExtensions.MetadataKey,metaData);
+                        var UpdateMetadata = new JObject
+                        {
+                            { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
+                        };
+                        updateJObject.Add(MetadataExtensions.MetadataKey,UpdateMetadata);
+                        updateJObject.Merge(start);
 
                         // only update if we have the same version as in CosmosDB
                         sagaUpdate.Context.TryGet<string>($"cosmos_etag:{sagaUpdate.SagaData.Id}", out var updateEtag);
@@ -151,5 +174,6 @@
         }
 
         TransactionalBatchDecorator transactionalBatchDecorator;
+        string partitionKeyPath;
     }
 }
