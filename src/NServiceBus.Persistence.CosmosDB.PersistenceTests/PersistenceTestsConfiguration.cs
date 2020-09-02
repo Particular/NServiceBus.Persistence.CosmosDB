@@ -101,7 +101,7 @@
             {
                 var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
-                logger.Info($"Charged RUs:{response.Headers["x-ms-request-charge"]} for {request.Method.Method} {request.RequestUri}");
+                logger.Info($"Charged RUs:{response.Headers["x-ms-request-charge"]} for {request.Method.Method} {request.RequestUri} Operation:{request.Headers["x-ms-activity-id"]}");
 
                 if ((int)response.StatusCode == 429)
                 {
