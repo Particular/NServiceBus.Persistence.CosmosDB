@@ -77,7 +77,13 @@
                             { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
                         };
                         createJObject.Add(MetadataExtensions.MetadataKey,saveMetadata);
-                        createJObject.Merge(start);
+
+                        // promote it if not there, what if the user has it and the key doesn't match?
+                        var createdMatchToken = createJObject.SelectToken(pathToMatch);
+                        if (createdMatchToken == null)
+                        {
+                            createJObject.Merge(start);
+                        }
 
                         // has to be kept open
                         var createStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createJObject)));
@@ -97,7 +103,13 @@
                             { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
                         };
                         updateJObject.Add(MetadataExtensions.MetadataKey,UpdateMetadata);
-                        updateJObject.Merge(start);
+
+                        // promote it if not there, what if the user has it and the key doesn't match?
+                        var updatedMatchToken = updateJObject.SelectToken(pathToMatch);
+                        if (updatedMatchToken == null)
+                        {
+                            updateJObject.Merge(start);
+                        }
 
                         // only update if we have the same version as in CosmosDB
                         sagaUpdate.Context.TryGet<string>($"cosmos_etag:{sagaUpdate.SagaData.Id}", out var updateEtag);
@@ -163,6 +175,11 @@
                     if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
                     {
                         throw new Exception("Concurrency conflict.");
+                    }
+
+                    if(result.StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        throw new Exception("Bad request. Quite likely the partition key did not match");
                     }
                 }
             }
