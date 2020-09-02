@@ -78,11 +78,13 @@
             };
         }
 
-        public async Task Cleanup()
+        public Task Cleanup()
         {
-            var database = cosmosDbClient.GetDatabase(databaseName);
-            var container = database.GetContainer(containerName);
-            await container.DeleteContainerAsync();
+            // TODO: commented out to verify if deleting the container impacts the metrics we don't see
+            // var database = cosmosDbClient.GetDatabase(databaseName);
+            // var container = database.GetContainer(containerName);
+            // await container.DeleteContainerAsync();
+            return Task.CompletedTask;
         }
 
         static string GetEnvironmentVariable(string variable)
@@ -98,9 +100,12 @@
             public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken)
             {
                 var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+                logger.Info($"Charged RUs:{response.Headers["x-ms-request-charge"]}");
+
                 if ((int)response.StatusCode == 429)
                 {
-                    logger.Info($"Request throttled. Charged RUs:{response.Headers["x-ms-request-charge"]}");
+                    logger.Info("Request throttled.");
                 }
 
                 return response;
