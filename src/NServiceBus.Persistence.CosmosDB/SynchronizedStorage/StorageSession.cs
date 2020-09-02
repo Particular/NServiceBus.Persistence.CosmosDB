@@ -12,7 +12,12 @@
 
     class StorageSession : CompletableSynchronizedStorageSession
     {
-        TransactionalBatchDecorator transactionalBatchDecorator;
+        public StorageSession(Container container, PartitionKey partitionKey)
+        {
+            Container = container;
+            PartitionKey = partitionKey;
+        }
+
         public Container Container { get; }
 
         public TransactionalBatchDecorator TransactionalBatch
@@ -27,15 +32,10 @@
                 return transactionalBatchDecorator;
             }
         }
+
         public PartitionKey PartitionKey { get; }
 
         public List<SagaModification> Modifications { get; } = new List<SagaModification>();
-
-        public StorageSession(Container container, PartitionKey partitionKey)
-        {
-            Container = container;
-            PartitionKey = partitionKey;
-        }
 
         public async Task CompleteAsync()
         {
@@ -93,7 +93,7 @@
 
                         // only delete if we have the same version as in CosmosDB
                         sagaDelete.Context.TryGet<string>($"cosmos_etag:{sagaDelete.SagaData.Id}", out var deleteEtag);
-                        var deleteOptions = new TransactionalBatchItemRequestOptions { IfMatchEtag = deleteEtag };
+                        var deleteOptions = new TransactionalBatchItemRequestOptions {IfMatchEtag = deleteEtag};
                         TransactionalBatch.DeleteItem(sagaDelete.SagaData.Id.ToString(), deleteOptions);
                         mappingDictionary[TransactionalBatch.Index] = sagaDelete;
                         break;
@@ -121,13 +121,25 @@
                             continue;
                         }
 
-                        // TODO: Provide more context in case of failure
+                        if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
+                        {
+                            switch (modification)
+                            {
+                                case SagaDelete sagaDelete:
+                                    throw new Exception($"The '{sagaDelete.SagaData.GetType().Name}' saga with id '{sagaDelete.SagaData.Id}' can't be completed because it was updated by another process.");
+                                case SagaSave sagaSave:
+                                    throw new Exception($"The '{sagaSave.SagaData.GetType().Name}' saga with id '{sagaSave.SagaData.Id}' could not be created possibly due to a concurrency conflict.");
+                                case SagaUpdate sagaUpdate:
+                                    throw new Exception($"The '{sagaUpdate.SagaData.GetType().Name}' saga with id '{sagaUpdate.SagaData.Id}' was updated by another process or no longer exists.");
+                                default:
+                                    throw new Exception("Concurrency conflict.");
+                            }
+                        }
                     }
 
                     if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
                     {
-                        // technically would could somehow map back to what we wrote if we store extra info in the session
-                        throw new Exception("Concurrent updates lead to write conflicts.");
+                        throw new Exception("Concurrency conflict.");
                     }
                 }
             }
@@ -137,5 +149,7 @@
         {
             transactionalBatchDecorator?.Dispose();
         }
+
+        TransactionalBatchDecorator transactionalBatchDecorator;
     }
 }
