@@ -2,14 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
-    using Features;
-    using Logging;
     using Microsoft.Azure.Cosmos;
-    using Microsoft.Azure.Cosmos.Fluent;
     using Newtonsoft.Json;
     using NServiceBus.Outbox;
     using NServiceBus.Sagas;
@@ -40,35 +35,22 @@
 
         public IOutboxStorage OutboxStorage { get; private set; }
 
-        public async Task Configure()
+        public Task Configure()
         {
-            var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
-            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVariableName}' with Cosmos DB connection string.");
-            }
-
-            containerName = $"{DateTime.UtcNow.Ticks}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
+            // with this we have a partition key per run which makes things naturally isolated
             partitionKey = Guid.NewGuid().ToString();
+
             var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
             var config = new PartitionAwareConfiguration(persistenceSettings);
             // very big cheat!
-            config.AddPartitionMappingForMessageType<object>((headers, id, message) => new PartitionKey(partitionKey), containerName, "/deep/down");
+            config.AddPartitionMappingForMessageType<object>((headers,
+                    id,
+                    message) => new PartitionKey(partitionKey),
+                SetupFixture.ContainerName,
+                SetupFixture.PartitionPathKey);
 
-            var builder = new CosmosClientBuilder(connectionString);
-            builder.AddCustomHandlers(new LoggingHandler());
-
-            cosmosDbClient = builder.Build();
-
-            SynchronizedStorage = new StorageSessionFactory(databaseName, cosmosDbClient, config);
-
+            SynchronizedStorage = new StorageSessionFactory(SetupFixture.DatabaseName, SetupFixture.cosmosDbClient, config);
             SagaStorage = new SagaPersister(new JsonSerializerSettings());
-
-            var maxThroughput = ThroughputProperties.CreateAutoscaleThroughput(4_000);
-
-            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName, maxThroughput);
-            await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection, config, cheat: true);
 
             GetContextBagForSagaStorage = () =>
             {
@@ -78,50 +60,15 @@
                 contextBag.Set(new LogicalMessage(new MessageMetadata(typeof(object)), null));
                 return contextBag;
             };
+
+            return Task.CompletedTask;
         }
 
-        public async Task Cleanup()
+        public Task Cleanup()
         {
-            var database = cosmosDbClient.GetDatabase(databaseName);
-            var container = database.GetContainer(containerName);
-            await container.DeleteContainerStreamAsync();
-
-            var logger = LogManager.GetLogger("ChargeTracker");
-            logger.Info($"Total charge: {totalCharge} RUs");
+            return Task.CompletedTask;
         }
 
-        static string GetEnvironmentVariable(string variable)
-        {
-            var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
-            return string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
-        }
-
-        class LoggingHandler : RequestHandler
-        {
-            ILog logger = LogManager.GetLogger<LoggingHandler>();
-
-            public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken)
-            {
-                var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-
-                var requestCharge = response.Headers["x-ms-request-charge"];
-                logger.Info($"Charged RUs:{requestCharge} for {request.Method.Method} {request.RequestUri} IsBatch:{request.Headers["x-ms-cosmos-is-batch-request"]}");
-                totalCharge += Convert.ToDouble(requestCharge);
-                logger.Info($"Total charge: {totalCharge} RUs");
-
-                if ((int)response.StatusCode == 429)
-                {
-                    logger.Info("Request throttled.");
-                }
-
-                return response;
-            }
-        }
-
-        const string databaseName = "CosmosDBPersistence";
-        CosmosClient cosmosDbClient;
-        string containerName;
         string partitionKey;
-        public static double totalCharge;
     }
 }
