@@ -43,7 +43,7 @@
         public async Task Configure()
         {
             var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
-            var connectionString = "AccountEndpoint=https://att-cosmosdb-2.documents.azure.com:443/;AccountKey=zx1ImY7rVOmAmpsZotH78KIp0LE3so99wInbmCB5NNHZoSmLiCgg7Tc0v6gDKPqI7P50A9dufXQI1yzBMbZPFA==;";//GetEnvironmentVariable(connectionStringEnvironmentVariableName);
+            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
             if (string.IsNullOrEmpty(connectionString))
             {
                 throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVariableName}' with Cosmos DB connection string.");
