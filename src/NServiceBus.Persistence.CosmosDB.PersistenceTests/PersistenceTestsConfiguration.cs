@@ -78,15 +78,14 @@
             };
         }
 
-        public Task Cleanup()
+        public async Task Cleanup()
         {
-            // Experimental to find out what's causing the throttling
-            // var database = cosmosDbClient.GetDatabase(databaseName);
-            // var container = database.GetContainer(containerName);
-            // await container.DeleteContainerAsync();
+            var database = cosmosDbClient.GetDatabase(databaseName);
+            var container = database.GetContainer(containerName);
+            await container.DeleteContainerStreamAsync();
+
             var logger = LogManager.GetLogger("ChargeTracker");
             logger.Info($"Total charge: {totalCharge} RUs");
-            return Task.CompletedTask;
         }
 
         static string GetEnvironmentVariable(string variable)
