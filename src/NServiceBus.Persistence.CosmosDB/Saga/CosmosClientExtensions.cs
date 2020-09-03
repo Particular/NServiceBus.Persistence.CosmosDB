@@ -48,9 +48,7 @@
                     Paths = { "/Id" }
                 });
 
-                var maxThroughput = ThroughputProperties.CreateAutoscaleThroughput(4_000);
-
-                await database.CreateContainerIfNotExistsAsync(containerProperties, maxThroughput).ConfigureAwait(false);
+                await database.CreateContainerIfNotExistsAsync(containerProperties).ConfigureAwait(false);
             }
         }
     }

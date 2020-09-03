@@ -65,7 +65,9 @@
 
             SagaStorage = new SagaPersister(new JsonSerializerSettings());
 
-            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
+            var maxThroughput = ThroughputProperties.CreateAutoscaleThroughput(4_000);
+
+            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName, maxThroughput);
             await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection, config, cheat: true);
 
             GetContextBagForSagaStorage = () =>
