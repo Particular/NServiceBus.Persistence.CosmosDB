@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Features
 {
-    using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
@@ -17,16 +16,15 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var clientFactory = context.Settings.Get<Func<CosmosClient>>(SettingsKeys.CosmosClient);
-            var databaseName = context.Settings.Get<string>(SettingsKeys.Sagas.DatabaseName);
+            var cosmosClient = context.Settings.Get<CosmosClient>(SettingsKeys.CosmosClient);
+            var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
             var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
             var sagaMetadataCollection = context.Settings.Get<SagaMetadataCollection>();
+            var partitionAwareConfiguration = context.Settings.Get<PartitionAwareConfiguration>();
 
-            var cosmosClient = clientFactory();
+            context.RegisterStartupTask(new InitializeContainers(cosmosClient, databaseName, sagaMetadataCollection, partitionAwareConfiguration));
 
-            context.RegisterStartupTask(new InitializeContainers(cosmosClient, databaseName, sagaMetadataCollection));
-
-            context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings, cosmosClient, databaseName), DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings), DependencyLifecycle.SingleInstance);
         }
 
         class InitializeContainers : FeatureStartupTask
@@ -34,9 +32,11 @@
             CosmosClient cosmosClient;
             SagaMetadataCollection sagaMetadataCollection;
             string databaseName;
+            PartitionAwareConfiguration partitionAwareConfiguration;
 
-            public InitializeContainers(CosmosClient cosmosClient, string databaseName, SagaMetadataCollection sagaMetadataCollection)
+            public InitializeContainers(CosmosClient cosmosClient, string databaseName, SagaMetadataCollection sagaMetadataCollection, PartitionAwareConfiguration partitionAwareConfiguration)
             {
+                this.partitionAwareConfiguration = partitionAwareConfiguration;
                 this.databaseName = databaseName;
                 this.sagaMetadataCollection = sagaMetadataCollection;
                 this.cosmosClient = cosmosClient;
@@ -44,7 +44,7 @@
 
             protected override Task OnStart(IMessageSession session)
             {
-                return cosmosClient.PopulateContainers(databaseName, sagaMetadataCollection);
+                return cosmosClient.PopulateContainers(databaseName, sagaMetadataCollection, partitionAwareConfiguration);
             }
 
             protected override Task OnStop(IMessageSession session)

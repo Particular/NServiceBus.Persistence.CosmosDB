@@ -1,18 +1,19 @@
 ﻿namespace NServiceBus.PersistenceTesting
 {
     using System;
-    using System.Threading;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Features;
-    using Logging;
+    using Extensibility;
     using Microsoft.Azure.Cosmos;
-    using Microsoft.Azure.Cosmos.Fluent;
     using Newtonsoft.Json;
     using NServiceBus.Outbox;
     using NServiceBus.Sagas;
     using Persistence;
-    using Persistence.ComponentTests;
     using Persistence.CosmosDB;
+    using Pipeline;
+    using Settings;
+    using Transport;
+    using Unicast.Messages;
 
     public partial class PersistenceTestsConfiguration
     {
@@ -34,66 +35,40 @@
 
         public IOutboxStorage OutboxStorage { get; private set; }
 
-        public async Task Configure()
+        public Task Configure()
         {
-            var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
-            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
-            if (string.IsNullOrEmpty(connectionString))
+            // with this we have a partition key per run which makes things naturally isolated
+            partitionKey = Guid.NewGuid().ToString();
+
+            var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
+            var config = new PartitionAwareConfiguration(persistenceSettings);
+            // very big cheat!
+            config.AddPartitionMappingForMessageType<object>((headers,
+                    id,
+                    message) => new PartitionKey(partitionKey),
+                SetupFixture.ContainerName,
+                SetupFixture.PartitionPathKey);
+
+            SynchronizedStorage = new StorageSessionFactory(SetupFixture.DatabaseName, SetupFixture.cosmosDbClient, config);
+            SagaStorage = new SagaPersister(new JsonSerializerSettings());
+
+            GetContextBagForSagaStorage = () =>
             {
-                throw new Exception($"Oh no! We couldn't find an environment variable '{connectionStringEnvironmentVariableName}' with Cosmos DB connection string.");
-            }
+                var contextBag = new ContextBag();
+                // dummy data
+                contextBag.Set(new IncomingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>()));
+                contextBag.Set(new LogicalMessage(new MessageMetadata(typeof(object)), null));
+                return contextBag;
+            };
 
-            SynchronizedStorage = new SynchronizedStorageForTesting();
-
-            var builder = new CosmosClientBuilder(connectionString);
-            builder.AddCustomHandlers(new LoggingHandler());
-
-            cosmosDbClient = builder.Build();
-            SagaStorage = new SagaPersister(new JsonSerializerSettings(), cosmosDbClient, databaseName);
-
-            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(databaseName);
-            await cosmosDbClient.PopulateContainers(databaseName, SagaMetadataCollection);
+            return Task.CompletedTask;
         }
 
-        public async Task Cleanup()
+        public Task Cleanup()
         {
-            // not really good because it prevents us from running concurrent builds but for now good enough
-            // techniqually we could override the convention and prefix things uniquely
-            // in addition this might be very slow
-            var database = cosmosDbClient.GetDatabase(databaseName);
-            foreach (var sagaMetadata in SagaMetadataCollection)
-            {
-                // TODO: use convention
-                var containerName = sagaMetadata.SagaEntityType.Name;
-
-                var container = database.GetContainer(containerName);
-                await container.DeleteContainerAsync();
-            }
+            return Task.CompletedTask;
         }
 
-        static string GetEnvironmentVariable(string variable)
-        {
-            var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
-            return string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
-        }
-
-        class LoggingHandler : RequestHandler
-        {
-            ILog logger = LogManager.GetLogger<LoggingHandler>();
-
-            public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken)
-            {
-                var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-                if ((int)response.StatusCode == 429)
-                {
-                    logger.Info("Request throttled");
-                }
-
-                return response;
-            }
-        }
-
-        const string databaseName = "CosmosDBPersistence";
-        CosmosClient cosmosDbClient;
+        string partitionKey;
     }
 }
