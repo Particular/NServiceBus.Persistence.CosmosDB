@@ -94,6 +94,7 @@
                         TransactionalBatch.CreateItemStream(createStream, createOptions);
                         mappingDictionary[TransactionalBatch.Index] = sagaSave;
                         break;
+
                     case SagaUpdate sagaUpdate:
                         var updateJObject = JObject.FromObject(sagaUpdate.SagaData);
 
@@ -124,6 +125,7 @@
                         TransactionalBatch.ReplaceItemStream(sagaUpdate.SagaData.Id.ToString(), updateStream, updateOptions);
                         mappingDictionary[TransactionalBatch.Index] = sagaUpdate;
                         break;
+
                     case SagaDelete sagaDelete:
 
                         // only delete if we have the same version as in CosmosDB
@@ -132,6 +134,7 @@
                         TransactionalBatch.DeleteItem(sagaDelete.SagaData.Id.ToString(), deleteOptions);
                         mappingDictionary[TransactionalBatch.Index] = sagaDelete;
                         break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(modification));
                 }
