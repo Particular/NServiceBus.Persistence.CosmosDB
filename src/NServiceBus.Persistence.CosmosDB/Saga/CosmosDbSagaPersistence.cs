@@ -10,7 +10,11 @@
     {
         internal CosmosDbSagaPersistence()
         {
-            Defaults(s => s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator()));
+            Defaults(s =>
+            {
+                s.EnableFeatureByDefault<SynchronizedStorage>();
+                s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator());
+            });
             DependsOn<Sagas>();
         }
 
