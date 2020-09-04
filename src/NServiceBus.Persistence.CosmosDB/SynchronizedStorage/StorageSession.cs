@@ -9,6 +9,7 @@
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using Outbox;
 
     class StorageSession : CompletableSynchronizedStorageSession, ITransactionalBatchProvider
     {
@@ -37,7 +38,7 @@
 
         public PartitionKey PartitionKey { get; }
 
-        public List<SagaModification> Modifications { get; } = new List<SagaModification>();
+        public List<Modification> Modifications { get; } = new List<Modification>();
 
         Task CompletableSynchronizedStorageSession.CompleteAsync()
         {
@@ -78,12 +79,37 @@
                 current = current[segmentName] as JObject;
             }
 
-
-            var mappingDictionary = new Dictionary<int, SagaModification>();
+            var mappingDictionary = new Dictionary<int, Modification>();
             foreach (var modification in Modifications)
             {
                 switch (modification)
                 {
+                    case OutboxStore outboxStore:
+                        var createOutboxJObject = JObject.FromObject(outboxStore.Record);
+
+                        createOutboxJObject.Add("id", outboxStore.Record.Id);
+                        var saveOutboxMetadata = new JObject
+                        {
+                            { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion }
+                        };
+                        createOutboxJObject.Add(MetadataExtensions.MetadataKey,saveOutboxMetadata);
+
+                        // promote it if not there, what if the user has it and the key doesn't match?
+                        var createdOutboxMatchToken = createOutboxJObject.SelectToken(pathToMatch);
+                        if (createdOutboxMatchToken == null)
+                        {
+                            createOutboxJObject.Merge(start);
+                        }
+
+                        // has to be kept open
+                        var createOutboxStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createOutboxJObject)));
+                        var createOutboxOptions = new TransactionalBatchItemRequestOptions
+                        {
+                            EnableContentResponseOnWrite = false
+                        };
+                        TransactionalBatch.CreateItemStream(createOutboxStream, createOutboxOptions);
+                        mappingDictionary[transactionalBatchDecorator.Index] = outboxStore;
+                        break;
                     case SagaSave sagaSave:
                         var createJObject = JObject.FromObject(sagaSave.SagaData);
 
@@ -171,23 +197,14 @@
                     {
                         if (result.IsSuccessStatusCode)
                         {
-                            modification.Context.Set($"cosmos_etag:{modification.SagaData.Id}", result.ETag);
+                            modification.Success(result);
                             continue;
                         }
 
                         if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
                         {
-                            switch (modification)
-                            {
-                                case SagaDelete sagaDelete:
-                                    throw new Exception($"The '{sagaDelete.SagaData.GetType().Name}' saga with id '{sagaDelete.SagaData.Id}' can't be completed because it was updated by another process.");
-                                case SagaSave sagaSave:
-                                    throw new Exception($"The '{sagaSave.SagaData.GetType().Name}' saga with id '{sagaSave.SagaData.Id}' could not be created possibly due to a concurrency conflict.");
-                                case SagaUpdate sagaUpdate:
-                                    throw new Exception($"The '{sagaUpdate.SagaData.GetType().Name}' saga with id '{sagaUpdate.SagaData.Id}' was updated by another process or no longer exists.");
-                                default:
-                                    throw new Exception("Concurrency conflict.");
-                            }
+                            // guaranteed to throw
+                            modification.Conflict(result);
                         }
                     }
 

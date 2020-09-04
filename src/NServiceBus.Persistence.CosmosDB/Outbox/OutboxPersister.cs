@@ -18,25 +18,28 @@
             return Task.FromResult((OutboxTransaction)new CosmosOutboxTransaction());
         }
 
-        public Task<OutboxMessage> Get(string messageId, ContextBag context)
+        public async Task<OutboxMessage> Get(string messageId, ContextBag context)
         {
-            //This always must return null for the Outbox "hack" to work
-            return null;
+            // backdoor to enable the outbox tests to pass but in theory someone could add it if they want
+            if (!context.TryGet<PartitionKey>(out var partitionKey) || !context.TryGet<Container>(out var container))
+            {
+                // we should always return null to make the outbox "hack" work
+                return null;
+            }
+
+            OutboxRecord outboxRecord = await container.ReadItemAsync<OutboxRecord>(messageId, partitionKey).ConfigureAwait(false);
+            return new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations);
         }
 
         public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context)
         {
             var cosmosTransaction = transaction as CosmosOutboxTransaction;
-
-            if (cosmosTransaction?.StorageSession is null)
-            {
-                return Task.CompletedTask;
-            }
-
-            //TODO: Probably serialize and add keypath/partitionkey JTokens and id
-
-            cosmosTransaction.StorageSession.TransactionalBatch.CreateItem(new OutboxRecord { Id = message.MessageId, TransportOperations = message.TransportOperations });
-
+            cosmosTransaction?.StorageSession?.Modifications.Add(new OutboxStore(new OutboxRecord
+                {
+                    Id = message.MessageId,
+                    TransportOperations = message.TransportOperations
+                },
+                context));
             return Task.CompletedTask;
         }
 
@@ -90,5 +93,7 @@
                 }
             }
         }
+
+        internal static readonly string SchemaVersion = "1.0.0";
     }
 }
