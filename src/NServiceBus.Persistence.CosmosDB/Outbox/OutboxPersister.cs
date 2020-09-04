@@ -58,12 +58,7 @@
                 cosmosTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
             }
 
-            if (cosmosTransaction.StorageSession == null)
-            {
-                throw new Exception($"Storage session needs to be initialized. Check if the behavior '{typeof(PartitioningBehavior)}' was registered");
-            }
-
-            cosmosTransaction.StorageSession.Modifications.Add(new OutboxStore(new OutboxRecord
+            cosmosTransaction.StorageSession?.Modifications.Add(new OutboxStore(new OutboxRecord
                 {
                     Id = message.MessageId,
                     TransportOperations = message.TransportOperations
