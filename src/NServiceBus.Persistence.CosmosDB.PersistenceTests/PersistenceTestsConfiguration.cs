@@ -9,12 +9,13 @@
     using NServiceBus.Sagas;
     using Persistence;
     using Persistence.CosmosDB;
+    using Persistence.CosmosDB.Outbox;
 
     public partial class PersistenceTestsConfiguration
     {
         public bool SupportsDtc => false;
 
-        public bool SupportsOutbox => false;
+        public bool SupportsOutbox => true;
 
         public bool SupportsFinders => false;
 
@@ -37,11 +38,20 @@
 
             SynchronizedStorage = new StorageSessionFactory();
             SagaStorage = new SagaPersister(new JsonSerializerSettings());
+            OutboxStorage = new OutboxPersister(new JsonSerializerSettings());
 
             GetContextBagForSagaStorage = () =>
             {
                 var contextBag = new ContextBag();
-                // dummy data
+                contextBag.Set(new PartitionKey(partitionKey));
+                contextBag.Set(SetupFixture.Container);
+                contextBag.Set(ContextBagKeys.PartitionKeyPath, SetupFixture.PartitionPathKey);
+                return contextBag;
+            };
+
+            GetContextBagForOutbox = () =>
+            {
+                var contextBag = new ContextBag();
                 contextBag.Set(new PartitionKey(partitionKey));
                 contextBag.Set(SetupFixture.Container);
                 contextBag.Set(ContextBagKeys.PartitionKeyPath, SetupFixture.PartitionPathKey);

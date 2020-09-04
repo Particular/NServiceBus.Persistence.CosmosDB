@@ -182,12 +182,12 @@
                 }
             }
 
-            if (!transactionalBatchDecorator.CanBeExecuted)
+            if (transactionalBatchDecorator == null || !transactionalBatchDecorator.CanBeExecuted)
             {
                 return;
             }
 
-            using (var batchOutcomeResponse = await transactionalBatchDecorator.ExecuteAsync().ConfigureAwait(false))
+            using (var batchOutcomeResponse = await transactionalBatchDecorator.Inner.ExecuteAsync().ConfigureAwait(false))
             {
                 for (var i = 0; i < batchOutcomeResponse.Count; i++)
                 {

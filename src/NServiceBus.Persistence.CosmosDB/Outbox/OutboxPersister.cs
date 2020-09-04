@@ -13,6 +13,13 @@
 
     class OutboxPersister : IOutboxStorage
     {
+        JsonSerializer serializer;
+
+        public OutboxPersister(JsonSerializerSettings jsonSerializerSettings)
+        {
+            serializer = JsonSerializer.Create(jsonSerializerSettings);
+        }
+
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
         {
             return Task.FromResult((OutboxTransaction)new CosmosOutboxTransaction());
@@ -27,14 +34,51 @@
                 return null;
             }
 
-            OutboxRecord outboxRecord = await container.ReadItemAsync<OutboxRecord>(messageId, partitionKey).ConfigureAwait(false);
-            return new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations);
+            // this path is really only ever reached during testing
+            var responseMessage = await container.ReadItemStreamAsync(messageId, partitionKey)
+                .ConfigureAwait(false);
+
+            if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+            {
+                return default;
+            }
+
+            using (var streamReader = new StreamReader(responseMessage.Content))
+            {
+                using (var jsonReader = new JsonTextReader(streamReader))
+                {
+                    var outboxRecord = serializer.Deserialize<OutboxRecord>(jsonReader);
+
+                    context.Set($"cosmos_etag:{messageId}", responseMessage.Headers.ETag);
+
+                    return new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations);
+                }
+            }
         }
 
         public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context)
         {
             var cosmosTransaction = transaction as CosmosOutboxTransaction;
-            cosmosTransaction?.StorageSession?.Modifications.Add(new OutboxStore(new OutboxRecord
+
+            if (cosmosTransaction == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            // backdoor to enable the outbox tests to pass but in theory someone could add it if they want
+            if (context.TryGet<PartitionKey>(out var partitionKey) &&
+                context.TryGet<Container>(out var container) &&
+                context.TryGet<string>(ContextBagKeys.PartitionKeyPath, out var partitionKeyPath))
+            {
+                cosmosTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
+            }
+
+            if (cosmosTransaction.StorageSession == null)
+            {
+                throw new Exception($"Storage session needs to be initialized. Check if the behavior '{typeof(PartitioningBehavior)}' was registered");
+            }
+
+            cosmosTransaction.StorageSession.Modifications.Add(new OutboxStore(new OutboxRecord
                 {
                     Id = message.MessageId,
                     TransportOperations = message.TransportOperations
@@ -48,7 +92,6 @@
             var partitionKey = context.Get<PartitionKey>();
             var partitionKeyPath = context.Get<string>(ContextBagKeys.PartitionKeyPath);
             var container = context.Get<Container>();
-            var logicalMessageId = context.Get<string>(ContextBagKeys.LogicalMessageId);
 
             //TODO: we should probably optimize this a bit and the result might be cacheable but let's worry later
             var pathToMatch = partitionKeyPath.Replace("/", ".");
@@ -72,11 +115,12 @@
 
             var outboxRecord = new OutboxRecord
             {
-                Id = logicalMessageId,
+                Id = messageId,
                 Dispatched = true
             };
 
             var createJObject = JObject.FromObject(outboxRecord);
+            createJObject.Add("id", outboxRecord.Id);
 
             // TODO: Make TTL configurable
             createJObject.Add("ttl", 100);

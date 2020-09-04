@@ -36,7 +36,6 @@
             context.Extensions.Set(partitionKey);
             context.Extensions.Set(container);
             context.Extensions.Set(ContextBagKeys.PartitionKeyPath, partitionKeyPath);
-            context.Extensions.Set(ContextBagKeys.LogicalMessageId, context.MessageId);
 
             if (!(context.Extensions.Get<OutboxTransaction>() is CosmosOutboxTransaction outboxTransaction))
             {

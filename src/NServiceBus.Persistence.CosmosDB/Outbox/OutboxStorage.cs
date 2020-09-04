@@ -3,6 +3,7 @@
     using System;
     using Features;
     using Microsoft.Azure.Cosmos;
+    using Newtonsoft.Json;
 
     class OutboxStorage : Feature
     {
@@ -28,7 +29,9 @@
                 throw new Exception("No message partition mappings were found. Use persistence.Partition() to configure mappings.");
             }
 
-            context.Container.ConfigureComponent(() => new OutboxPersister(), DependencyLifecycle.SingleInstance);
+            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
+
+            context.Container.ConfigureComponent(() => new OutboxPersister(serializerSettings), DependencyLifecycle.SingleInstance);
         }
     }
 }
