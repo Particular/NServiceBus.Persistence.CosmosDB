@@ -62,10 +62,10 @@
             var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
             config = new PartitionAwareConfiguration(persistenceSettings);
             // we actually don't really care about the mapping function on this level, we just need the path
-            config.AddPartitionMappingForMessageType<When_message_has_a_saga_id.MessageWithSagaId>((h, id, m)=> new PartitionKey(m.DataId.ToString()), SetupFixture.ContainerName, "/partitionKey");
-            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.StartMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, "/partitionKey");
-            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.ContinueMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, "/partitionKey");
-            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.FinishMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, "/partitionKey");
+            config.AddPartitionMappingForMessageType<When_message_has_a_saga_id.MessageWithSagaId>((h, id, m)=> new PartitionKey(m.DataId.ToString()), SetupFixture.ContainerName, PartitionPathKey);
+            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.StartMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, PartitionPathKey);
+            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.ContinueMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, PartitionPathKey);
+            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.FinishMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, PartitionPathKey);
 
             await CosmosDbClient.CreateDatabaseIfNotExistsAsync(DatabaseName);
             await CosmosDbClient.PopulateContainers(DatabaseName, SagaMetadataCollection, config);
