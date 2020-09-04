@@ -47,6 +47,7 @@
             context.Extensions.Set(ContextBagKeys.PartitionKeyValue, partitionKey);
             context.Extensions.Set(ContextBagKeys.PartitionKeyPath, partitionKeyPath);
             context.Extensions.Set(container);
+            context.Extensions.Set(ContextBagKeys.LogicalMessageId, context.MessageId);
 
             OutboxRecord outboxRecord = await container.ReadItemAsync<OutboxRecord>(context.MessageId, partitionKey).ConfigureAwait(false);
 
