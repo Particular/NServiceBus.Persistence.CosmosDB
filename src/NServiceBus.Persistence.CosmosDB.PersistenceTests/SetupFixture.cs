@@ -49,9 +49,7 @@
                 SetupFixture.ContainerName,
                 SetupFixture.PartitionPathKey);
 
-            var maxThroughput = ThroughputProperties.CreateAutoscaleThroughput(4_000);
-
-            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(DatabaseName, maxThroughput);
+            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(DatabaseName);
             await cosmosDbClient.PopulateContainers(DatabaseName, persistenceTestConfiguration.SagaMetadataCollection, config, cheat: true);
         }
 
