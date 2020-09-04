@@ -24,8 +24,9 @@
                 throw new Exception("No message partition mappings were found. Use persistence.Partition() to configure mappings.");
             }
 
-            context.Container.ConfigureComponent(() => new StorageSessionFactory(databaseName, client, partitionConfig), DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent<StorageSessionFactory>(DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionAdapter>(DependencyLifecycle.SingleInstance);
+            context.Pipeline.Register(new PartitioningBehavior(databaseName, client, partitionConfig), "Partition Behavior");
         }
     }
 }

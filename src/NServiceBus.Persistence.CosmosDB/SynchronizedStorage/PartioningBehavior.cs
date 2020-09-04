@@ -1,24 +1,21 @@
-﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
     using System.Collections.Generic;
-    using System.Text;
     using System.Threading.Tasks;
+    using DelayedDelivery;
+    using DeliveryConstraints;
     using Microsoft.Azure.Cosmos;
-    using NServiceBus.DelayedDelivery;
-    using NServiceBus.DeliveryConstraints;
     using NServiceBus.Outbox;
-    using NServiceBus.Performance.TimeToBeReceived;
-    using NServiceBus.Pipeline;
-    using NServiceBus.Routing;
-    using NServiceBus.Transport;
+    using Outbox;
+    using Performance.TimeToBeReceived;
+    using Pipeline;
+    using Routing;
+    using Transport;
+    using TransportOperation = Transport.TransportOperation;
 
-    class PartitioningBehavior : Behavior<IIncomingLogicalMessageContext>
+    class PartitioningBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        readonly string databaseName;
-        readonly CosmosClient cosmosClient;
-        readonly PartitionAwareConfiguration partitionAwareConfiguration;
-
         public PartitioningBehavior(string databaseName, CosmosClient cosmosClient, PartitionAwareConfiguration partitionAwareConfiguration)
         {
             this.databaseName = databaseName;
@@ -26,16 +23,8 @@
             this.partitionAwareConfiguration = partitionAwareConfiguration;
         }
 
-        public override async Task Invoke(IIncomingLogicalMessageContext context, Func<Task> next)
+        public async Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
         {
-            var outboxTransaction = context.Extensions.Get<OutboxTransaction>() as CosmosOutboxTransaction;
-
-            if (outboxTransaction is null)
-            {
-                await next().ConfigureAwait(false);
-                return;
-            }
-
             var incomingMessage = context.Extensions.Get<IncomingMessage>();
             var logicalMessage = context.Extensions.Get<LogicalMessage>();
 
@@ -44,19 +33,23 @@
             var partitionKeyPath = partitionAwareConfiguration.MapMessageToPartitionKeyPath(logicalMessage.MessageType);
             var container = cosmosClient.GetContainer(databaseName, containerName);
 
-            context.Extensions.Set(ContextBagKeys.PartitionKeyValue, partitionKey);
-            context.Extensions.Set(ContextBagKeys.PartitionKeyPath, partitionKeyPath);
+            context.Extensions.Set(partitionKey);
             context.Extensions.Set(container);
+            context.Extensions.Set(ContextBagKeys.PartitionKeyPath, partitionKeyPath);
             context.Extensions.Set(ContextBagKeys.LogicalMessageId, context.MessageId);
 
-            OutboxRecord outboxRecord = await container.ReadItemAsync<OutboxRecord>(context.MessageId, partitionKey).ConfigureAwait(false);
+            if (!(context.Extensions.Get<OutboxTransaction>() is CosmosOutboxTransaction outboxTransaction))
+            {
+                await next(context).ConfigureAwait(false);
+                return;
+            }
 
+            OutboxRecord outboxRecord = await container.ReadItemAsync<OutboxRecord>(context.MessageId, partitionKey).ConfigureAwait(false);
             if (outboxRecord is null)
             {
-                outboxTransaction.TransactionalBatch = new TransactionalBatchDecorator(container.CreateTransactionalBatch(partitionKey));
+                outboxTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
 
-                await next().ConfigureAwait(false);
-
+                await next(context).ConfigureAwait(false);
                 return;
             }
 
@@ -69,7 +62,7 @@
                 var message = new OutgoingMessage(operation.MessageId, operation.Headers, operation.Body);
 
                 pendingTransportOperations.Add(
-                    new Transport.TransportOperation(
+                    new TransportOperation(
                         message,
                         DeserializeRoutingStrategy(operation.Options),
                         DispatchConsistency.Isolated,
@@ -99,6 +92,7 @@
             {
                 constraints.Add(new DiscardIfNotReceivedBefore(TimeSpan.Parse(ttbr)));
             }
+
             return constraints;
         }
 
@@ -116,5 +110,9 @@
 
             throw new Exception("Could not find routing strategy to deserialize");
         }
+
+        readonly string databaseName;
+        readonly CosmosClient cosmosClient;
+        readonly PartitionAwareConfiguration partitionAwareConfiguration;
     }
 }

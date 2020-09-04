@@ -17,7 +17,8 @@
         public const string DatabaseName = "CosmosDBPersistence";
         public const string PartitionPathKey = "/deep/down";
         public static string ContainerName;
-        public static CosmosClient cosmosDbClient;
+        public static CosmosClient CosmosDbClient;
+        public static Container Container;
         static double totalRequestCharges = 0;
 
         [OneTimeSetUp]
@@ -35,7 +36,7 @@
             var builder = new CosmosClientBuilder(connectionString);
             builder.AddCustomHandlers(new LoggingHandler());
 
-            cosmosDbClient = builder.Build();
+            CosmosDbClient = builder.Build();
 
             // should we ever need the test variant we have a problem
             var persistenceTestConfiguration = new PersistenceTestsConfiguration(new TestVariant("default"));
@@ -49,16 +50,17 @@
                 SetupFixture.ContainerName,
                 SetupFixture.PartitionPathKey);
 
-            await cosmosDbClient.CreateDatabaseIfNotExistsAsync(DatabaseName);
-            await cosmosDbClient.PopulateContainers(DatabaseName, persistenceTestConfiguration.SagaMetadataCollection, config, cheat: true);
+            await CosmosDbClient.CreateDatabaseIfNotExistsAsync(DatabaseName);
+            await CosmosDbClient.PopulateContainers(DatabaseName, persistenceTestConfiguration.SagaMetadataCollection, config, cheat: true);
+
+            var database = CosmosDbClient.GetDatabase(DatabaseName);
+            Container = database.GetContainer(ContainerName);
         }
 
         [OneTimeTearDown]
-        public async Task OneTimeTearDown()
+        public Task OneTimeTearDown()
         {
-            var database = cosmosDbClient.GetDatabase(DatabaseName);
-            var container = database.GetContainer(ContainerName);
-            await container.DeleteContainerStreamAsync();
+            return Container.DeleteContainerStreamAsync();
         }
 
         static string GetEnvironmentVariable(string variable)

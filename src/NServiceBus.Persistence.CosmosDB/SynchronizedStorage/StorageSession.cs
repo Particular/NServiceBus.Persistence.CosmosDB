@@ -10,10 +10,11 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    class StorageSession : CompletableSynchronizedStorageSession
+    class StorageSession : CompletableSynchronizedStorageSession, ITransactionalBatchProvider
     {
-        public StorageSession(Container container, PartitionKey partitionKey, string partitionKeyPath)
+        public StorageSession(Container container, PartitionKey partitionKey, string partitionKeyPath, bool ownsBatch)
         {
+            this.ownsBatch = ownsBatch;
             this.partitionKeyPath = partitionKeyPath;
             Container = container;
             PartitionKey = partitionKey;
@@ -21,7 +22,7 @@
 
         public Container Container { get; }
 
-        public TransactionalBatchDecorator TransactionalBatch
+        public TransactionalBatch TransactionalBatch
         {
             get
             {
@@ -38,7 +39,22 @@
 
         public List<SagaModification> Modifications { get; } = new List<SagaModification>();
 
-        public async Task CompleteAsync()
+        Task CompletableSynchronizedStorageSession.CompleteAsync()
+        {
+            return ownsBatch ? Commit() : Task.CompletedTask;
+        }
+
+        void IDisposable.Dispose()
+        {
+            if (!ownsBatch)
+            {
+                return;
+            }
+
+            Dispose();
+        }
+
+        public async Task Commit()
         {
             var partitionKey = JArray.Parse(PartitionKey.ToString())[0];
 
@@ -92,7 +108,7 @@
                             EnableContentResponseOnWrite = false
                         };
                         TransactionalBatch.CreateItemStream(createStream, createOptions);
-                        mappingDictionary[TransactionalBatch.Index] = sagaSave;
+                        mappingDictionary[transactionalBatchDecorator.Index] = sagaSave;
                         break;
 
                     case SagaUpdate sagaUpdate:
@@ -123,7 +139,7 @@
                         // has to be kept open
                         var updateStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(updateJObject)));
                         TransactionalBatch.ReplaceItemStream(sagaUpdate.SagaData.Id.ToString(), updateStream, updateOptions);
-                        mappingDictionary[TransactionalBatch.Index] = sagaUpdate;
+                        mappingDictionary[transactionalBatchDecorator.Index] = sagaUpdate;
                         break;
 
                     case SagaDelete sagaDelete:
@@ -132,7 +148,7 @@
                         sagaDelete.Context.TryGet<string>($"cosmos_etag:{sagaDelete.SagaData.Id}", out var deleteEtag);
                         var deleteOptions = new TransactionalBatchItemRequestOptions {IfMatchEtag = deleteEtag};
                         TransactionalBatch.DeleteItem(sagaDelete.SagaData.Id.ToString(), deleteOptions);
-                        mappingDictionary[TransactionalBatch.Index] = sagaDelete;
+                        mappingDictionary[transactionalBatchDecorator.Index] = sagaDelete;
                         break;
 
                     default:
@@ -140,12 +156,12 @@
                 }
             }
 
-            if (!TransactionalBatch.CanBeExecuted)
+            if (!transactionalBatchDecorator.CanBeExecuted)
             {
                 return;
             }
 
-            using (var batchOutcomeResponse = await TransactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
+            using (var batchOutcomeResponse = await transactionalBatchDecorator.ExecuteAsync().ConfigureAwait(false))
             {
                 for (var i = 0; i < batchOutcomeResponse.Count; i++)
                 {
@@ -195,5 +211,6 @@
 
         TransactionalBatchDecorator transactionalBatchDecorator;
         string partitionKeyPath;
+        readonly bool ownsBatch;
     }
 }

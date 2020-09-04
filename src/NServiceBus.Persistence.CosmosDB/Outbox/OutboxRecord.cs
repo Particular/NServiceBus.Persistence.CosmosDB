@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
-    using System;
     using NServiceBus.Outbox;
 
     class OutboxRecord

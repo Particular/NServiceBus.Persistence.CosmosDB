@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using System.Net;
     using System.Text;
@@ -9,9 +8,8 @@
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
-    using NServiceBus.Extensibility;
+    using Extensibility;
     using NServiceBus.Outbox;
-    using NServiceBus.Pipeline;
 
     class OutboxPersister : IOutboxStorage
     {
@@ -30,21 +28,21 @@
         {
             var cosmosTransaction = transaction as CosmosOutboxTransaction;
 
-            if (cosmosTransaction.TransactionalBatch is null)
+            if (cosmosTransaction?.StorageSession is null)
             {
                 return Task.CompletedTask;
             }
 
             //TODO: Probably serialize and add keypath/partitionkey JTokens and id
 
-            cosmosTransaction.TransactionalBatch.CreateItem(new OutboxRecord { Id = message.MessageId, TransportOperations = message.TransportOperations });
+            cosmosTransaction.StorageSession.TransactionalBatch.CreateItem(new OutboxRecord { Id = message.MessageId, TransportOperations = message.TransportOperations });
 
             return Task.CompletedTask;
         }
 
         public async Task SetAsDispatched(string messageId, ContextBag context)
         {
-            var partitionKey = context.Get<string>(ContextBagKeys.PartitionKeyValue);
+            var partitionKey = context.Get<PartitionKey>();
             var partitionKeyPath = context.Get<string>(ContextBagKeys.PartitionKeyPath);
             var container = context.Get<Container>();
             var logicalMessageId = context.Get<string>(ContextBagKeys.LogicalMessageId);
@@ -61,7 +59,7 @@
 
                 if (i == segments.Length - 1)
                 {
-                    current[segmentName] = partitionKey;
+                    current[segmentName] = JArray.Parse(partitionKey.ToString())[0];
                     continue;
                 }
 
@@ -77,13 +75,14 @@
 
             var createJObject = JObject.FromObject(outboxRecord);
 
+            // TODO: Make TTL configurable
             createJObject.Add("ttl", 100);
 
             createJObject.Merge(start);
 
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createJObject))))
             {
-                var result = await container.UpsertItemStreamAsync(stream, new PartitionKey(partitionKey)).ConfigureAwait(false);
+                var result = await container.UpsertItemStreamAsync(stream, partitionKey).ConfigureAwait(false);
 
                 if (result.StatusCode == HttpStatusCode.BadRequest)
                 {
