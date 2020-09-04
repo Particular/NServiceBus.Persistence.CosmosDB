@@ -35,25 +35,10 @@
             }
 
             // this path is really only ever reached during testing
-            var responseMessage = await container.ReadItemStreamAsync(messageId, partitionKey)
+            var outboxRecord = await container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
                 .ConfigureAwait(false);
 
-            if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
-            {
-                return default;
-            }
-
-            using (var streamReader = new StreamReader(responseMessage.Content))
-            {
-                using (var jsonReader = new JsonTextReader(streamReader))
-                {
-                    var outboxRecord = serializer.Deserialize<OutboxRecord>(jsonReader);
-
-                    context.Set($"cosmos_etag:{messageId}", responseMessage.Headers.ETag);
-
-                    return new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations);
-                }
-            }
+            return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations) : null;
         }
 
         public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context)

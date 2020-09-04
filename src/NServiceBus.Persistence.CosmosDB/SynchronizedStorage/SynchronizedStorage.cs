@@ -3,6 +3,7 @@
     using System;
     using Features;
     using Microsoft.Azure.Cosmos;
+    using Newtonsoft.Json;
 
     class SynchronizedStorage : Feature
     {
@@ -24,9 +25,11 @@
                 throw new Exception("No message partition mappings were found. Use persistence.Partition() to configure mappings.");
             }
 
+            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
+
             context.Container.ConfigureComponent<StorageSessionFactory>(DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionAdapter>(DependencyLifecycle.SingleInstance);
-            context.Pipeline.Register(new PartitioningBehavior(databaseName, client, partitionConfig), "Partition Behavior");
+            context.Pipeline.Register(new PartitioningBehavior(serializerSettings, databaseName, client, partitionConfig), "Partition Behavior");
         }
     }
 }

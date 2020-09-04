@@ -1,11 +1,15 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Linq.Expressions;
+    using System.Reflection;
     using System.Threading.Tasks;
     using DelayedDelivery;
     using DeliveryConstraints;
     using Microsoft.Azure.Cosmos;
+    using Newtonsoft.Json;
     using NServiceBus.Outbox;
     using Outbox;
     using Performance.TimeToBeReceived;
@@ -16,11 +20,22 @@
 
     class PartitioningBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        public PartitioningBehavior(string databaseName, CosmosClient cosmosClient, PartitionAwareConfiguration partitionAwareConfiguration)
+        static PartitioningBehavior()
+        {
+            var field = typeof(PendingTransportOperations).GetField("operations", BindingFlags.NonPublic | BindingFlags.Instance);
+            var targetExp = Expression.Parameter(typeof(PendingTransportOperations), "target");
+            var fieldExp = Expression.Field(targetExp, field);
+            var assignExp = Expression.Assign(fieldExp, Expression.Constant(new ConcurrentStack<TransportOperation>()));
+
+            setter = Expression.Lambda<Action<PendingTransportOperations>>(assignExp, targetExp).Compile();
+        }
+
+        public PartitioningBehavior(JsonSerializerSettings jsonSerializerSettings, string databaseName, CosmosClient cosmosClient, PartitionAwareConfiguration partitionAwareConfiguration)
         {
             this.databaseName = databaseName;
             this.cosmosClient = cosmosClient;
             this.partitionAwareConfiguration = partitionAwareConfiguration;
+            serializer = JsonSerializer.Create(jsonSerializerSettings);
         }
 
         public async Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
@@ -37,13 +52,21 @@
             context.Extensions.Set(container);
             context.Extensions.Set(ContextBagKeys.PartitionKeyPath, partitionKeyPath);
 
-            if (!(context.Extensions.Get<OutboxTransaction>() is CosmosOutboxTransaction outboxTransaction))
+            if (!context.Extensions.TryGet<OutboxTransaction>(out var transaction))
             {
                 await next(context).ConfigureAwait(false);
                 return;
             }
 
-            OutboxRecord outboxRecord = await container.ReadItemAsync<OutboxRecord>(context.MessageId, partitionKey).ConfigureAwait(false);
+            if (!(transaction is CosmosOutboxTransaction outboxTransaction))
+            {
+                await next(context).ConfigureAwait(false);
+                return;
+            }
+
+            var outboxRecord = await container.ReadOutboxRecord(context.MessageId, partitionKey, serializer, context.Extensions)
+                .ConfigureAwait(false);
+
             if (outboxRecord is null)
             {
                 outboxTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
@@ -53,8 +76,7 @@
             }
 
             var pendingTransportOperations = context.Extensions.Get<PendingTransportOperations>();
-
-            //TODO: use reflection to clear any existing operations from previous behaviors created by the customer that sent or published a message not using immediate dispatch
+            setter(pendingTransportOperations);
 
             foreach (var operation in outboxRecord.TransportOperations)
             {
@@ -113,5 +135,7 @@
         readonly string databaseName;
         readonly CosmosClient cosmosClient;
         readonly PartitionAwareConfiguration partitionAwareConfiguration;
+        JsonSerializer serializer;
+        static Action<PendingTransportOperations> setter;
     }
 }
