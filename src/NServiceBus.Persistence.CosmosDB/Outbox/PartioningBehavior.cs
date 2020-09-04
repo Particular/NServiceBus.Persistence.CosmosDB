@@ -62,7 +62,7 @@
 
             var pendingTransportOperations = context.Extensions.Get<PendingTransportOperations>();
 
-            //TODO: use reflection to clear any existing operations from previous behaviors created by the customer
+            //TODO: use reflection to clear any existing operations from previous behaviors created by the customer that sent or published a message not using immediate dispatch
 
             foreach (var operation in outboxRecord.TransportOperations)
             {
