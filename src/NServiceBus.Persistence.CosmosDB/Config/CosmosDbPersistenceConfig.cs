@@ -17,7 +17,7 @@
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(cosmosClient), cosmosClient);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, cosmosClient);
+            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder { Client = cosmosClient });
             return persistenceExtensions;
         }
 
@@ -29,7 +29,7 @@
         {
             Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new CosmosClient(connectionString));
+            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient,new ClientHolder { Client = new CosmosClient(connectionString) });
 
             return persistenceExtensions;
         }

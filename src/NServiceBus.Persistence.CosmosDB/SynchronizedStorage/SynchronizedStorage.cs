@@ -2,14 +2,13 @@
 {
     using System;
     using Features;
-    using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
 
     class SynchronizedStorage : Feature
     {
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var client = context.Settings.Get<CosmosClient>(SettingsKeys.CosmosClient);
+            var client = context.Settings.Get<ClientHolder>(SettingsKeys.CosmosClient).Client;
 
             if (client is null)
             {

@@ -1,10 +1,9 @@
-﻿namespace NServiceBus.Features
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
-    using NServiceBus.Sagas;
-    using Persistence.CosmosDB;
+    using Sagas;
 
     internal static class CosmosClientExtensions
     {

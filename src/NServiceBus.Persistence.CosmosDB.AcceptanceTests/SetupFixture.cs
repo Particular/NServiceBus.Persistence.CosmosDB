@@ -1,11 +1,15 @@
-﻿namespace NServiceBus.PersistenceTesting
+﻿namespace NServiceBus.AcceptanceTests
 {
     using System;
     using System.IO;
+    using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
+    using Sagas;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
+    using NServiceBus.Sagas;
     using NUnit.Framework;
     using Persistence.CosmosDB;
     using Settings;
@@ -18,7 +22,25 @@
         public static string ContainerName;
         public static CosmosClient CosmosDbClient;
         public static Container Container;
+        public static PartitionAwareConfiguration config;
         static double totalRequestCharges = 0;
+        SagaMetadataCollection sagaMetadataCollection;
+
+        public SagaMetadataCollection SagaMetadataCollection
+        {
+            get
+            {
+                if (sagaMetadataCollection == null)
+                {
+                    var sagaTypes = Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(Saga).IsAssignableFrom(t) || typeof(IFindSagas<>).IsAssignableFrom(t) || typeof(IFinder).IsAssignableFrom(t)).ToArray();
+                    sagaMetadataCollection = new SagaMetadataCollection();
+                    sagaMetadataCollection.Initialize(sagaTypes);
+                }
+
+                return sagaMetadataCollection;
+            }
+            set { sagaMetadataCollection = value; }
+        }
 
         [OneTimeSetUp]
         public async Task OneTimeSetUp()
@@ -37,29 +59,26 @@
 
             CosmosDbClient = builder.Build();
 
-            // should we ever need the test variant we have a problem
-            var persistenceTestConfiguration = new PersistenceTestsConfiguration(new TestVariant("default"));
-
             var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
-            var config = new PartitionAwareConfiguration(persistenceSettings);
+            config = new PartitionAwareConfiguration(persistenceSettings);
             // we actually don't really care about the mapping function on this level, we just need the path
-            config.AddPartitionMappingForMessageType<object>((headers,
-                    id,
-                    message) => new PartitionKey("partitionKey"),
-                SetupFixture.ContainerName,
-                SetupFixture.PartitionPathKey);
+            config.AddPartitionMappingForMessageType<When_message_has_a_saga_id.MessageWithSagaId>((h, id, m)=> new PartitionKey(m.DataId.ToString()), SetupFixture.ContainerName, "/partitionKey");
+            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.StartMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, "/partitionKey");
+            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.ContinueMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, "/partitionKey");
+            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.FinishMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, "/partitionKey");
 
             await CosmosDbClient.CreateDatabaseIfNotExistsAsync(DatabaseName);
-            await CosmosDbClient.PopulateContainers(DatabaseName, persistenceTestConfiguration.SagaMetadataCollection, config, cheat: true);
+            await CosmosDbClient.PopulateContainers(DatabaseName, SagaMetadataCollection, config);
 
             var database = CosmosDbClient.GetDatabase(DatabaseName);
             Container = database.GetContainer(ContainerName);
         }
 
         [OneTimeTearDown]
-        public Task OneTimeTearDown()
+        public async Task OneTimeTearDown()
         {
-            return Container.DeleteContainerStreamAsync();
+            await Container.DeleteContainerStreamAsync();
+            CosmosDbClient.Dispose();
         }
 
         static string GetEnvironmentVariable(string variable)

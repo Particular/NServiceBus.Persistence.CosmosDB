@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.PersistenceTests", "NServiceBus.Persistence.CosmosDB.PersistenceTests\NServiceBus.Persistence.CosmosDB.PersistenceTests.csproj", "{BCA68BFA-84B4-401C-A37B-50A978669E7F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.AcceptanceTests\NServiceBus.Persistence.CosmosDB.AcceptanceTests.csproj", "{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{BCA68BFA-84B4-401C-A37B-50A978669E7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCA68BFA-84B4-401C-A37B-50A978669E7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCA68BFA-84B4-401C-A37B-50A978669E7F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
