@@ -12,11 +12,4 @@
             public const string JsonSerializerSettings =  nameof(baseName) + nameof(Sagas) + "." + nameof(JsonSerializerSettings);
         }
     }
-
-    static class ContextBagKeys
-    {
-        const string baseName = "CosmosDB.";
-        public const string PartitionKeyValue = baseName + nameof(PartitionKeyValue);
-        public const string PartitionKeyPath = baseName + nameof(PartitionKeyPath);
-    }
 }
