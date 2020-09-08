@@ -9,11 +9,13 @@
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using Outbox;
 
-    class StorageSession : CompletableSynchronizedStorageSession
+    class StorageSession : CompletableSynchronizedStorageSession, ITransactionalBatchProvider
     {
-        public StorageSession(Container container, PartitionKey partitionKey, string partitionKeyPath)
+        public StorageSession(Container container, PartitionKey partitionKey, string partitionKeyPath, bool ownsBatch)
         {
+            this.ownsBatch = ownsBatch;
             this.partitionKeyPath = partitionKeyPath;
             Container = container;
             PartitionKey = partitionKey;
@@ -21,7 +23,7 @@
 
         public Container Container { get; }
 
-        public TransactionalBatchDecorator TransactionalBatch
+        public TransactionalBatch TransactionalBatch
         {
             get
             {
@@ -36,9 +38,24 @@
 
         public PartitionKey PartitionKey { get; }
 
-        public List<SagaModification> Modifications { get; } = new List<SagaModification>();
+        public List<Modification> Modifications { get; } = new List<Modification>();
 
-        public async Task CompleteAsync()
+        Task CompletableSynchronizedStorageSession.CompleteAsync()
+        {
+            return ownsBatch ? Commit() : Task.CompletedTask;
+        }
+
+        void IDisposable.Dispose()
+        {
+            if (!ownsBatch)
+            {
+                return;
+            }
+
+            Dispose();
+        }
+
+        public async Task Commit()
         {
             var partitionKey = JArray.Parse(PartitionKey.ToString())[0];
 
@@ -62,12 +79,37 @@
                 current = current[segmentName] as JObject;
             }
 
-
-            var mappingDictionary = new Dictionary<int, SagaModification>();
+            var mappingDictionary = new Dictionary<int, Modification>();
             foreach (var modification in Modifications)
             {
                 switch (modification)
                 {
+                    case OutboxStore outboxStore:
+                        var createOutboxJObject = JObject.FromObject(outboxStore.Record);
+
+                        createOutboxJObject.Add("id", outboxStore.Record.Id);
+                        var saveOutboxMetadata = new JObject
+                        {
+                            { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion }
+                        };
+                        createOutboxJObject.Add(MetadataExtensions.MetadataKey,saveOutboxMetadata);
+
+                        // promote it if not there, what if the user has it and the key doesn't match?
+                        var createdOutboxMatchToken = createOutboxJObject.SelectToken(pathToMatch);
+                        if (createdOutboxMatchToken == null)
+                        {
+                            createOutboxJObject.Merge(start);
+                        }
+
+                        // has to be kept open
+                        var createOutboxStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createOutboxJObject)));
+                        var createOutboxOptions = new TransactionalBatchItemRequestOptions
+                        {
+                            EnableContentResponseOnWrite = false
+                        };
+                        TransactionalBatch.CreateItemStream(createOutboxStream, createOutboxOptions);
+                        mappingDictionary[transactionalBatchDecorator.Index] = outboxStore;
+                        break;
                     case SagaSave sagaSave:
                         var createJObject = JObject.FromObject(sagaSave.SagaData);
 
@@ -92,8 +134,9 @@
                             EnableContentResponseOnWrite = false
                         };
                         TransactionalBatch.CreateItemStream(createStream, createOptions);
-                        mappingDictionary[TransactionalBatch.Index] = sagaSave;
+                        mappingDictionary[transactionalBatchDecorator.Index] = sagaSave;
                         break;
+
                     case SagaUpdate sagaUpdate:
                         var updateJObject = JObject.FromObject(sagaUpdate.SagaData);
 
@@ -122,27 +165,29 @@
                         // has to be kept open
                         var updateStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(updateJObject)));
                         TransactionalBatch.ReplaceItemStream(sagaUpdate.SagaData.Id.ToString(), updateStream, updateOptions);
-                        mappingDictionary[TransactionalBatch.Index] = sagaUpdate;
+                        mappingDictionary[transactionalBatchDecorator.Index] = sagaUpdate;
                         break;
+
                     case SagaDelete sagaDelete:
 
                         // only delete if we have the same version as in CosmosDB
                         sagaDelete.Context.TryGet<string>($"cosmos_etag:{sagaDelete.SagaData.Id}", out var deleteEtag);
                         var deleteOptions = new TransactionalBatchItemRequestOptions {IfMatchEtag = deleteEtag};
                         TransactionalBatch.DeleteItem(sagaDelete.SagaData.Id.ToString(), deleteOptions);
-                        mappingDictionary[TransactionalBatch.Index] = sagaDelete;
+                        mappingDictionary[transactionalBatchDecorator.Index] = sagaDelete;
                         break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(modification));
                 }
             }
 
-            if (!TransactionalBatch.CanBeExecuted)
+            if (transactionalBatchDecorator == null || !transactionalBatchDecorator.CanBeExecuted)
             {
                 return;
             }
 
-            using (var batchOutcomeResponse = await TransactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
+            using (var batchOutcomeResponse = await transactionalBatchDecorator.Inner.ExecuteAsync().ConfigureAwait(false))
             {
                 for (var i = 0; i < batchOutcomeResponse.Count; i++)
                 {
@@ -152,23 +197,14 @@
                     {
                         if (result.IsSuccessStatusCode)
                         {
-                            modification.Context.Set($"cosmos_etag:{modification.SagaData.Id}", result.ETag);
+                            modification.Success(result);
                             continue;
                         }
 
                         if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
                         {
-                            switch (modification)
-                            {
-                                case SagaDelete sagaDelete:
-                                    throw new Exception($"The '{sagaDelete.SagaData.GetType().Name}' saga with id '{sagaDelete.SagaData.Id}' can't be completed because it was updated by another process.");
-                                case SagaSave sagaSave:
-                                    throw new Exception($"The '{sagaSave.SagaData.GetType().Name}' saga with id '{sagaSave.SagaData.Id}' could not be created possibly due to a concurrency conflict.");
-                                case SagaUpdate sagaUpdate:
-                                    throw new Exception($"The '{sagaUpdate.SagaData.GetType().Name}' saga with id '{sagaUpdate.SagaData.Id}' was updated by another process or no longer exists.");
-                                default:
-                                    throw new Exception("Concurrency conflict.");
-                            }
+                            // guaranteed to throw
+                            modification.Conflict(result);
                         }
                     }
 
@@ -192,5 +228,6 @@
 
         TransactionalBatchDecorator transactionalBatchDecorator;
         string partitionKeyPath;
+        readonly bool ownsBatch;
     }
 }

@@ -1,11 +1,17 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
     using System;
     using Features;
     using Newtonsoft.Json;
 
-    class SynchronizedStorage : Feature
+    class OutboxStorage : Feature
     {
+        OutboxStorage()
+        {
+            Defaults(s => s.EnableFeatureByDefault<SynchronizedStorage>());
+            DependsOn<Outbox>();
+        }
+
         protected override void Setup(FeatureConfigurationContext context)
         {
             var client = context.Settings.Get<ClientHolder>(SettingsKeys.CosmosClient).Client;
@@ -14,8 +20,6 @@
             {
                 throw new Exception("You must configure a CosmosClient or provide a connection string");
             }
-
-            var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
 
             var partitionConfig = context.Settings.Get<PartitionAwareConfiguration>();
 
@@ -26,9 +30,7 @@
 
             var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
 
-            context.Container.ConfigureComponent<StorageSessionFactory>(DependencyLifecycle.SingleInstance);
-            context.Container.ConfigureComponent<StorageSessionAdapter>(DependencyLifecycle.SingleInstance);
-            context.Pipeline.Register(new PartitioningBehavior(serializerSettings, databaseName, client, partitionConfig), "Partition Behavior");
+            context.Container.ConfigureComponent(() => new OutboxPersister(serializerSettings), DependencyLifecycle.SingleInstance);
         }
     }
 }

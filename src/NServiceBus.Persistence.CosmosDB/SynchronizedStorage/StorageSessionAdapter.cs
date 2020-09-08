@@ -2,6 +2,7 @@
 {
     using System.Threading.Tasks;
     using Extensibility;
+    using NServiceBus.Outbox;
     using Outbox;
     using Transport;
 
@@ -9,6 +10,11 @@
     {
         public Task<CompletableSynchronizedStorageSession> TryAdapt(OutboxTransaction transaction, ContextBag context)
         {
+            if (transaction is CosmosOutboxTransaction cosmosOutboxTransaction)
+            {
+                return Task.FromResult((CompletableSynchronizedStorageSession)cosmosOutboxTransaction.StorageSession);
+            }
+
             return emptyResult;
         }
 

@@ -1,28 +1,33 @@
-﻿namespace NServiceBus.Features
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System.Threading.Tasks;
+    using Features;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
-    using NServiceBus.Sagas;
-    using Persistence.CosmosDB;
+    using Sagas;
+    using CosmosDB;
 
     class CosmosDbSagaPersistence : Feature
     {
         internal CosmosDbSagaPersistence()
         {
-            Defaults(s => s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator()));
+            Defaults(s =>
+            {
+                s.EnableFeatureByDefault<SynchronizedStorage>();
+                s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator());
+            });
             DependsOn<Sagas>();
         }
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var cosmosClient = context.Settings.Get<CosmosClient>(SettingsKeys.CosmosClient);
-            var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
+            // var cosmosClient = context.Settings.Get<CosmosClient>(SettingsKeys.CosmosClient);
+            // var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
             var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
-            var sagaMetadataCollection = context.Settings.Get<SagaMetadataCollection>();
-            var partitionAwareConfiguration = context.Settings.Get<PartitionAwareConfiguration>();
+            // var sagaMetadataCollection = context.Settings.Get<SagaMetadataCollection>();
+            // var partitionAwareConfiguration = context.Settings.Get<PartitionAwareConfiguration>();
 
-            context.RegisterStartupTask(new InitializeContainers(cosmosClient, databaseName, sagaMetadataCollection, partitionAwareConfiguration));
+            //context.RegisterStartupTask(new InitializeContainers(cosmosClient, databaseName, sagaMetadataCollection, partitionAwareConfiguration));
 
             context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings), DependencyLifecycle.SingleInstance);
         }
