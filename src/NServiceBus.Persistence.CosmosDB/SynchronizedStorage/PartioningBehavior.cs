@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using System.Linq.Expressions;
     using System.Reflection;
+    using System.Text;
     using System.Threading.Tasks;
     using DelayedDelivery;
     using DeliveryConstraints;
@@ -30,28 +31,13 @@
             setter = Expression.Lambda<Action<PendingTransportOperations>>(assignExp, targetExp).Compile();
         }
 
-        public PartitioningBehavior(JsonSerializerSettings jsonSerializerSettings, string databaseName, CosmosClient cosmosClient, PartitionAwareConfiguration partitionAwareConfiguration)
+        public PartitioningBehavior(JsonSerializerSettings jsonSerializerSettings)
         {
-            this.databaseName = databaseName;
-            this.cosmosClient = cosmosClient;
-            this.partitionAwareConfiguration = partitionAwareConfiguration;
             serializer = JsonSerializer.Create(jsonSerializerSettings);
         }
 
         public async Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
         {
-            var incomingMessage = context.Extensions.Get<IncomingMessage>();
-            var logicalMessage = context.Extensions.Get<LogicalMessage>();
-
-            var partitionKey = partitionAwareConfiguration.MapMessageToPartition(incomingMessage.Headers, incomingMessage.MessageId, logicalMessage.MessageType, logicalMessage.Instance);
-            var containerName = partitionAwareConfiguration.MapMessageToContainer(logicalMessage.MessageType);
-            var partitionKeyPath = partitionAwareConfiguration.MapMessageToPartitionKeyPath(logicalMessage.MessageType);
-            var container = cosmosClient.GetContainer(databaseName, containerName);
-
-            context.Extensions.Set(partitionKey);
-            context.Extensions.Set(container);
-            context.Extensions.Set(ContextBagKeys.PartitionKeyPath, partitionKeyPath);
-
             if (!context.Extensions.TryGet<OutboxTransaction>(out var transaction))
             {
                 await next(context).ConfigureAwait(false);
@@ -62,6 +48,31 @@
             {
                 await next(context).ConfigureAwait(false);
                 return;
+            }
+
+            var partitionKeyFound = context.Extensions.TryGet<PartitionKey>(out var partitionKey);
+            var partitionKeyPathFound = context.Extensions.TryGet<PartitionKeyPath>(out var partitionKeyPath);
+            var containerFound = context.Extensions.TryGet<Container>(out var container);
+
+            if (!partitionKeyFound || !containerFound || !partitionKeyPathFound)
+            {
+                var messageBuilder = new StringBuilder("For the outbox to work the following information must be provided at latest up to the incoming logical message stage:");
+                if (!partitionKeyFound)
+                {
+                    messageBuilder.AppendLine("- A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`");
+                }
+
+                if (!partitionKeyPathFound)
+                {
+                    messageBuilder.AppendLine("- A partition key path via `context.Extensions.Set<PartitionKeyPath>(yourPartitionKeyPath)`");
+                }
+
+                if (!containerFound)
+                {
+                    messageBuilder.AppendLine("- A container via `context.Extensions.Set<Container>(yourContainer)`");
+                }
+
+                throw new Exception(messageBuilder.ToString());
             }
 
             var outboxRecord = await container.ReadOutboxRecord(context.MessageId, partitionKey, serializer, context.Extensions)
@@ -132,9 +143,6 @@
             throw new Exception("Could not find routing strategy to deserialize");
         }
 
-        readonly string databaseName;
-        readonly CosmosClient cosmosClient;
-        readonly PartitionAwareConfiguration partitionAwareConfiguration;
         JsonSerializer serializer;
         static Action<PendingTransportOperations> setter;
     }

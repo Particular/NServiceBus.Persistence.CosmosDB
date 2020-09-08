@@ -15,20 +15,11 @@
                 throw new Exception("You must configure a CosmosClient or provide a connection string");
             }
 
-            var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
-
-            var partitionConfig = context.Settings.Get<PartitionAwareConfiguration>();
-
-            if (partitionConfig is null)
-            {
-                throw new Exception("No message partition mappings were found. Use persistence.Partition() to configure mappings.");
-            }
-
             var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
 
             context.Container.ConfigureComponent<StorageSessionFactory>(DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionAdapter>(DependencyLifecycle.SingleInstance);
-            context.Pipeline.Register(new PartitioningBehavior(serializerSettings, databaseName, client, partitionConfig), "Partition Behavior");
+            context.Pipeline.Register(new PartitioningBehavior(serializerSettings), "Partition Behavior");
         }
     }
 }

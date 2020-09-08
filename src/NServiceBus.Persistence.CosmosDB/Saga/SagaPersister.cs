@@ -8,6 +8,7 @@
     using Persistence;
     using Newtonsoft.Json;
     using System.IO;
+    using Microsoft.Azure.Cosmos;
 
     class SagaPersister : ISagaPersister
     {
@@ -39,7 +40,9 @@
 
             // reads need to go directly
             var container = storageSession.Container;
-            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), storageSession.PartitionKey).ConfigureAwait(false);
+            var sagaIdAsString = sagaId.ToString();
+            var partitionKey = storageSession.PartitionKey ?? new PartitionKey(sagaIdAsString);
+            var responseMessage = await container.ReadItemStreamAsync(sagaIdAsString, partitionKey).ConfigureAwait(false);
 
             if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {

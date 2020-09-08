@@ -27,14 +27,12 @@
 
         public async Task<OutboxMessage> Get(string messageId, ContextBag context)
         {
-            // backdoor to enable the outbox tests to pass but in theory someone could add it if they want
             if (!context.TryGet<PartitionKey>(out var partitionKey) || !context.TryGet<Container>(out var container))
             {
-                // we should always return null to make the outbox "hack" work
+                // we return null here to enable outbox work at logical stage
                 return null;
             }
 
-            // this path is really only ever reached during testing
             var outboxRecord = await container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
                 .ConfigureAwait(false);
 
@@ -50,10 +48,9 @@
                 return Task.CompletedTask;
             }
 
-            // backdoor to enable the outbox tests to pass but in theory someone could add it if they want
             if (context.TryGet<PartitionKey>(out var partitionKey) &&
                 context.TryGet<Container>(out var container) &&
-                context.TryGet<string>(ContextBagKeys.PartitionKeyPath, out var partitionKeyPath))
+                context.TryGet<PartitionKeyPath>(out var partitionKeyPath))
             {
                 cosmosTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
             }

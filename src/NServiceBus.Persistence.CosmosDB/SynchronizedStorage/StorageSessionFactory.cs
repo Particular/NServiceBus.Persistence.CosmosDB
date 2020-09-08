@@ -9,7 +9,7 @@
         public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag)
         {
             var partitionKey = contextBag.Get<PartitionKey>();
-            var partitionKeyPath = contextBag.Get<string>(ContextBagKeys.PartitionKeyPath);
+            var partitionKeyPath = contextBag.Get<PartitionKeyPath>();
             var container = contextBag.Get<Container>();
 
             return Task.FromResult<CompletableSynchronizedStorageSession>(new StorageSession(container, partitionKey, partitionKeyPath, true));

@@ -47,7 +47,7 @@
                 }
             };
 
-            var behavior = new PartitioningBehavior(new JsonSerializerSettings(), "", fakeCosmosClient, partitionAwareConfiguration);
+            var behavior = new PartitioningBehavior(new JsonSerializerSettings());
 
             var testableContext = new TestableIncomingLogicalMessageContext();
 

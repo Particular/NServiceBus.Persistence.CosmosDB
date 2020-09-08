@@ -13,7 +13,7 @@
 
     class StorageSession : CompletableSynchronizedStorageSession, ITransactionalBatchProvider
     {
-        public StorageSession(Container container, PartitionKey partitionKey, string partitionKeyPath, bool ownsBatch)
+        public StorageSession(Container container, PartitionKey? partitionKey, PartitionKeyPath? partitionKeyPath, bool ownsBatch)
         {
             this.ownsBatch = ownsBatch;
             this.partitionKeyPath = partitionKeyPath;
@@ -29,14 +29,14 @@
             {
                 if (transactionalBatchDecorator == null)
                 {
-                    transactionalBatchDecorator = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(PartitionKey));
+                    transactionalBatchDecorator = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(PartitionKey.Value));
                 }
 
                 return transactionalBatchDecorator;
             }
         }
 
-        public PartitionKey PartitionKey { get; }
+        public PartitionKey? PartitionKey { get; }
 
         public List<Modification> Modifications { get; } = new List<Modification>();
 
@@ -60,7 +60,7 @@
             var partitionKey = JArray.Parse(PartitionKey.ToString())[0];
 
             // we should probably optimize this a bit and the result might be cacheable but let's worry later
-            var pathToMatch = partitionKeyPath.Replace("/", ".");
+            var pathToMatch = ((string)partitionKeyPath).Replace("/", ".");
             var segments = pathToMatch.Split(new[]{ "." }, StringSplitOptions.RemoveEmptyEntries);
 
             var start = new JObject();
@@ -85,6 +85,7 @@
                 switch (modification)
                 {
                     case OutboxStore outboxStore:
+
                         var createOutboxJObject = JObject.FromObject(outboxStore.Record);
 
                         createOutboxJObject.Add("id", outboxStore.Record.Id);
@@ -111,6 +112,7 @@
                         mappingDictionary[transactionalBatchDecorator.Index] = outboxStore;
                         break;
                     case SagaSave sagaSave:
+                        var localBatch = Container.CreateTransactionalBatch(new PartitionKey(sagaSave.SagaData.Id.ToString()));
                         var createJObject = JObject.FromObject(sagaSave.SagaData);
 
                         createJObject.Add("id", sagaSave.SagaData.Id.ToString());
@@ -227,7 +229,7 @@
         }
 
         TransactionalBatchDecorator transactionalBatchDecorator;
-        string partitionKeyPath;
+        PartitionKeyPath? partitionKeyPath;
         readonly bool ownsBatch;
     }
 }
