@@ -76,7 +76,7 @@
                 }
 
                 current[segmentName] = new JObject();
-                current = current[segmentName] as JObject;
+                current = (JObject)current[segmentName];
             }
 
             var mappingDictionary = new Dictionary<int, Modification>();
