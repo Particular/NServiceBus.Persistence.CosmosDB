@@ -13,6 +13,8 @@
         }
 
         public ContextBag Context { get; }
+        public abstract PartitionKey PartitionKey { get; }
+        public abstract PartitionKeyPath PartitionKeyPath { get; }
 
         public virtual void Success(TransactionalBatchOperationResult result)
         {
@@ -49,8 +51,8 @@
             }
 
             // promote it if not there, what if the user has it and the key doesn't match?
-            var createdMatchToken = toBeEnriched.SelectToken(pathToMatch);
-            if (createdMatchToken == null)
+            var matchToken = toBeEnriched.SelectToken(pathToMatch);
+            if (matchToken == null)
             {
                 toBeEnriched.Merge(start);
             }

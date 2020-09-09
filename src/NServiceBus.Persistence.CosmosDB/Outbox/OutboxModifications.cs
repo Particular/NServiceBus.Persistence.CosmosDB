@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
+    using System;
     using System.IO;
     using System.Text;
     using Extensibility;
@@ -15,6 +16,10 @@
         {
             Record = record;
         }
+
+        // should never be called
+        public override PartitionKey PartitionKey => throw new InvalidOperationException();
+        public override PartitionKeyPath PartitionKeyPath => throw new InvalidOperationException();
     }
 
     class OutboxStore : OutboxModification

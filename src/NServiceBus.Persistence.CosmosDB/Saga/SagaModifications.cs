@@ -18,6 +18,9 @@
             SagaData = sagaData;
         }
 
+        public override PartitionKey PartitionKey => new PartitionKey(SagaData.Id.ToString());
+        public override PartitionKeyPath PartitionKeyPath => new PartitionKeyPath("/Id");
+
         public override void Success(TransactionalBatchOperationResult result)
         {
             Context.Set($"cosmos_etag:{SagaData.Id}", result.ETag);
