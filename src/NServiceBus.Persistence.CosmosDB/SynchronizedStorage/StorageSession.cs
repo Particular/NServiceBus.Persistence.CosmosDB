@@ -8,28 +8,21 @@
 
     class StorageSession : CompletableSynchronizedStorageSession
     {
-        public StorageSession(Container container, PartitionKey? partitionKey, PartitionKeyPath? partitionKeyPath, bool ownsBatch)
+        // When outbox is involved, commitOnComplete will be false
+        public StorageSession(Container container, bool commitOnComplete)
         {
-            this.ownsBatch = ownsBatch;
-            this.partitionKeyPath = partitionKeyPath;
             Container = container;
-            PartitionKey = partitionKey;
+            this.commitOnComplete = commitOnComplete;
         }
-
-        public Container Container { get; }
-
-        public PartitionKey? PartitionKey { get; }
-
-        public List<Modification> Modifications { get; } = new List<Modification>();
 
         Task CompletableSynchronizedStorageSession.CompleteAsync()
         {
-            return ownsBatch ? Commit() : Task.CompletedTask;
+            return commitOnComplete ? Commit() : Task.CompletedTask;
         }
 
         void IDisposable.Dispose()
         {
-            if (!ownsBatch)
+            if (!commitOnComplete)
             {
                 return;
             }
@@ -37,94 +30,63 @@
             Dispose();
         }
 
+        // TODO: is this enough to be thread safe or do we need to worry about concurrent access?
+        public void AddOperation(Operation operation)
+        {
+            var operationPartitionKey = operation.PartitionKey;
+
+            if (!operations.ContainsKey(operationPartitionKey))
+            {
+                operations.Add(operationPartitionKey, new Dictionary<int, Operation>());
+            }
+
+            var index = operations[operationPartitionKey].Count;
+            operations[operationPartitionKey].Add(index, operation);
+        }
+
         public async Task Commit()
         {
-            var batchAndMappings = new List<(TransactionalBatchDecorator transactionalBatchDecorator, Dictionary<int, Modification> mappings)>();
-            TransactionalBatchDecorator current = null;
-            Dictionary<int, Modification> currentMappingDictionary = null;
-            var freshBatch = false;
-            foreach (var modification in Modifications)
+            foreach (var batchOfOperations in operations)
             {
-                PartitionKey key;
-                PartitionKeyPath path;
-                if (PartitionKey.HasValue && partitionKeyPath.HasValue)
+                using (var transactionalBatch = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(batchOfOperations.Key)))
                 {
-                    key = PartitionKey.Value;
-                    path = partitionKeyPath.Value;
-                }
-                else
-                {
-                    key = modification.PartitionKey;
-                    path = modification.PartitionKeyPath;
-                    freshBatch = true;
-                }
+                    var batchedOperations = batchOfOperations.Value.Values;
 
-                if (current == null)
-                {
-                    current = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(key));
-                }
-
-                if (currentMappingDictionary == null)
-                {
-                    currentMappingDictionary = new Dictionary<int, Modification>();
-                }
-
-                modification.Apply(current, key, path);
-                currentMappingDictionary[current.Index] = modification;
-
-                if (!freshBatch)
-                {
-                    continue;
-                }
-
-                batchAndMappings.Add((current, currentMappingDictionary));
-                current = null;
-                currentMappingDictionary = null;
-            }
-
-
-            if (current != null)
-            {
-                batchAndMappings.Add((current, currentMappingDictionary));
-            }
-
-            if (batchAndMappings.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var (batch, mappings) in batchAndMappings)
-            {
-                using(batch)
-                using (var batchOutcomeResponse = await batch.Inner.ExecuteAsync().ConfigureAwait(false))
-                {
-                    for (var i = 0; i < batchOutcomeResponse.Count; i++)
+                    foreach (var operation in batchedOperations)
                     {
-                        var result = batchOutcomeResponse[i];
+                        operation.Apply(transactionalBatch);
+                    }
 
-                        if (mappings.TryGetValue(i, out var modification))
+                    using (var batchOutcomeResponse = await transactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
+                    {
+                        for (var i = 0; i < batchOutcomeResponse.Count; i++)
                         {
-                            if (result.IsSuccessStatusCode)
+                            var result = batchOutcomeResponse[i];
+
+                            if (batchOfOperations.Value.TryGetValue(i, out var modification))
                             {
-                                modification.Success(result);
-                                continue;
+                                if (result.IsSuccessStatusCode)
+                                {
+                                    modification.Success(result);
+                                    continue;
+                                }
+
+                                if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
+                                {
+                                    // guaranteed to throw
+                                    modification.Conflict(result);
+                                }
                             }
 
                             if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
                             {
-                                // guaranteed to throw
-                                modification.Conflict(result);
+                                throw new Exception("Concurrency conflict.");
                             }
-                        }
 
-                        if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
-                        {
-                            throw new Exception("Concurrency conflict.");
-                        }
-
-                        if(result.StatusCode == HttpStatusCode.BadRequest)
-                        {
-                            throw new Exception("Bad request. Quite likely the partition key did not match");
+                            if (result.StatusCode == HttpStatusCode.BadRequest)
+                            {
+                                throw new Exception("Bad request. Quite likely the partition key did not match");
+                            }
                         }
                     }
                 }
@@ -135,7 +97,10 @@
         {
         }
 
-        PartitionKeyPath? partitionKeyPath;
-        readonly bool ownsBatch;
+        readonly bool commitOnComplete;
+        public Container Container { get; }
+
+        readonly Dictionary<PartitionKey, Dictionary<int, Operation>> operations = new Dictionary<PartitionKey, Dictionary<int, Operation>>();
+
     }
 }

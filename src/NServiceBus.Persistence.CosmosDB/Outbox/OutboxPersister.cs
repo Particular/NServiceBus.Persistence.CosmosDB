@@ -22,7 +22,15 @@
 
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
         {
-            return Task.FromResult((OutboxTransaction)new CosmosOutboxTransaction());
+            var container = context.Get<Container>();
+            var cosmosOutboxTransaction = new CosmosOutboxTransaction(container);
+
+            if (context.TryGet<PartitionKey>(out var partitionKey))
+            {
+                cosmosOutboxTransaction.PartitionKey = partitionKey;
+            }
+
+            return Task.FromResult((OutboxTransaction)cosmosOutboxTransaction);
         }
 
         public async Task<OutboxMessage> Get(string messageId, ContextBag context)
@@ -41,25 +49,22 @@
 
         public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context)
         {
-            var cosmosTransaction = transaction as CosmosOutboxTransaction;
+            var cosmosTransaction = (CosmosOutboxTransaction)transaction;
 
-            if (cosmosTransaction == null)
+            if (cosmosTransaction == null || cosmosTransaction.SuppressStoreAndCommit || cosmosTransaction.PartitionKey == null)
             {
                 return Task.CompletedTask;
             }
 
-            if (context.TryGet<PartitionKey>(out var partitionKey) &&
-                context.TryGet<Container>(out var container) &&
-                context.TryGet<PartitionKeyPath>(out var partitionKeyPath))
-            {
-                cosmosTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
-            }
+            var partitionKeyPath = context.Get<PartitionKeyPath>();
 
-            cosmosTransaction.StorageSession?.Modifications.Add(new OutboxStore(new OutboxRecord
+            cosmosTransaction.StorageSession.AddOperation(new OutboxStore(new OutboxRecord
                 {
                     Id = message.MessageId,
                     TransportOperations = message.TransportOperations
                 },
+                cosmosTransaction.PartitionKey.Value,
+                partitionKeyPath,
                 context));
             return Task.CompletedTask;
         }

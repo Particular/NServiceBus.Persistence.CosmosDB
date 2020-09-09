@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
-    using System;
     using System.IO;
     using System.Text;
     using Extensibility;
@@ -8,27 +7,23 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    abstract class OutboxModification : Modification
+    abstract class OutboxOperation : Operation
     {
         public OutboxRecord Record { get;  }
 
-        protected OutboxModification(OutboxRecord record, ContextBag context) : base(context)
+        protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(context, partitionKey, partitionKeyPath)
         {
             Record = record;
         }
-
-        // should never be called
-        public override PartitionKey PartitionKey => throw new InvalidOperationException();
-        public override PartitionKeyPath PartitionKeyPath => throw new InvalidOperationException();
     }
 
-    class OutboxStore : OutboxModification
+    class OutboxStore : OutboxOperation
     {
-        public OutboxStore(OutboxRecord record, ContextBag context) : base(record, context)
+        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(record, partitionKey, partitionKeyPath, context)
         {
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath)
+        public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
             var jObject = JObject.FromObject(Record);
 
@@ -39,7 +34,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
-            EnrichWithPartitionKeyIfNecessary(jObject, partitionKey, partitionKeyPath);
+            EnrichWithPartitionKeyIfNecessary(jObject, PartitionKey, PartitionKeyPath);
 
             // has to be kept open
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));

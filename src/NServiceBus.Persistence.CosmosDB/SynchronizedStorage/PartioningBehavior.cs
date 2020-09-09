@@ -5,7 +5,6 @@
     using System.Collections.Generic;
     using System.Linq.Expressions;
     using System.Reflection;
-    using System.Text;
     using System.Threading.Tasks;
     using DelayedDelivery;
     using DeliveryConstraints;
@@ -50,41 +49,34 @@
                 return;
             }
 
-            var partitionKeyFound = context.Extensions.TryGet<PartitionKey>(out var partitionKey);
-            var partitionKeyPathFound = context.Extensions.TryGet<PartitionKeyPath>(out var partitionKeyPath);
-            var containerFound = context.Extensions.TryGet<Container>(out var container);
-
-            if (!partitionKeyFound || !containerFound || !partitionKeyPathFound)
+            // Normal outbox operating at the physical stage
+            if (outboxTransaction.PartitionKey.HasValue)
             {
-                var messageBuilder = new StringBuilder("For the outbox to work the following information must be provided at latest up to the incoming logical message stage:");
-                if (!partitionKeyFound)
-                {
-                    messageBuilder.AppendLine("- A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`");
-                }
-
-                if (!partitionKeyPathFound)
-                {
-                    messageBuilder.AppendLine("- A partition key path via `context.Extensions.Set<PartitionKeyPath>(yourPartitionKeyPath)`");
-                }
-
-                if (!containerFound)
-                {
-                    messageBuilder.AppendLine("- A container via `context.Extensions.Set<Container>(yourContainer)`");
-                }
-
-                throw new Exception(messageBuilder.ToString());
+                await next(context).ConfigureAwait(false);
+                return;
             }
 
-            var outboxRecord = await container.ReadOutboxRecord(context.MessageId, partitionKey, serializer, context.Extensions)
+            // Outbox operating at the logical stage
+            if (!context.Extensions.TryGet<PartitionKey>(out var partitionKey))
+            {
+                throw new Exception("For the outbox to work the following information must be provided at latest up to the incoming physical or logical message stage. A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`");
+            }
+
+            outboxTransaction.PartitionKey = partitionKey;
+
+            var container = context.Extensions.Get<Container>();
+
+            var outboxRecord = await container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions)
                 .ConfigureAwait(false);
 
             if (outboxRecord is null)
             {
-                outboxTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
-
                 await next(context).ConfigureAwait(false);
                 return;
             }
+
+            // Signals that Outbox persister Store and Commit should be no-ops
+            outboxTransaction.SuppressStoreAndCommit = true;
 
             var pendingTransportOperations = context.Extensions.Get<PendingTransportOperations>();
             setter(pendingTransportOperations);

@@ -9,17 +9,14 @@
     using Newtonsoft.Json.Linq;
     using Sagas;
 
-    abstract class SagaModification : Modification
+    abstract class SagaOperation : Operation
     {
         public IContainSagaData SagaData { get; }
 
-        protected SagaModification(IContainSagaData sagaData, ContextBag context) : base(context)
+        protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(context, partitionKey, partitionKeyPath)
         {
             SagaData = sagaData;
         }
-
-        public override PartitionKey PartitionKey => new PartitionKey(SagaData.Id.ToString());
-        public override PartitionKeyPath PartitionKeyPath => new PartitionKeyPath("/Id");
 
         public override void Success(TransactionalBatchOperationResult result)
         {
@@ -27,11 +24,11 @@
         }
     }
 
-    sealed class SagaSave : SagaModification
+    sealed class SagaSave : SagaOperation
     {
         public SagaCorrelationProperty CorrelationProperty { get; }
 
-        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, ContextBag context) : base(sagaData, context)
+        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
         {
             CorrelationProperty = correlationProperty;
         }
@@ -41,7 +38,7 @@
             throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' could not be created possibly due to a concurrency conflict.");
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath)
+        public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
             var jObject = JObject.FromObject(SagaData);
 
@@ -52,7 +49,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
-            EnrichWithPartitionKeyIfNecessary(jObject, partitionKey, partitionKeyPath);
+            EnrichWithPartitionKeyIfNecessary(jObject, PartitionKey, PartitionKeyPath);
 
             // has to be kept open
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
@@ -64,9 +61,9 @@
         }
     }
 
-    sealed class SagaUpdate : SagaModification
+    sealed class SagaUpdate : SagaOperation
     {
-        public SagaUpdate(IContainSagaData sagaData, ContextBag context) : base(sagaData, context)
+        public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
         {
         }
 
@@ -75,7 +72,7 @@
             throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' was updated by another process or no longer exists.");
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath)
+        public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
             var jObject = JObject.FromObject(SagaData);
 
@@ -86,7 +83,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
-            EnrichWithPartitionKeyIfNecessary(jObject, partitionKey, partitionKeyPath);
+            EnrichWithPartitionKeyIfNecessary(jObject, PartitionKey, PartitionKeyPath);
 
             // only update if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{SagaData.Id}", out var updateEtag);
@@ -102,9 +99,9 @@
         }
     }
 
-    sealed class SagaDelete : SagaModification
+    sealed class SagaDelete : SagaOperation
     {
-        public SagaDelete(IContainSagaData sagaData, ContextBag context) : base(sagaData, context)
+        public SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
         {
         }
 
@@ -113,7 +110,7 @@
             throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' can't be completed because it was updated by another process.");
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath)
+        public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
             // only delete if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{SagaData.Id}", out var deleteEtag);

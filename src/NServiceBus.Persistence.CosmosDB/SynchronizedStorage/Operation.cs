@@ -5,16 +5,19 @@
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json.Linq;
 
-    abstract class Modification
+    abstract class Operation
     {
-        protected Modification(ContextBag context)
+        protected Operation(ContextBag context, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath)
         {
             Context = context;
+            PartitionKey = partitionKey;
+            PartitionKeyPath = partitionKeyPath;
         }
 
+        //TODO: what's the purpose of the context bag here?
         public ContextBag Context { get; }
-        public abstract PartitionKey PartitionKey { get; }
-        public abstract PartitionKeyPath PartitionKeyPath { get; }
+        public PartitionKey PartitionKey { get; }
+        public PartitionKeyPath PartitionKeyPath { get; }
 
         public virtual void Success(TransactionalBatchOperationResult result)
         {
@@ -25,7 +28,7 @@
             throw new Exception("Concurrency conflict.");
         }
 
-        public abstract void Apply(TransactionalBatchDecorator transactionalBatch, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath);
+        public abstract void Apply(TransactionalBatchDecorator transactionalBatch);
 
         protected void EnrichWithPartitionKeyIfNecessary(JObject toBeEnriched, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath)
         {

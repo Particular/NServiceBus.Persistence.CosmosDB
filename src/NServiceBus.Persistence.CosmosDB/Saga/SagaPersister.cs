@@ -19,18 +19,36 @@
             serializer = JsonSerializer.Create(jsonSerializerSettings);
         }
 
+        static (PartitionKey partitionKey, PartitionKeyPath partitionKeyPath) GetPartitionKeyAndPartitionKeyValue(ContextBag context, Guid sagaDataId)
+        {
+            if (!context.TryGet<PartitionKey>(out var partitionKey))
+            {
+                partitionKey = new PartitionKey(sagaDataId.ToString());
+            }
+
+            if (!context.TryGet<PartitionKeyPath>(out var partitionKeyPath))
+            {
+                partitionKeyPath = new PartitionKeyPath("/Id");
+            }
+
+            return (partitionKey, partitionKeyPath);
+        }
+
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             var storageSession = (StorageSession)session;
+            var (partitionKey, partitionKeyPath) = GetPartitionKeyAndPartitionKeyValue(context, sagaData.Id);
 
-            storageSession.Modifications.Add(new SagaSave(sagaData, correlationProperty, context));
+            storageSession.AddOperation(new SagaSave(sagaData, correlationProperty, partitionKey, partitionKeyPath, context));
             return Task.CompletedTask;
         }
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
             var storageSession = (StorageSession)session;
-            storageSession.Modifications.Add(new SagaUpdate(sagaData, context));
+            var (partitionKey, partitionKeyPath) = GetPartitionKeyAndPartitionKeyValue(context, sagaData.Id);
+
+            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, partitionKeyPath, context));
             return Task.CompletedTask;
         }
 
@@ -40,9 +58,9 @@
 
             // reads need to go directly
             var container = storageSession.Container;
-            var sagaIdAsString = sagaId.ToString();
-            var partitionKey = storageSession.PartitionKey ?? new PartitionKey(sagaIdAsString);
-            var responseMessage = await container.ReadItemStreamAsync(sagaIdAsString, partitionKey).ConfigureAwait(false);
+            var (partitionKey, _) = GetPartitionKeyAndPartitionKeyValue(context, sagaId);
+
+            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
 
             if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {
@@ -76,7 +94,10 @@
             // TODO: this will allow developers to see that saga will be removed rather than not find it and wonder what happened.
 
             var storageSession = (StorageSession)session;
-            storageSession.Modifications.Add(new SagaDelete(sagaData, context));
+            var (partitionKey, partitionKeyPath) = GetPartitionKeyAndPartitionKeyValue(context, sagaData.Id);
+
+            storageSession.AddOperation(new SagaDelete(sagaData, partitionKey, partitionKeyPath, context));
+
             return Task.CompletedTask;
         }
 

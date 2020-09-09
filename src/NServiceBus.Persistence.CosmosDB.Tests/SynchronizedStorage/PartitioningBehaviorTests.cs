@@ -53,7 +53,7 @@
 
             testableContext.Extensions.Set(new IncomingMessage(messageId, new Dictionary<string, string>(), Array.Empty<byte>()));
             testableContext.Extensions.Set(new LogicalMessage(new MessageMetadata(typeof(object)), null));
-            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction());
+            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(new FakeContainer()));
 
             var pendingTransportOperations = new PendingTransportOperations();
             pendingTransportOperations.Add(new TransportOperation(new OutgoingMessage(null, null, null), null));
