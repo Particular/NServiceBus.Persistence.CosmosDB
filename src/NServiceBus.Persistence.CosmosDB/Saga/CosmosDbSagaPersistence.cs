@@ -21,12 +21,6 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            // var cosmosClient = context.Settings.Get<CosmosClient>(SettingsKeys.CosmosClient);
-            // var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
-            // var sagaMetadataCollection = context.Settings.Get<SagaMetadataCollection>();
-            // var partitionAwareConfiguration = context.Settings.Get<PartitionAwareConfiguration>();
-
-            //context.RegisterStartupTask(new InitializeContainers(cosmosClient, databaseName, sagaMetadataCollection, partitionAwareConfiguration));
 
             context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings), DependencyLifecycle.SingleInstance);
         }
