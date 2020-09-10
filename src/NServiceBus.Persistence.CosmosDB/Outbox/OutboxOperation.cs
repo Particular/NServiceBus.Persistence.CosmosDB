@@ -7,22 +7,15 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    abstract class OutboxOperation : Operation
-    {
-        public OutboxRecord Record { get;  }
-
-        protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(context, partitionKey, partitionKeyPath)
-        {
-            Record = record;
-        }
-    }
-
-    class OutboxStore : OutboxOperation
+    class OutboxStore : Operation
     {
         readonly JsonSerializer serializer;
 
+        public OutboxRecord Record { get; }
+
         public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(context, partitionKey, partitionKeyPath)
         {
+            Record = record;
             this.serializer = serializer;
         }
 
