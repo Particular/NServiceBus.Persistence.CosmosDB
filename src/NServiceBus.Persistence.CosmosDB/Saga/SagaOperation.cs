@@ -49,7 +49,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
-            EnrichWithPartitionKeyIfNecessary(jObject, PartitionKey, PartitionKeyPath);
+            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 
             // has to be kept open
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
@@ -83,7 +83,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
-            EnrichWithPartitionKeyIfNecessary(jObject, PartitionKey, PartitionKeyPath);
+            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 
             // only update if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{SagaData.Id}", out var updateEtag);

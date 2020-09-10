@@ -72,28 +72,6 @@
         public async Task SetAsDispatched(string messageId, ContextBag context)
         {
             var partitionKey = context.Get<PartitionKey>();
-            var partitionKeyPath = context.Get<string>(ContextBagKeys.PartitionKeyPath);
-            var container = context.Get<Container>();
-
-            //TODO: we should probably optimize this a bit and the result might be cacheable but let's worry later
-            var pathToMatch = partitionKeyPath.Replace("/", ".");
-            var segments = pathToMatch.Split(new[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-
-            var start = new JObject();
-            var current = start;
-            for (var i = 0; i < segments.Length; i++)
-            {
-                var segmentName = segments[i];
-
-                if (i == segments.Length - 1)
-                {
-                    current[segmentName] = JArray.Parse(partitionKey.ToString())[0];
-                    continue;
-                }
-
-                current[segmentName] = new JObject();
-                current = current[segmentName] as JObject;
-            }
 
             var outboxRecord = new OutboxRecord
             {
@@ -107,7 +85,7 @@
             // TODO: Make TTL configurable
             createJObject.Add("ttl", 100);
 
-            createJObject.Merge(start);
+            createJObject.EnrichWithPartitionKeyIfNecessary(partitionKey.ToString(), partitionKeyPath);
 
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createJObject))))
             {

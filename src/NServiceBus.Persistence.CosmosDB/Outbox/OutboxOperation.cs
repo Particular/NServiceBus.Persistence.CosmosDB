@@ -34,7 +34,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
-            EnrichWithPartitionKeyIfNecessary(jObject, PartitionKey, PartitionKeyPath);
+            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 
             // has to be kept open
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
