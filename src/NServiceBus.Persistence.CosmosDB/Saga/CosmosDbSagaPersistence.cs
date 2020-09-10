@@ -16,6 +16,7 @@
                 s.EnableFeatureByDefault<SynchronizedStorage>();
                 s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator());
             });
+            DependsOn<SynchronizedStorage>();
             DependsOn<Sagas>();
         }
 

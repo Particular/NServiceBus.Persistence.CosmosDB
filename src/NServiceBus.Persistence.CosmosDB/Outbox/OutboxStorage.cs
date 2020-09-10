@@ -9,6 +9,7 @@
         OutboxStorage()
         {
             Defaults(s => s.EnableFeatureByDefault<SynchronizedStorage>());
+            DependsOn<SynchronizedStorage>();
             DependsOn<Outbox>();
         }
 
