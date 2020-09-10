@@ -21,8 +21,9 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
+            var serializer = new JsonSerializer { ContractResolver = new CosmosDBContractResolver() };
 
-            context.Container.ConfigureComponent(builder => new SagaPersister(serializerSettings), DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent(builder => new SagaPersister(serializer), DependencyLifecycle.SingleInstance);
         }
 
         class InitializeContainers : FeatureStartupTask

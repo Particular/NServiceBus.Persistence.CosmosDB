@@ -18,7 +18,6 @@
 
             context.Container.ConfigureComponent<StorageSessionFactory>(DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionAdapter>(DependencyLifecycle.SingleInstance);
-            context.Pipeline.Register(new PartitioningBehavior(serializerSettings), "Partition Behavior");
         }
     }
 }

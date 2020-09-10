@@ -30,9 +30,9 @@
             setter = Expression.Lambda<Action<PendingTransportOperations>>(assignExp, targetExp).Compile();
         }
 
-        public PartitioningBehavior(JsonSerializerSettings jsonSerializerSettings)
+        public PartitioningBehavior(JsonSerializer serializer)
         {
-            serializer = JsonSerializer.Create(jsonSerializerSettings);
+            this.serializer = serializer;
         }
 
         public async Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)

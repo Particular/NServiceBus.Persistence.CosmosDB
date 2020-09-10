@@ -15,6 +15,7 @@
         protected override void Setup(FeatureConfigurationContext context)
         {
             var client = context.Settings.Get<ClientHolder>(SettingsKeys.CosmosClient).Client;
+            var serializer = new JsonSerializer { ContractResolver = new CosmosDBContractResolver() };
 
             if (client is null)
             {
@@ -29,7 +30,8 @@
             }
 
 
-            context.Container.ConfigureComponent(() => new OutboxPersister(serializerSettings), DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent(builder => new OutboxPersister(builder.Build<ContainerHolder>(), serializer), DependencyLifecycle.SingleInstance);
+            context.Pipeline.Register(new PartitioningBehavior(serializer), "Partition Behavior");
         }
     }
 }

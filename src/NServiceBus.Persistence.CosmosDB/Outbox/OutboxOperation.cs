@@ -19,15 +19,17 @@
 
     class OutboxStore : OutboxOperation
     {
-        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(record, partitionKey, partitionKeyPath, context)
+        readonly JsonSerializer serializer;
+
+        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(context, partitionKey, partitionKeyPath)
         {
+            this.serializer = serializer;
         }
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
-            var jObject = JObject.FromObject(Record);
+            var jObject = JObject.FromObject(Record, serializer);
 
-            jObject.Add("id", Record.Id);
             var metadata = new JObject
             {
                 { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion }

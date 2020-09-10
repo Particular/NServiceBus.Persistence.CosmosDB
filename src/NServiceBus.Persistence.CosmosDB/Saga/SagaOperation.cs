@@ -26,11 +26,14 @@
 
     sealed class SagaSave : SagaOperation
     {
+        readonly JsonSerializer serializer;
+
         public SagaCorrelationProperty CorrelationProperty { get; }
 
-        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
+        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
         {
             CorrelationProperty = correlationProperty;
+            this.serializer = serializer;
         }
 
         public override void Conflict(TransactionalBatchOperationResult result)
@@ -40,9 +43,8 @@
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
-            var jObject = JObject.FromObject(SagaData);
+            var jObject = JObject.FromObject(SagaData, serializer);
 
-            jObject.Add("id", SagaData.Id.ToString());
             var metadata = new JObject
             {
                 { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
@@ -63,8 +65,11 @@
 
     sealed class SagaUpdate : SagaOperation
     {
-        public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
+        readonly JsonSerializer serializer;
+
+        public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
         {
+            this.serializer = serializer;
         }
 
         public override void Conflict(TransactionalBatchOperationResult result)
@@ -74,9 +79,8 @@
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
-            var jObject = JObject.FromObject(SagaData);
+            var jObject = JObject.FromObject(SagaData, serializer);
 
-            jObject.Add("id", SagaData.Id.ToString());
             var metadata = new JObject
             {
                 { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }

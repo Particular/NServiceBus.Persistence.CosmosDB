@@ -13,11 +13,10 @@
 
     class OutboxPersister : IOutboxStorage
     {
-        JsonSerializer serializer;
 
-        public OutboxPersister(JsonSerializerSettings jsonSerializerSettings)
+        public OutboxPersister(JsonSerializer serializer)
         {
-            serializer = JsonSerializer.Create(jsonSerializerSettings);
+            this.serializer = serializer;
         }
 
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
@@ -65,6 +64,7 @@
                 },
                 cosmosTransaction.PartitionKey.Value,
                 partitionKeyPath,
+                serializer,
                 context));
             return Task.CompletedTask;
         }
@@ -79,15 +79,14 @@
                 Dispatched = true
             };
 
-            var createJObject = JObject.FromObject(outboxRecord);
-            createJObject.Add("id", outboxRecord.Id);
+            var createJObject = JObject.FromObject(outboxRecord, serializer);
 
             // TODO: Make TTL configurable
             createJObject.Add("ttl", 100);
 
             createJObject.EnrichWithPartitionKeyIfNecessary(partitionKey.ToString(), partitionKeyPath);
 
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createJObject))))
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(createJObject.ToString(Formatting.None))))
             {
                 var result = await container.UpsertItemStreamAsync(stream, partitionKey).ConfigureAwait(false);
 
@@ -99,5 +98,6 @@
         }
 
         internal static readonly string SchemaVersion = "1.0.0";
+        readonly JsonSerializer serializer;
     }
 }

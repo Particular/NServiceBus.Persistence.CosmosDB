@@ -14,9 +14,9 @@
     {
         JsonSerializer serializer;
 
-        public SagaPersister(JsonSerializerSettings jsonSerializerSettings)
+        public SagaPersister(JsonSerializer serializer)
         {
-            serializer = JsonSerializer.Create(jsonSerializerSettings);
+            this.serializer = serializer;
         }
 
         static (PartitionKey partitionKey, PartitionKeyPath partitionKeyPath) GetPartitionKeyAndPartitionKeyValue(ContextBag context, Guid sagaDataId)
@@ -39,7 +39,7 @@
             var storageSession = (StorageSession)session;
             var (partitionKey, partitionKeyPath) = GetPartitionKeyAndPartitionKeyValue(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaSave(sagaData, correlationProperty, partitionKey, partitionKeyPath, context));
+            storageSession.AddOperation(new SagaSave(sagaData, correlationProperty, partitionKey, partitionKeyPath, serializer, context));
             return Task.CompletedTask;
         }
 
@@ -48,7 +48,7 @@
             var storageSession = (StorageSession)session;
             var (partitionKey, partitionKeyPath) = GetPartitionKeyAndPartitionKeyValue(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, partitionKeyPath, context));
+            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, partitionKeyPath, serializer, context));
             return Task.CompletedTask;
         }
 
