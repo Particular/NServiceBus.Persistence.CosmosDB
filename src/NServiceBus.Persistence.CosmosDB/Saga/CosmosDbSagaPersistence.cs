@@ -23,7 +23,6 @@
         {
             // var cosmosClient = context.Settings.Get<CosmosClient>(SettingsKeys.CosmosClient);
             // var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
-            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
             // var sagaMetadataCollection = context.Settings.Get<SagaMetadataCollection>();
             // var partitionAwareConfiguration = context.Settings.Get<PartitionAwareConfiguration>();
 

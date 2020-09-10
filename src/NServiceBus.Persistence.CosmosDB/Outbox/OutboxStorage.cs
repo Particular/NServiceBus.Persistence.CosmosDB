@@ -28,7 +28,6 @@
                 throw new Exception("No message partition mappings were found. Use persistence.Partition() to configure mappings.");
             }
 
-            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
 
             context.Container.ConfigureComponent(() => new OutboxPersister(serializerSettings), DependencyLifecycle.SingleInstance);
         }

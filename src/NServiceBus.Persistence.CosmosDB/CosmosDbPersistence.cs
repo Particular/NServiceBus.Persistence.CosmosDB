@@ -13,7 +13,6 @@
     {
         internal CosmosDbPersistence()
         {
-            Defaults(s => s.Set(SettingsKeys.Sagas.JsonSerializerSettings, new JsonSerializerSettings()));
 
             Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<CosmosDbSagaPersistence>());
             Supports<StorageType.Outbox>(s => s.EnableFeatureByDefault<OutboxStorage>());
