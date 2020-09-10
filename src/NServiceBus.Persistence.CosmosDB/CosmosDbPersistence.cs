@@ -13,6 +13,10 @@
     {
         internal CosmosDbPersistence()
         {
+            Defaults(s => {
+                s.SetDefault(SettingsKeys.DatabaseName, "NServiceBus");
+                s.SetDefault(SettingsKeys.ContainerName, s.EndpointName());
+            });
 
             Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<CosmosDbSagaPersistence>());
             Supports<StorageType.Outbox>(s => s.EnableFeatureByDefault<OutboxStorage>());

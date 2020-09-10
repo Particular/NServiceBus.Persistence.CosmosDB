@@ -14,8 +14,10 @@
     class OutboxPersister : IOutboxStorage
     {
 
-        public OutboxPersister(JsonSerializer serializer)
+        public OutboxPersister(ContainerHolder containerHolder, JsonSerializer serializer)
         {
+            container = containerHolder.Container;
+            partitionKeyPath = containerHolder.PartitionKeyPath;
             this.serializer = serializer;
         }
 
@@ -99,5 +101,7 @@
 
         internal static readonly string SchemaVersion = "1.0.0";
         readonly JsonSerializer serializer;
+        readonly Container container;
+        readonly string partitionKeyPath;
     }
 }
