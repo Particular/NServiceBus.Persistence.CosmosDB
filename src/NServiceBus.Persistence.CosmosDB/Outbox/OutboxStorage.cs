@@ -15,13 +15,7 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var client = context.Settings.Get<ClientHolder>(SettingsKeys.CosmosClient).Client;
             var serializer = new JsonSerializer { ContractResolver = new CosmosDBContractResolver() };
-
-            if (client is null)
-            {
-                throw new Exception("You must configure a CosmosClient or provide a connection string");
-            }
 
             var partitionConfig = context.Settings.Get<PartitionAwareConfiguration>();
 
