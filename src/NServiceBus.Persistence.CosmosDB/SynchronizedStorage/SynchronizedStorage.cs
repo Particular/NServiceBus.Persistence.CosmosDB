@@ -2,7 +2,6 @@
 {
     using System;
     using Features;
-    using Microsoft.Azure.Cosmos;
 
     class SynchronizedStorage : Feature
     {
@@ -17,26 +16,11 @@
 
             var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
             var containerName = context.Settings.Get<string>(SettingsKeys.ContainerName);
-
-            if (!context.Settings.TryGet<PartitionKeyPath>(out var partitionKeyPath))
-            {
-                partitionKeyPath = new PartitionKeyPath(string.Empty); //TODO: What is the right default? "id"?
-            }
+            var partitionKeyPath = context.Settings.Get<PartitionKeyPath>();
 
             var container = client.GetContainer(databaseName, containerName);
 
             var containerHolder = new ContainerHolder(container, partitionKeyPath);
-
-            var installersEnabled = true; //TODO: HOW?!
-
-            if (installersEnabled) //TODO: add logging - look for a nice message
-            {
-                client.CreateDatabaseIfNotExistsAsync(databaseName).GetAwaiter().GetResult();
-
-                var database = client.GetDatabase(databaseName);
-
-                database.CreateContainerIfNotExistsAsync(new ContainerProperties(containerName, partitionKeyPath)).GetAwaiter().GetResult();
-            }
 
             context.Container.ConfigureComponent(() => containerHolder, DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionFactory>(DependencyLifecycle.SingleInstance);

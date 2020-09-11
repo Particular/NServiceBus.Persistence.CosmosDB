@@ -95,6 +95,7 @@
 
         public void Dispose()
         {
+            operations.Clear();
         }
 
         readonly bool commitOnComplete;

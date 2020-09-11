@@ -8,18 +8,10 @@
     using Microsoft.Azure.Cosmos.Fluent;
     using NUnit.Framework;
     using Persistence.CosmosDB;
-    using Settings;
 
     [SetUpFixture]
     public class SetupFixture
     {
-        public const string DatabaseName = "CosmosDBPersistence";
-        public const string PartitionPathKey = "/deep/down";
-        public static string ContainerName;
-        public static CosmosClient CosmosDbClient;
-        public static Container Container;
-        static double totalRequestCharges = 0;
-
         [OneTimeSetUp]
         public async Task OneTimeSetUp()
         {
@@ -37,20 +29,14 @@
 
             CosmosDbClient = builder.Build();
 
-            // should we ever need the test variant we have a problem
-            var persistenceTestConfiguration = new PersistenceTestsConfiguration(new TestVariant("default"));
-
-            var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
-            var config = new PartitionAwareConfiguration(persistenceSettings);
-            // we actually don't really care about the mapping function on this level, we just need the path
-            config.AddPartitionMappingForMessageType<object>((headers,
-                    id,
-                    message) => new PartitionKey("partitionKey"),
-                SetupFixture.ContainerName,
-                SetupFixture.PartitionPathKey);
-
-            await CosmosDbClient.CreateDatabaseIfNotExistsAsync(DatabaseName);
-            await CosmosDbClient.PopulateContainers(DatabaseName, persistenceTestConfiguration.SagaMetadataCollection, config, cheat: true);
+            await CosmosDBPersistenceInstaller.CreateContainerIfNotExists(new InstallerSettings
+            {
+                Client = CosmosDbClient,
+                ContainerName = ContainerName,
+                DatabaseName = DatabaseName,
+                Disabled = false,
+                PartitionKeyPath = PartitionPathKey
+            });
 
             var database = CosmosDbClient.GetDatabase(DatabaseName);
             Container = database.GetContainer(ContainerName);
@@ -67,6 +53,13 @@
             var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
             return string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
         }
+
+        public const string DatabaseName = "CosmosDBPersistence";
+        public const string PartitionPathKey = "/deep/down";
+        public static string ContainerName;
+        public static CosmosClient CosmosDbClient;
+        public static Container Container;
+        static double totalRequestCharges;
 
         class LoggingHandler : RequestHandler
         {
