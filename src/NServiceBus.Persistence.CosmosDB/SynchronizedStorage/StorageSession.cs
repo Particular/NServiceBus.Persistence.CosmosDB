@@ -29,7 +29,6 @@
             Dispose();
         }
 
-        // TODO: is this enough to be thread safe or do we need to worry about concurrent access?
         public void AddOperation(Operation operation)
         {
             var operationPartitionKey = operation.PartitionKey;
