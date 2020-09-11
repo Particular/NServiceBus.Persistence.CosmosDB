@@ -18,9 +18,12 @@
     using Transport;
     using TransportOperation = Transport.TransportOperation;
 
-    class PartitioningBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
+    /// <summary>
+    /// Mimics the outbox behavior as part of the logical phase. This type is public so that it isn't renamed and it can be used to register logical behaviors before this behavior
+    /// </summary>
+    public sealed class LogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        static PartitioningBehavior()
+        static LogicalOutboxBehavior()
         {
             var field = typeof(PendingTransportOperations).GetField("operations", BindingFlags.NonPublic | BindingFlags.Instance);
             var targetExp = Expression.Parameter(typeof(PendingTransportOperations), "target");
@@ -30,11 +33,12 @@
             setter = Expression.Lambda<Action<PendingTransportOperations>>(assignExp, targetExp).Compile();
         }
 
-        public PartitioningBehavior(JsonSerializer serializer)
+        internal LogicalOutboxBehavior(JsonSerializer serializer)
         {
             this.serializer = serializer;
         }
 
+        /// <inheritdoc />
         public async Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
         {
             if (!context.Extensions.TryGet<OutboxTransaction>(out var transaction))

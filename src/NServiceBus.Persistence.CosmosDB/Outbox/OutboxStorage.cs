@@ -17,7 +17,7 @@
             var serializer = new JsonSerializer {ContractResolver = new CosmosDBContractResolver()};
 
             context.Container.ConfigureComponent(builder => new OutboxPersister(builder.Build<ContainerHolder>(), serializer), DependencyLifecycle.SingleInstance);
-            context.Pipeline.Register(new PartitioningBehavior(serializer), "Partition Behavior");
+            context.Pipeline.Register(new LogicalOutboxBehavior(serializer), "Behavior that mimics the outbox as part of the logical stage.");
         }
     }
 }

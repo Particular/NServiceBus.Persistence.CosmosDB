@@ -19,7 +19,7 @@
     using TransportOperation = NServiceBus.Outbox.TransportOperation;
 
     [TestFixture]
-    public class PartitioningBehaviorTests
+    public class LogicalOutboxBehaviorTests
     {
         [Test]
         public async Task Should_clear_added_pending_operations_and_restore_ones_from_outbox_record()
@@ -45,7 +45,7 @@
                 }
             };
 
-            var behavior = new PartitioningBehavior(new JsonSerializer());
+            var behavior = new LogicalOutboxBehavior(new JsonSerializer());
 
             var testableContext = new TestableIncomingLogicalMessageContext();
 
