@@ -2,13 +2,13 @@
 {
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
-    using NServiceBus.Settings;
     using Persistence.CosmosDB;
+    using Settings;
 
     /// <summary>
     /// Configuration extensions for CosmosDB Core API Persistence
     /// </summary>
-    public static partial class CosmosDbPersistenceConfig
+    public static class CosmosDbPersistenceConfig
     {
         /// <summary>
         /// Override the default CosmosClient creation by providing a pre-configured CosmosClient
@@ -18,7 +18,7 @@
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(cosmosClient), cosmosClient);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder { Client = cosmosClient });
+            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = cosmosClient});
             return persistenceExtensions;
         }
 
@@ -30,7 +30,7 @@
         {
             Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient,new ClientHolder { Client = new CosmosClient(connectionString) });
+            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = new CosmosClient(connectionString)});
 
             return persistenceExtensions;
         }
@@ -67,8 +67,6 @@
     /// </summary>
     public class ContainerSettings
     {
-        readonly SettingsHolder settings;
-
         /// <summary>
         /// </summary>
         public ContainerSettings(SettingsHolder settings)
@@ -77,7 +75,6 @@
         }
 
         /// <summary>
-        ///
         /// </summary>
         /// <param name="partitionKeyPath"></param>
         public void UsePartitionKeyPath(string partitionKeyPath)
@@ -86,5 +83,7 @@
 
             settings.Set(new PartitionKeyPath(partitionKeyPath));
         }
+
+        readonly SettingsHolder settings;
     }
 }
