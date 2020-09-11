@@ -51,7 +51,7 @@
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 
-            // has to be kept open
+            // Has to be kept open for transaction batch to be able to use the stream
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
             var options = new TransactionalBatchItemRequestOptions
             {
