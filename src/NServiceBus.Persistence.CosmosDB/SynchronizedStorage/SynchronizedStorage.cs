@@ -20,9 +20,7 @@
 
             var container = client.GetContainer(databaseName, containerName);
 
-            var containerHolder = new ContainerHolder(container, partitionKeyPath);
-
-            context.Container.ConfigureComponent(() => containerHolder, DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent(() => new ContainerHolder(container, partitionKeyPath), DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionFactory>(DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionAdapter>(DependencyLifecycle.SingleInstance);
         }

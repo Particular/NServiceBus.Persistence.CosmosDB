@@ -23,7 +23,6 @@
 
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
         {
-            var container = context.Get<Container>();
             var cosmosOutboxTransaction = new CosmosOutboxTransaction(container);
 
             if (context.TryGet<PartitionKey>(out var partitionKey))
@@ -36,7 +35,7 @@
 
         public async Task<OutboxMessage> Get(string messageId, ContextBag context)
         {
-            if (!context.TryGet<PartitionKey>(out var partitionKey) || !context.TryGet<Container>(out var container))
+            if (!context.TryGet<PartitionKey>(out var partitionKey))
             {
                 // we return null here to enable outbox work at logical stage
                 return null;
