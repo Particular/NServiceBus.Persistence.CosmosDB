@@ -1,24 +1,38 @@
-﻿using System;
-using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-
-namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System;
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Serialization;
+
     class CosmosDBContractResolver : DefaultContractResolver
     {
-        protected override string ResolvePropertyName(string propertyName) => propertyName.Equals("Id") ? "id" : base.ResolvePropertyName(propertyName);
-
-        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
+        protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
-            var property = base.CreateProperty(member, memberSerialization);
-
-            if (property.PropertyName.Equals("Id", StringComparison.Ordinal))
+            var properties = base.CreateProperties(type, memberSerialization);
+            foreach (var property in properties)
             {
-                property.PropertyName = "id";
+                if (!property.PropertyName.Equals("Id", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                properties.Add(new JsonProperty
+                {
+                    PropertyName = "id",
+                    UnderlyingName = "id",
+                    PropertyType = property.PropertyType,
+                    AttributeProvider = property.AttributeProvider,
+                    ValueProvider = property.ValueProvider,
+                    Readable = property.Readable,
+                    Writable = property.Writable,
+                    ItemIsReference = false,
+                    TypeNameHandling = TypeNameHandling.None,
+                });
+                return properties;
             }
 
-            return property;
+            return properties;
         }
     }
 }
