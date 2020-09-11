@@ -47,7 +47,7 @@
                 }
             };
 
-            var behavior = new PartitioningBehavior(new JsonSerializerSettings());
+            var behavior = new PartitioningBehavior(new JsonSerializer());
 
             var testableContext = new TestableIncomingLogicalMessageContext();
 
