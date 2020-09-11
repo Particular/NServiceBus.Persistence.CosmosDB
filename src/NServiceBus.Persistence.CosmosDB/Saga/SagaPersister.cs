@@ -1,54 +1,37 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.IO;
     using System.Net;
     using System.Threading.Tasks;
     using Extensibility;
-    using Sagas;
-    using Persistence;
-    using Newtonsoft.Json;
-    using System.IO;
     using Microsoft.Azure.Cosmos;
+    using Newtonsoft.Json;
+    using Sagas;
 
     class SagaPersister : ISagaPersister
     {
-        JsonSerializer serializer;
-
-        public SagaPersister(JsonSerializer serializer)
+        public SagaPersister(ContainerHolder containerHolder, JsonSerializer serializer)
         {
+            this.containerHolder = containerHolder;
             this.serializer = serializer;
-        }
-
-        static (PartitionKey partitionKey, PartitionKeyPath partitionKeyPath) GetPartitionKeyAndPartitionKeyValue(ContextBag context, Guid sagaDataId)
-        {
-            if (!context.TryGet<PartitionKey>(out var partitionKey))
-            {
-                partitionKey = new PartitionKey(sagaDataId.ToString());
-            }
-
-            if (!context.TryGet<PartitionKeyPath>(out var partitionKeyPath))
-            {
-                partitionKeyPath = new PartitionKeyPath("/Id");
-            }
-
-            return (partitionKey, partitionKeyPath);
         }
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             var storageSession = (StorageSession)session;
-            var (partitionKey, partitionKeyPath) = GetPartitionKeyAndPartitionKeyValue(context, sagaData.Id);
+            var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaSave(sagaData, correlationProperty, partitionKey, partitionKeyPath, serializer, context));
+            storageSession.AddOperation(new SagaSave(sagaData, correlationProperty, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
             return Task.CompletedTask;
         }
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
             var storageSession = (StorageSession)session;
-            var (partitionKey, partitionKeyPath) = GetPartitionKeyAndPartitionKeyValue(context, sagaData.Id);
+            var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, partitionKeyPath, serializer, context));
+            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
             return Task.CompletedTask;
         }
 
@@ -58,11 +41,11 @@
 
             // reads need to go directly
             var container = storageSession.Container;
-            var (partitionKey, _) = GetPartitionKeyAndPartitionKeyValue(context, sagaId);
+            var partitionKey = GetPartitionKey(context, sagaId);
 
             var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
 
-            if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+            if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {
                 return default;
             }
@@ -94,12 +77,25 @@
             // TODO: this will allow developers to see that saga will be removed rather than not find it and wonder what happened.
 
             var storageSession = (StorageSession)session;
-            var (partitionKey, partitionKeyPath) = GetPartitionKeyAndPartitionKeyValue(context, sagaData.Id);
+            var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaDelete(sagaData, partitionKey, partitionKeyPath, context));
+            storageSession.AddOperation(new SagaDelete(sagaData, partitionKey, containerHolder.PartitionKeyPath, context));
 
             return Task.CompletedTask;
         }
+
+        static PartitionKey GetPartitionKey(ContextBag context, Guid sagaDataId)
+        {
+            if (!context.TryGet<PartitionKey>(out var partitionKey))
+            {
+                partitionKey = new PartitionKey(sagaDataId.ToString());
+            }
+
+            return partitionKey;
+        }
+
+        readonly ContainerHolder containerHolder;
+        JsonSerializer serializer;
 
         internal static readonly string SchemaVersion = "1.0.0";
     }
