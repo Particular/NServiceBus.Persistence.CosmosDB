@@ -15,18 +15,18 @@
                 {
                     var result = batchOutcomeResponse[i];
 
-                    if (operationMappings.TryGetValue(i, out var modification))
+                    if (operationMappings.TryGetValue(i, out var operation))
                     {
                         if (result.IsSuccessStatusCode)
                         {
-                            modification.Success(result);
+                            operation.Success(result);
                             continue;
                         }
 
                         if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
                         {
                             // guaranteed to throw
-                            modification.Conflict(result);
+                            operation.Conflict(result);
                         }
                     }
 
