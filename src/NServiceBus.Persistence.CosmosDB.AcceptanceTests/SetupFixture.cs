@@ -2,46 +2,16 @@
 {
     using System;
     using System.IO;
-    using System.Linq;
-    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
-    using Sagas;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
-    using NServiceBus.Sagas;
     using NUnit.Framework;
     using Persistence.CosmosDB;
-    using Settings;
 
     [SetUpFixture]
     public class SetupFixture
     {
-        public const string DatabaseName = "CosmosDBPersistence";
-        public const string PartitionPathKey = "/deep/down";
-        public static string ContainerName;
-        public static CosmosClient CosmosDbClient;
-        public static Container Container;
-        public static PartitionAwareConfiguration config;
-        static double totalRequestCharges = 0;
-        SagaMetadataCollection sagaMetadataCollection;
-
-        public SagaMetadataCollection SagaMetadataCollection
-        {
-            get
-            {
-                if (sagaMetadataCollection == null)
-                {
-                    var sagaTypes = Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(Saga).IsAssignableFrom(t) || typeof(IFindSagas<>).IsAssignableFrom(t) || typeof(IFinder).IsAssignableFrom(t)).ToArray();
-                    sagaMetadataCollection = new SagaMetadataCollection();
-                    sagaMetadataCollection.Initialize(sagaTypes);
-                }
-
-                return sagaMetadataCollection;
-            }
-            set { sagaMetadataCollection = value; }
-        }
-
         [OneTimeSetUp]
         public async Task OneTimeSetUp()
         {
@@ -59,16 +29,14 @@
 
             CosmosDbClient = builder.Build();
 
-            var persistenceSettings = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
-            config = new PartitionAwareConfiguration(persistenceSettings);
-            // we actually don't really care about the mapping function on this level, we just need the path
-            config.AddPartitionMappingForMessageType<When_message_has_a_saga_id.MessageWithSagaId>((h, id, m)=> new PartitionKey(m.DataId.ToString()), SetupFixture.ContainerName, PartitionPathKey);
-            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.StartMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, PartitionPathKey);
-            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.ContinueMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, PartitionPathKey);
-            config.AddPartitionMappingForMessageType<When_handling_concurrent_messages.FinishMsg>((h, id, m)=> new PartitionKey(m.OrderId), SetupFixture.ContainerName, PartitionPathKey);
-
-            await CosmosDbClient.CreateDatabaseIfNotExistsAsync(DatabaseName);
-            await CosmosDbClient.PopulateContainers(DatabaseName, SagaMetadataCollection, config);
+            await CosmosDBPersistenceInstaller.CreateContainerIfNotExists(new InstallerSettings
+            {
+                Client = CosmosDbClient,
+                ContainerName = ContainerName,
+                DatabaseName = DatabaseName,
+                Disabled = false,
+                PartitionKeyPath = PartitionPathKey
+            });
 
             var database = CosmosDbClient.GetDatabase(DatabaseName);
             Container = database.GetContainer(ContainerName);
@@ -86,6 +54,13 @@
             var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
             return string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
         }
+
+        public const string DatabaseName = "CosmosDBPersistence";
+        public const string PartitionPathKey = "/deep/down";
+        public static string ContainerName;
+        public static CosmosClient CosmosDbClient;
+        public static Container Container;
+        static double totalRequestCharges;
 
         class LoggingHandler : RequestHandler
         {

@@ -18,9 +18,12 @@
     using Transport;
     using TransportOperation = Transport.TransportOperation;
 
-    class PartitioningBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
+    /// <summary>
+    /// Mimics the outbox behavior as part of the logical phase. This type is public so that it isn't renamed and it can be used to register logical behaviors before this behavior
+    /// </summary>
+    public sealed class LogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        static PartitioningBehavior()
+        static LogicalOutboxBehavior()
         {
             var field = typeof(PendingTransportOperations).GetField("operations", BindingFlags.NonPublic | BindingFlags.Instance);
             var targetExp = Expression.Parameter(typeof(PendingTransportOperations), "target");
@@ -30,28 +33,14 @@
             setter = Expression.Lambda<Action<PendingTransportOperations>>(assignExp, targetExp).Compile();
         }
 
-        public PartitioningBehavior(JsonSerializerSettings jsonSerializerSettings, string databaseName, CosmosClient cosmosClient, PartitionAwareConfiguration partitionAwareConfiguration)
+        internal LogicalOutboxBehavior(JsonSerializer serializer)
         {
-            this.databaseName = databaseName;
-            this.cosmosClient = cosmosClient;
-            this.partitionAwareConfiguration = partitionAwareConfiguration;
-            serializer = JsonSerializer.Create(jsonSerializerSettings);
+            this.serializer = serializer;
         }
 
+        /// <inheritdoc />
         public async Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
         {
-            var incomingMessage = context.Extensions.Get<IncomingMessage>();
-            var logicalMessage = context.Extensions.Get<LogicalMessage>();
-
-            var partitionKey = partitionAwareConfiguration.MapMessageToPartition(incomingMessage.Headers, incomingMessage.MessageId, logicalMessage.MessageType, logicalMessage.Instance);
-            var containerName = partitionAwareConfiguration.MapMessageToContainer(logicalMessage.MessageType);
-            var partitionKeyPath = partitionAwareConfiguration.MapMessageToPartitionKeyPath(logicalMessage.MessageType);
-            var container = cosmosClient.GetContainer(databaseName, containerName);
-
-            context.Extensions.Set(partitionKey);
-            context.Extensions.Set(container);
-            context.Extensions.Set(ContextBagKeys.PartitionKeyPath, partitionKeyPath);
-
             if (!context.Extensions.TryGet<OutboxTransaction>(out var transaction))
             {
                 await next(context).ConfigureAwait(false);
@@ -64,16 +53,34 @@
                 return;
             }
 
-            var outboxRecord = await container.ReadOutboxRecord(context.MessageId, partitionKey, serializer, context.Extensions)
+            // Normal outbox operating at the physical stage
+            if (outboxTransaction.PartitionKey.HasValue)
+            {
+                await next(context).ConfigureAwait(false);
+                return;
+            }
+
+            // Outbox operating at the logical stage
+            if (!context.Extensions.TryGet<PartitionKey>(out var partitionKey) && partitionKey != PartitionKey.Null)
+            {
+                throw new Exception("For the outbox to work the following information must be provided at latest up to the incoming physical or logical message stage. A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`");
+            }
+
+            outboxTransaction.PartitionKey = partitionKey;
+
+            var container = context.Extensions.Get<Container>();
+
+            var outboxRecord = await container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions)
                 .ConfigureAwait(false);
 
             if (outboxRecord is null)
             {
-                outboxTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
-
                 await next(context).ConfigureAwait(false);
                 return;
             }
+
+            // Signals that Outbox persister Store and Commit should be no-ops
+            outboxTransaction.SuppressStoreAndCommit = true;
 
             var pendingTransportOperations = context.Extensions.Get<PendingTransportOperations>();
             setter(pendingTransportOperations);
@@ -132,9 +139,6 @@
             throw new Exception("Could not find routing strategy to deserialize");
         }
 
-        readonly string databaseName;
-        readonly CosmosClient cosmosClient;
-        readonly PartitionAwareConfiguration partitionAwareConfiguration;
         JsonSerializer serializer;
         static Action<PendingTransportOperations> setter;
     }

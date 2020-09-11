@@ -2,17 +2,16 @@
 {
     using System.Threading.Tasks;
     using Extensibility;
-    using Microsoft.Azure.Cosmos;
 
     class StorageSessionFactory : ISynchronizedStorage
     {
-        public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag)
-        {
-            var partitionKey = contextBag.Get<PartitionKey>();
-            var partitionKeyPath = contextBag.Get<string>(ContextBagKeys.PartitionKeyPath);
-            var container = contextBag.Get<Container>();
+        readonly ContainerHolder containerHolder;
 
-            return Task.FromResult<CompletableSynchronizedStorageSession>(new StorageSession(container, partitionKey, partitionKeyPath, true));
+        public StorageSessionFactory(ContainerHolder containerHolder)
+        {
+            this.containerHolder = containerHolder;
         }
+
+        public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag) => Task.FromResult<CompletableSynchronizedStorageSession>(new StorageSession(containerHolder.Container, true));
     }
 }

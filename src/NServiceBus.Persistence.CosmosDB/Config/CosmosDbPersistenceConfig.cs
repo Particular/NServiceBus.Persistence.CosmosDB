@@ -7,7 +7,7 @@
     /// <summary>
     /// Configuration extensions for CosmosDB Core API Persistence
     /// </summary>
-    public static partial class CosmosDbPersistenceConfig
+    public static class CosmosDbPersistenceConfig
     {
         /// <summary>
         /// Override the default CosmosClient creation by providing a pre-configured CosmosClient
@@ -17,7 +17,7 @@
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(cosmosClient), cosmosClient);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder { Client = cosmosClient });
+            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = cosmosClient});
             return persistenceExtensions;
         }
 
@@ -29,7 +29,7 @@
         {
             Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient,new ClientHolder { Client = new CosmosClient(connectionString) });
+            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = new CosmosClient(connectionString)});
 
             return persistenceExtensions;
         }
@@ -42,6 +42,21 @@
             Guard.AgainstNullAndEmpty(nameof(databaseName), databaseName);
 
             persistenceExtensions.GetSettings().Set(SettingsKeys.DatabaseName, databaseName);
+
+            return persistenceExtensions;
+        }
+
+        /// <summary>
+        /// Sets container name and the partition key path
+        /// </summary>
+        public static PersistenceExtensions<CosmosDbPersistence> Container(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string containerName, string partitionKeyPath)
+        {
+            Guard.AgainstNullAndEmpty(nameof(containerName), containerName);
+
+            var settings = persistenceExtensions.GetSettings();
+
+            settings.Set(SettingsKeys.ContainerName, containerName);
+            settings.Set(new PartitionKeyPath(partitionKeyPath));
 
             return persistenceExtensions;
         }

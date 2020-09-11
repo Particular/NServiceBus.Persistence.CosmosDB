@@ -1,8 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos;
 using NServiceBus;
+using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Pipeline;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
 {
@@ -13,11 +17,13 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             return Task.FromResult(0);
         }
 
-        configuration.GetSettings().Set(SetupFixture.config);
-
         var persistence = configuration.UsePersistence<CosmosDbPersistence>();
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
+
+        persistence.Container(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
+
+        configuration.Pipeline.Register(typeof(PartitionKeyProviderBehavior), "Populates the partition key");
 
         return Task.FromResult(0);
     }
@@ -25,5 +31,22 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
     public Task Cleanup()
     {
         return Task.CompletedTask;
+    }
+
+    class PartitionKeyProviderBehavior : Behavior<ITransportReceiveContext>
+    {
+        ScenarioContext scenarioContext;
+
+        public PartitionKeyProviderBehavior(ScenarioContext scenarioContext)
+        {
+            this.scenarioContext = scenarioContext;
+        }
+
+        public override Task Invoke(ITransportReceiveContext context, Func<Task> next)
+        {
+            context.Extensions.Set(new PartitionKey(scenarioContext.TestRunId.ToString()));
+            context.Extensions.Set(new PartitionKeyPath(SetupFixture.PartitionPathKey));
+            return next();
+        }
     }
 }

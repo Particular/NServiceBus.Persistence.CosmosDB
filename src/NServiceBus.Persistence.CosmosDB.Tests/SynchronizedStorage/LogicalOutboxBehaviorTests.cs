@@ -14,49 +14,47 @@
     using NServiceBus.Outbox;
     using NUnit.Framework;
     using Outbox;
-    using Pipeline;
-    using Settings;
     using Testing;
     using Transport;
-    using Unicast.Messages;
-    using TransportOperation = Transport.TransportOperation;
+    using TransportOperation = NServiceBus.Outbox.TransportOperation;
 
     [TestFixture]
-    public class PartitioningBehaviorTests
+    public class LogicalOutboxBehaviorTests
     {
         [Test]
         public async Task Should_clear_added_pending_operations_and_restore_ones_from_outbox_record()
         {
-            var persistenceExtensions = new PersistenceExtensions<CosmosDbPersistence>(new SettingsHolder());
-            var partitionAwareConfiguration = persistenceExtensions.Partition();
-            partitionAwareConfiguration.AddPartitionMappingForMessageType<object>((h, id, m) => new PartitionKey(""), "", "");
-
             var messageId = Guid.NewGuid().ToString();
 
-            var fakeCosmosClient = new FakeCosmosClient();
-            fakeCosmosClient.Container.ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord
+            var fakeCosmosClient = new FakeCosmosClient
             {
-                Dispatched = false,
-                Id = messageId,
-                TransportOperations = new []
+                Container =
                 {
-                    new NServiceBus.Outbox.TransportOperation("42", new Dictionary<string, string>
+                    ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord
                     {
-                        { "Destination", "somewhere" }
-                    }, Array.Empty<byte>(), new Dictionary<string, string>()),
+                        Dispatched = false,
+                        Id = messageId,
+                        TransportOperations = new[]
+                        {
+                            new TransportOperation("42", new Dictionary<string, string>
+                            {
+                                {"Destination", "somewhere"}
+                            }, Array.Empty<byte>(), new Dictionary<string, string>()),
+                        }
+                    }
                 }
             };
 
-            var behavior = new PartitioningBehavior(new JsonSerializerSettings(), "", fakeCosmosClient, partitionAwareConfiguration);
+            var behavior = new LogicalOutboxBehavior(new JsonSerializer());
 
             var testableContext = new TestableIncomingLogicalMessageContext();
 
-            testableContext.Extensions.Set(new IncomingMessage(messageId, new Dictionary<string, string>(), Array.Empty<byte>()));
-            testableContext.Extensions.Set(new LogicalMessage(new MessageMetadata(typeof(object)), null));
-            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction());
+            testableContext.Extensions.Set(new PartitionKey(""));
+            testableContext.Extensions.Set<Container>(fakeCosmosClient.Container);
+            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(fakeCosmosClient.Container));
 
             var pendingTransportOperations = new PendingTransportOperations();
-            pendingTransportOperations.Add(new TransportOperation(new OutgoingMessage(null, null, null), null));
+            pendingTransportOperations.Add(new Transport.TransportOperation(new OutgoingMessage(null, null, null), null));
             testableContext.Extensions.Set(pendingTransportOperations);
 
             await behavior.Invoke(testableContext, c => Task.CompletedTask);
@@ -90,6 +88,11 @@
 
     class FakeContainer : Container
     {
+        public override string Id { get; }
+        public override Database Database { get; }
+        public override Conflicts Conflicts { get; }
+        public override Scripts Scripts { get; }
+
         public override Task<ContainerResponse> ReadContainerAsync(ContainerRequestOptions requestOptions = null, CancellationToken cancellationToken = new CancellationToken())
         {
             throw new NotImplementedException();
@@ -149,8 +152,6 @@
         {
             throw new NotImplementedException();
         }
-
-        public Func<string, PartitionKey, OutboxRecord> ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord();
 
         public override Task<ResponseMessage> ReadItemStreamAsync(string id, PartitionKey partitionKey, ItemRequestOptions requestOptions = null, CancellationToken cancellationToken = new CancellationToken())
         {
@@ -236,9 +237,6 @@
             throw new NotImplementedException();
         }
 
-        public override string Id { get; }
-        public override Database Database { get; }
-        public override Conflicts Conflicts { get; }
-        public override Scripts Scripts { get; }
+        public Func<string, PartitionKey, OutboxRecord> ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord();
     }
 }

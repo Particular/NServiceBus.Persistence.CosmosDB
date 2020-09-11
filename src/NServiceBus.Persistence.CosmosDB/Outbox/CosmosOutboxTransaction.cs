@@ -1,14 +1,29 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
     using System.Threading.Tasks;
+    using Microsoft.Azure.Cosmos;
     using NServiceBus.Outbox;
 
     class CosmosOutboxTransaction : OutboxTransaction
     {
-        public StorageSession StorageSession { get; set; }
-        
+        public StorageSession StorageSession { get; }
+        public PartitionKey? PartitionKey { get; set; }
+
+        // By default, store and commit are enabled
+        public bool SuppressStoreAndCommit { get; set; }
+
+        public CosmosOutboxTransaction(Container container)
+        {
+            StorageSession = new StorageSession(container, false);
+        }
+
         public Task Commit()
         {
+            if (SuppressStoreAndCommit)
+            {
+                return Task.CompletedTask;
+            }
+
             return StorageSession.Commit();
         }
 

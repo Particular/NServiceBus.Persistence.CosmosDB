@@ -1,41 +1,47 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
-    using System;
-    using System.IO;
-    using System.Net;
-    using System.Text;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
-    using Extensibility;
     using NServiceBus.Outbox;
 
     class OutboxPersister : IOutboxStorage
     {
-        JsonSerializer serializer;
-
-        public OutboxPersister(JsonSerializerSettings jsonSerializerSettings)
+        public OutboxPersister(ContainerHolder containerHolder, JsonSerializer serializer)
         {
-            serializer = JsonSerializer.Create(jsonSerializerSettings);
+            this.containerHolder = containerHolder;
+            this.serializer = serializer;
         }
 
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
         {
-            return Task.FromResult((OutboxTransaction)new CosmosOutboxTransaction());
+            var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolder.Container);
+
+            if (context.TryGet<PartitionKey>(out var partitionKey))
+            {
+                cosmosOutboxTransaction.PartitionKey = partitionKey;
+            }
+            else
+            {
+                // hack so it is possible to override it in the logical phase
+                context.Set(PartitionKey.Null);
+            }
+
+
+            return Task.FromResult((OutboxTransaction)cosmosOutboxTransaction);
         }
 
         public async Task<OutboxMessage> Get(string messageId, ContextBag context)
         {
-            // backdoor to enable the outbox tests to pass but in theory someone could add it if they want
-            if (!context.TryGet<PartitionKey>(out var partitionKey) || !context.TryGet<Container>(out var container))
+            if (!context.TryGet<PartitionKey>(out var partitionKey))
             {
-                // we should always return null to make the outbox "hack" work
+                // we return null here to enable outbox work at logical stage
                 return null;
             }
 
-            // this path is really only ever reached during testing
-            var outboxRecord = await container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
+            var outboxRecord = await containerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
                 .ConfigureAwait(false);
 
             return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations) : null;
@@ -43,26 +49,21 @@
 
         public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context)
         {
-            var cosmosTransaction = transaction as CosmosOutboxTransaction;
+            var cosmosTransaction = (CosmosOutboxTransaction)transaction;
 
-            if (cosmosTransaction == null)
+            if (cosmosTransaction == null || cosmosTransaction.SuppressStoreAndCommit || cosmosTransaction.PartitionKey == null)
             {
                 return Task.CompletedTask;
             }
 
-            // backdoor to enable the outbox tests to pass but in theory someone could add it if they want
-            if (context.TryGet<PartitionKey>(out var partitionKey) &&
-                context.TryGet<Container>(out var container) &&
-                context.TryGet<string>(ContextBagKeys.PartitionKeyPath, out var partitionKeyPath))
-            {
-                cosmosTransaction.StorageSession = new StorageSession(container, partitionKey, partitionKeyPath, false);
-            }
-
-            cosmosTransaction.StorageSession?.Modifications.Add(new OutboxStore(new OutboxRecord
+            cosmosTransaction.StorageSession.AddOperation(new OutboxStore(new OutboxRecord
                 {
                     Id = message.MessageId,
                     TransportOperations = message.TransportOperations
                 },
+                cosmosTransaction.PartitionKey.Value,
+                containerHolder.PartitionKeyPath,
+                serializer,
                 context));
             return Task.CompletedTask;
         }
@@ -70,53 +71,27 @@
         public async Task SetAsDispatched(string messageId, ContextBag context)
         {
             var partitionKey = context.Get<PartitionKey>();
-            var partitionKeyPath = context.Get<string>(ContextBagKeys.PartitionKeyPath);
-            var container = context.Get<Container>();
 
-            //TODO: we should probably optimize this a bit and the result might be cacheable but let's worry later
-            var pathToMatch = partitionKeyPath.Replace("/", ".");
-            var segments = pathToMatch.Split(new[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-
-            var start = new JObject();
-            var current = start;
-            for (var i = 0; i < segments.Length; i++)
-            {
-                var segmentName = segments[i];
-
-                if (i == segments.Length - 1)
-                {
-                    current[segmentName] = JArray.Parse(partitionKey.ToString())[0];
-                    continue;
-                }
-
-                current[segmentName] = new JObject();
-                current = current[segmentName] as JObject;
-            }
-
-            var outboxRecord = new OutboxRecord
+            var operation = new OutboxDelete(new OutboxRecord
             {
                 Id = messageId,
                 Dispatched = true
-            };
+            }, partitionKey, containerHolder.PartitionKeyPath, serializer, context);
 
-            var createJObject = JObject.FromObject(outboxRecord);
-            createJObject.Add("id", outboxRecord.Id);
-
-            // TODO: Make TTL configurable
-            createJObject.Add("ttl", 100);
-
-            createJObject.Merge(start);
-
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createJObject))))
+            using (var transactionalBatch = new TransactionalBatchDecorator(containerHolder.Container.CreateTransactionalBatch(partitionKey)))
             {
-                var result = await container.UpsertItemStreamAsync(stream, partitionKey).ConfigureAwait(false);
-
-                if (result.StatusCode == HttpStatusCode.BadRequest)
+                var dictionary = new Dictionary<int, Operation>
                 {
-                    throw new Exception($"Unable to update the outbox record: {result.ErrorMessage}");
-                }
+                    {0, operation}
+                };
+                operation.Apply(transactionalBatch);
+
+                await transactionalBatch.Execute(dictionary).ConfigureAwait(false);
             }
         }
+
+        readonly JsonSerializer serializer;
+        readonly ContainerHolder containerHolder;
 
         internal static readonly string SchemaVersion = "1.0.0";
     }

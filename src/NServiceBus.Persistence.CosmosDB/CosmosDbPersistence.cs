@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus
 {
     using Features;
-    using Newtonsoft.Json;
     using Persistence;
     using Persistence.CosmosDB;
     using Persistence.CosmosDB.Outbox;
@@ -13,7 +12,12 @@
     {
         internal CosmosDbPersistence()
         {
-            Defaults(s => s.Set(SettingsKeys.Sagas.JsonSerializerSettings, new JsonSerializerSettings()));
+            Defaults(s =>
+            {
+                s.SetDefault(SettingsKeys.DatabaseName, "NServiceBus");
+                s.SetDefault(SettingsKeys.ContainerName, s.EndpointName());
+                s.SetDefault(new PartitionKeyPath("/Id"));
+            });
 
             Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<CosmosDbSagaPersistence>());
             Supports<StorageType.Outbox>(s => s.EnableFeatureByDefault<OutboxStorage>());

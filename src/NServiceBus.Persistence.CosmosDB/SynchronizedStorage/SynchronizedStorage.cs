@@ -2,7 +2,6 @@
 {
     using System;
     using Features;
-    using Newtonsoft.Json;
 
     class SynchronizedStorage : Feature
     {
@@ -16,19 +15,14 @@
             }
 
             var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
+            var containerName = context.Settings.Get<string>(SettingsKeys.ContainerName);
+            var partitionKeyPath = context.Settings.Get<PartitionKeyPath>();
 
-            var partitionConfig = context.Settings.Get<PartitionAwareConfiguration>();
+            var container = client.GetContainer(databaseName, containerName);
 
-            if (partitionConfig is null)
-            {
-                throw new Exception("No message partition mappings were found. Use persistence.Partition() to configure mappings.");
-            }
-
-            var serializerSettings = context.Settings.Get<JsonSerializerSettings>(SettingsKeys.Sagas.JsonSerializerSettings);
-
+            context.Container.ConfigureComponent(() => new ContainerHolder(container, partitionKeyPath), DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionFactory>(DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<StorageSessionAdapter>(DependencyLifecycle.SingleInstance);
-            context.Pipeline.Register(new PartitioningBehavior(serializerSettings, databaseName, client, partitionConfig), "Partition Behavior");
         }
     }
 }

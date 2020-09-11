@@ -1,35 +1,37 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.IO;
     using System.Net;
     using System.Threading.Tasks;
     using Extensibility;
-    using Sagas;
-    using Persistence;
+    using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
-    using System.IO;
+    using Sagas;
 
     class SagaPersister : ISagaPersister
     {
-        JsonSerializer serializer;
-
-        public SagaPersister(JsonSerializerSettings jsonSerializerSettings)
+        public SagaPersister(ContainerHolder containerHolder, JsonSerializer serializer)
         {
-            serializer = JsonSerializer.Create(jsonSerializerSettings);
+            this.containerHolder = containerHolder;
+            this.serializer = serializer;
         }
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
         {
             var storageSession = (StorageSession)session;
+            var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.Modifications.Add(new SagaSave(sagaData, correlationProperty, context));
+            storageSession.AddOperation(new SagaSave(sagaData, correlationProperty, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
             return Task.CompletedTask;
         }
 
         public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
             var storageSession = (StorageSession)session;
-            storageSession.Modifications.Add(new SagaUpdate(sagaData, context));
+            var partitionKey = GetPartitionKey(context, sagaData.Id);
+
+            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
             return Task.CompletedTask;
         }
 
@@ -39,9 +41,11 @@
 
             // reads need to go directly
             var container = storageSession.Container;
-            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), storageSession.PartitionKey).ConfigureAwait(false);
+            var partitionKey = GetPartitionKey(context, sagaId);
 
-            if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
+
+            if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {
                 return default;
             }
@@ -73,9 +77,25 @@
             // TODO: this will allow developers to see that saga will be removed rather than not find it and wonder what happened.
 
             var storageSession = (StorageSession)session;
-            storageSession.Modifications.Add(new SagaDelete(sagaData, context));
+            var partitionKey = GetPartitionKey(context, sagaData.Id);
+
+            storageSession.AddOperation(new SagaDelete(sagaData, partitionKey, containerHolder.PartitionKeyPath, context));
+
             return Task.CompletedTask;
         }
+
+        static PartitionKey GetPartitionKey(ContextBag context, Guid sagaDataId)
+        {
+            if (!context.TryGet<PartitionKey>(out var partitionKey))
+            {
+                partitionKey = new PartitionKey(sagaDataId.ToString());
+            }
+
+            return partitionKey;
+        }
+
+        readonly ContainerHolder containerHolder;
+        JsonSerializer serializer;
 
         internal static readonly string SchemaVersion = "1.0.0";
     }

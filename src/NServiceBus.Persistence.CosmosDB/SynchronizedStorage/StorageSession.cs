@@ -2,52 +2,26 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Net;
-    using System.Text;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
-    using Outbox;
 
-    class StorageSession : CompletableSynchronizedStorageSession, ITransactionalBatchProvider
+    class StorageSession : CompletableSynchronizedStorageSession
     {
-        public StorageSession(Container container, PartitionKey partitionKey, string partitionKeyPath, bool ownsBatch)
+        // When outbox is involved, commitOnComplete will be false
+        public StorageSession(Container container, bool commitOnComplete)
         {
-            this.ownsBatch = ownsBatch;
-            this.partitionKeyPath = partitionKeyPath;
             Container = container;
-            PartitionKey = partitionKey;
+            this.commitOnComplete = commitOnComplete;
         }
-
-        public Container Container { get; }
-
-        public TransactionalBatch TransactionalBatch
-        {
-            get
-            {
-                if (transactionalBatchDecorator == null)
-                {
-                    transactionalBatchDecorator = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(PartitionKey));
-                }
-
-                return transactionalBatchDecorator;
-            }
-        }
-
-        public PartitionKey PartitionKey { get; }
-
-        public List<Modification> Modifications { get; } = new List<Modification>();
 
         Task CompletableSynchronizedStorageSession.CompleteAsync()
         {
-            return ownsBatch ? Commit() : Task.CompletedTask;
+            return commitOnComplete ? Commit() : Task.CompletedTask;
         }
 
         void IDisposable.Dispose()
         {
-            if (!ownsBatch)
+            if (!commitOnComplete)
             {
                 return;
             }
@@ -55,179 +29,45 @@
             Dispose();
         }
 
+        public void AddOperation(Operation operation)
+        {
+            var operationPartitionKey = operation.PartitionKey;
+
+            if (!operations.ContainsKey(operationPartitionKey))
+            {
+                operations.Add(operationPartitionKey, new Dictionary<int, Operation>());
+            }
+
+            var index = operations[operationPartitionKey].Count;
+            operations[operationPartitionKey].Add(index, operation);
+        }
+
         public async Task Commit()
         {
-            var partitionKey = JArray.Parse(PartitionKey.ToString())[0];
-
-            // we should probably optimize this a bit and the result might be cacheable but let's worry later
-            var pathToMatch = partitionKeyPath.Replace("/", ".");
-            var segments = pathToMatch.Split(new[]{ "." }, StringSplitOptions.RemoveEmptyEntries);
-
-            var start = new JObject();
-            var current = start;
-            for (var i = 0; i < segments.Length; i++)
+            foreach (var batchOfOperations in operations)
             {
-                var segmentName = segments[i];
-
-                if(i == segments.Length -1)
+                using (var transactionalBatch = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(batchOfOperations.Key)))
                 {
-                    current[segmentName] = partitionKey;
-                    continue;
-                }
+                    var batchedOperations = batchOfOperations.Value.Values;
 
-                current[segmentName] = new JObject();
-                current = current[segmentName] as JObject;
-            }
-
-            var mappingDictionary = new Dictionary<int, Modification>();
-            foreach (var modification in Modifications)
-            {
-                switch (modification)
-                {
-                    case OutboxStore outboxStore:
-                        var createOutboxJObject = JObject.FromObject(outboxStore.Record);
-
-                        createOutboxJObject.Add("id", outboxStore.Record.Id);
-                        var saveOutboxMetadata = new JObject
-                        {
-                            { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion }
-                        };
-                        createOutboxJObject.Add(MetadataExtensions.MetadataKey,saveOutboxMetadata);
-
-                        // promote it if not there, what if the user has it and the key doesn't match?
-                        var createdOutboxMatchToken = createOutboxJObject.SelectToken(pathToMatch);
-                        if (createdOutboxMatchToken == null)
-                        {
-                            createOutboxJObject.Merge(start);
-                        }
-
-                        // has to be kept open
-                        var createOutboxStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createOutboxJObject)));
-                        var createOutboxOptions = new TransactionalBatchItemRequestOptions
-                        {
-                            EnableContentResponseOnWrite = false
-                        };
-                        TransactionalBatch.CreateItemStream(createOutboxStream, createOutboxOptions);
-                        mappingDictionary[transactionalBatchDecorator.Index] = outboxStore;
-                        break;
-                    case SagaSave sagaSave:
-                        var createJObject = JObject.FromObject(sagaSave.SagaData);
-
-                        createJObject.Add("id", sagaSave.SagaData.Id.ToString());
-                        var saveMetadata = new JObject
-                        {
-                            { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
-                        };
-                        createJObject.Add(MetadataExtensions.MetadataKey,saveMetadata);
-
-                        // promote it if not there, what if the user has it and the key doesn't match?
-                        var createdMatchToken = createJObject.SelectToken(pathToMatch);
-                        if (createdMatchToken == null)
-                        {
-                            createJObject.Merge(start);
-                        }
-
-                        // has to be kept open
-                        var createStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(createJObject)));
-                        var createOptions = new TransactionalBatchItemRequestOptions
-                        {
-                            EnableContentResponseOnWrite = false
-                        };
-                        TransactionalBatch.CreateItemStream(createStream, createOptions);
-                        mappingDictionary[transactionalBatchDecorator.Index] = sagaSave;
-                        break;
-
-                    case SagaUpdate sagaUpdate:
-                        var updateJObject = JObject.FromObject(sagaUpdate.SagaData);
-
-                        updateJObject.Add("id", sagaUpdate.SagaData.Id.ToString());
-                        var UpdateMetadata = new JObject
-                        {
-                            { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
-                        };
-                        updateJObject.Add(MetadataExtensions.MetadataKey,UpdateMetadata);
-
-                        // promote it if not there, what if the user has it and the key doesn't match?
-                        var updatedMatchToken = updateJObject.SelectToken(pathToMatch);
-                        if (updatedMatchToken == null)
-                        {
-                            updateJObject.Merge(start);
-                        }
-
-                        // only update if we have the same version as in CosmosDB
-                        sagaUpdate.Context.TryGet<string>($"cosmos_etag:{sagaUpdate.SagaData.Id}", out var updateEtag);
-                        var updateOptions = new TransactionalBatchItemRequestOptions
-                        {
-                            IfMatchEtag = updateEtag,
-                            EnableContentResponseOnWrite = false,
-                        };
-
-                        // has to be kept open
-                        var updateStream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(updateJObject)));
-                        TransactionalBatch.ReplaceItemStream(sagaUpdate.SagaData.Id.ToString(), updateStream, updateOptions);
-                        mappingDictionary[transactionalBatchDecorator.Index] = sagaUpdate;
-                        break;
-
-                    case SagaDelete sagaDelete:
-
-                        // only delete if we have the same version as in CosmosDB
-                        sagaDelete.Context.TryGet<string>($"cosmos_etag:{sagaDelete.SagaData.Id}", out var deleteEtag);
-                        var deleteOptions = new TransactionalBatchItemRequestOptions {IfMatchEtag = deleteEtag};
-                        TransactionalBatch.DeleteItem(sagaDelete.SagaData.Id.ToString(), deleteOptions);
-                        mappingDictionary[transactionalBatchDecorator.Index] = sagaDelete;
-                        break;
-
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(modification));
-                }
-            }
-
-            if (transactionalBatchDecorator == null || !transactionalBatchDecorator.CanBeExecuted)
-            {
-                return;
-            }
-
-            using (var batchOutcomeResponse = await transactionalBatchDecorator.Inner.ExecuteAsync().ConfigureAwait(false))
-            {
-                for (var i = 0; i < batchOutcomeResponse.Count; i++)
-                {
-                    var result = batchOutcomeResponse[i];
-
-                    if (mappingDictionary.TryGetValue(i, out var modification))
+                    foreach (var operation in batchedOperations)
                     {
-                        if (result.IsSuccessStatusCode)
-                        {
-                            modification.Success(result);
-                            continue;
-                        }
-
-                        if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
-                        {
-                            // guaranteed to throw
-                            modification.Conflict(result);
-                        }
+                        operation.Apply(transactionalBatch);
                     }
 
-                    if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
-                    {
-                        throw new Exception("Concurrency conflict.");
-                    }
-
-                    if(result.StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        throw new Exception("Bad request. Quite likely the partition key did not match");
-                    }
+                    await transactionalBatch.Execute(batchOfOperations.Value).ConfigureAwait(false);
                 }
             }
         }
 
         public void Dispose()
         {
-            transactionalBatchDecorator?.Dispose();
+            operations.Clear();
         }
 
-        TransactionalBatchDecorator transactionalBatchDecorator;
-        string partitionKeyPath;
-        readonly bool ownsBatch;
+        readonly bool commitOnComplete;
+        public Container Container { get; }
+
+        readonly Dictionary<PartitionKey, Dictionary<int, Operation>> operations = new Dictionary<PartitionKey, Dictionary<int, Operation>>();
     }
 }
