@@ -43,10 +43,7 @@
     <Compile Remove="\**\TimeToBeReceived\*.*" />
     <Compile Remove="\**\Tx\**\*.*" />
     <Compile Remove="\**\Versioning\*.*" />
-    <Compile Remove="\**\Sagas\**\When_correlation*.*" />
-    <Compile Remove="\**\Sagas\**\When_saga*.*" />
     <Compile Remove="\**\Sagas\**\When_r*.*" />
-    <Compile Remove="\**\Sagas\**\When_s*.*" />
     <Compile Remove="\**\Sagas\**\When_t*.*" />
     <Compile Remove="\**\Sagas\**\When_u*.*" />
     <Compile Remove="\**\Sagas\**\When_c*.*" />
