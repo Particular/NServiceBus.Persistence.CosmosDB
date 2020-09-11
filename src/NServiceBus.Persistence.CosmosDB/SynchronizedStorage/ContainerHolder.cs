@@ -1,14 +1,16 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using Microsoft.Azure.Cosmos;
+
     class ContainerHolder
     {
-        public ContainerHolder(Microsoft.Azure.Cosmos.Container container, PartitionKeyPath partitionKeyPath)
+        public ContainerHolder(Container container, PartitionKeyPath partitionKeyPath)
         {
             Container = container;
             PartitionKeyPath = partitionKeyPath;
         }
 
-        public Microsoft.Azure.Cosmos.Container Container { get; set; }
-        public string PartitionKeyPath { get; set; }
+        public Container Container { get; set; }
+        public PartitionKeyPath PartitionKeyPath { get; set; }
     }
 }

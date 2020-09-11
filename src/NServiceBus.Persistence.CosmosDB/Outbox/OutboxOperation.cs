@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
+    using System;
     using System.IO;
     using System.Text;
     using Extensibility;
@@ -7,21 +8,29 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    class OutboxStore : Operation
+    abstract class OutboxOperation : Operation
     {
-        readonly JsonSerializer serializer;
+        public OutboxRecord Record { get;  }
 
-        public OutboxRecord Record { get; }
-
-        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(context, partitionKey, partitionKeyPath)
+        protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
         {
             Record = record;
-            this.serializer = serializer;
+        }
+        public override void Success(TransactionalBatchOperationResult result)
+        {
+            Context.Set($"cosmos_etag:{Record.Id}", result.ETag);
+        }
+    }
+
+    class OutboxStore : OutboxOperation
+    {
+        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
+        {
         }
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
-            var jObject = JObject.FromObject(Record, serializer);
+            var jObject = JObject.FromObject(Record, Serializer);
 
             var metadata = new JObject
             {
@@ -38,6 +47,36 @@
                 EnableContentResponseOnWrite = false
             };
             transactionalBatch.CreateItemStream(stream, options);
+        }
+    }
+
+
+    class OutboxDelete : OutboxOperation
+    {
+        public OutboxDelete(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
+        {
+        }
+
+        public override void Apply(TransactionalBatchDecorator transactionalBatch)
+        {
+            var jObject = JObject.FromObject(Record, Serializer);
+            // TODO: Make TTL configurable
+            jObject.Add("ttl", 100);
+
+            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
+
+            // has to be kept open
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(jObject.ToString(Formatting.None)));
+            var options = new TransactionalBatchItemRequestOptions
+            {
+                EnableContentResponseOnWrite = false
+            };
+            transactionalBatch.UpsertItemStream(stream, options);
+        }
+
+        public override void Conflict(TransactionalBatchOperationResult result)
+        {
+            throw new Exception($"The outbox record with id '{Record.Id}' could not be marked as dispatched, it was updated by another process.");
         }
     }
 }

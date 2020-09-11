@@ -13,7 +13,7 @@
     {
         public IContainSagaData SagaData { get; }
 
-        protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(context, partitionKey, partitionKeyPath)
+        protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
         {
             SagaData = sagaData;
         }
@@ -26,14 +26,12 @@
 
     sealed class SagaSave : SagaOperation
     {
-        readonly JsonSerializer serializer;
-
         public SagaCorrelationProperty CorrelationProperty { get; }
 
-        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
+        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
+            : base(sagaData, partitionKey, partitionKeyPath, serializer, context)
         {
             CorrelationProperty = correlationProperty;
-            this.serializer = serializer;
         }
 
         public override void Conflict(TransactionalBatchOperationResult result)
@@ -43,7 +41,7 @@
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
-            var jObject = JObject.FromObject(SagaData, serializer);
+            var jObject = JObject.FromObject(SagaData, Serializer);
 
             var metadata = new JObject
             {
@@ -65,11 +63,8 @@
 
     sealed class SagaUpdate : SagaOperation
     {
-        readonly JsonSerializer serializer;
-
-        public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
+        public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, serializer, context)
         {
-            this.serializer = serializer;
         }
 
         public override void Conflict(TransactionalBatchOperationResult result)
@@ -79,7 +74,7 @@
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
-            var jObject = JObject.FromObject(SagaData, serializer);
+            var jObject = JObject.FromObject(SagaData, Serializer);
 
             var metadata = new JObject
             {
@@ -105,7 +100,7 @@
 
     sealed class SagaDelete : SagaOperation
     {
-        public SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, context)
+        public SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, null, context)
         {
         }
 

@@ -3,20 +3,23 @@
     using System;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
+    using Newtonsoft.Json;
 
     abstract class Operation
     {
-        protected Operation(ContextBag context, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath)
+        protected Operation(PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
         {
-            Context = context;
             PartitionKey = partitionKey;
             PartitionKeyPath = partitionKeyPath;
+            Serializer = serializer;
+            Context = context;
         }
 
         //TODO: what's the purpose of the context bag here?
         public ContextBag Context { get; }
         public PartitionKey PartitionKey { get; }
         public PartitionKeyPath PartitionKeyPath { get; }
+        public JsonSerializer Serializer { get; }
 
         public virtual void Success(TransactionalBatchOperationResult result)
         {

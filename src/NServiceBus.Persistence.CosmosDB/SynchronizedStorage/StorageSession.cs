@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
 
@@ -57,38 +56,7 @@
                         operation.Apply(transactionalBatch);
                     }
 
-                    using (var batchOutcomeResponse = await transactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
-                    {
-                        for (var i = 0; i < batchOutcomeResponse.Count; i++)
-                        {
-                            var result = batchOutcomeResponse[i];
-
-                            if (batchOfOperations.Value.TryGetValue(i, out var modification))
-                            {
-                                if (result.IsSuccessStatusCode)
-                                {
-                                    modification.Success(result);
-                                    continue;
-                                }
-
-                                if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
-                                {
-                                    // guaranteed to throw
-                                    modification.Conflict(result);
-                                }
-                            }
-
-                            if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
-                            {
-                                throw new Exception("Concurrency conflict.");
-                            }
-
-                            if (result.StatusCode == HttpStatusCode.BadRequest)
-                            {
-                                throw new Exception("Bad request. Quite likely the partition key did not match");
-                            }
-                        }
-                    }
+                    await transactionalBatch.Execute(batchOfOperations.Value).ConfigureAwait(false);
                 }
             }
         }
@@ -102,6 +70,5 @@
         public Container Container { get; }
 
         readonly Dictionary<PartitionKey, Dictionary<int, Operation>> operations = new Dictionary<PartitionKey, Dictionary<int, Operation>>();
-
     }
 }
