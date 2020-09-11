@@ -43,7 +43,6 @@
     <Compile Remove="\**\TimeToBeReceived\*.*" />
     <Compile Remove="\**\Tx\**\*.*" />
     <Compile Remove="\**\Versioning\*.*" />
-    <Compile Remove="\**\Outbox\**\*.*" />
     <Compile Remove="\**\Sagas\**\When_correlation*.*" />
     <Compile Remove="\**\Sagas\**\When_saga*.*" />
     <Compile Remove="\**\Sagas\**\When_r*.*" />
@@ -54,5 +53,5 @@
     <Compile Remove="\**\Sagas\**\When_doing*.*" />
     <Compile Remove="\**\Sagas\**\When_an_end*.*" />
   </ItemGroup>
-    
+
 </Project>
