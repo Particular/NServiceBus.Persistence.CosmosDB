@@ -23,6 +23,12 @@
             {
                 cosmosOutboxTransaction.PartitionKey = partitionKey;
             }
+            else
+            {
+                // hack so it is possible to override it in the logical phase
+                context.Set(PartitionKey.Null);
+            }
+
 
             return Task.FromResult((OutboxTransaction)cosmosOutboxTransaction);
         }
