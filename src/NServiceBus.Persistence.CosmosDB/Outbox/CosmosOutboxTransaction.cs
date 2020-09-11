@@ -9,7 +9,8 @@
         public StorageSession StorageSession { get; }
         public PartitionKey? PartitionKey { get; set; }
 
-        public bool SuppressStoreAndCommit { get; set; } = false;
+        // By default, store and commit are enabled
+        public bool SuppressStoreAndCommit { get; set; }
 
         public CosmosOutboxTransaction(Container container)
         {
