@@ -14,10 +14,8 @@
     using NServiceBus.Outbox;
     using NUnit.Framework;
     using Outbox;
-    using Pipeline;
     using Testing;
     using Transport;
-    using Unicast.Messages;
     using TransportOperation = NServiceBus.Outbox.TransportOperation;
 
     [TestFixture]
