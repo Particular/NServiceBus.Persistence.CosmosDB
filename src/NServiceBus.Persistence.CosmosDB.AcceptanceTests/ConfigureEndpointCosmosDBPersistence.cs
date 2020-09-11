@@ -21,8 +21,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        var containerSettings = persistence.Container(SetupFixture.ContainerName);
-        containerSettings.UsePartitionKeyPath(SetupFixture.PartitionPathKey);
+        persistence.Container(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
 
         configuration.Pipeline.Register(typeof(PartitionKeyProviderBehavior), "Populates the partition key");
 

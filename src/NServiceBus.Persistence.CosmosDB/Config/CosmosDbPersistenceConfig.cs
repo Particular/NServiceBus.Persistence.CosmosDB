@@ -3,7 +3,6 @@
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;
-    using Settings;
 
     /// <summary>
     /// Configuration extensions for CosmosDB Core API Persistence
@@ -48,42 +47,18 @@
         }
 
         /// <summary>
-        /// Sets the database name
+        /// Sets container name and the partition key path
         /// </summary>
-        public static ContainerSettings Container(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string containerName) //TODO: I am sure this is right, but I wanted to capture the requirement
+        public static PersistenceExtensions<CosmosDbPersistence> Container(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string containerName, string partitionKeyPath)
         {
             Guard.AgainstNullAndEmpty(nameof(containerName), containerName);
 
             var settings = persistenceExtensions.GetSettings();
 
             settings.Set(SettingsKeys.ContainerName, containerName);
-
-            return new ContainerSettings(settings);
-        }
-    }
-
-    /// <summary>
-    /// Settings for the Cosmos DB container (collection)
-    /// </summary>
-    public class ContainerSettings
-    {
-        /// <summary>
-        /// </summary>
-        public ContainerSettings(SettingsHolder settings)
-        {
-            this.settings = settings;
-        }
-
-        /// <summary>
-        /// </summary>
-        /// <param name="partitionKeyPath"></param>
-        public void UsePartitionKeyPath(string partitionKeyPath)
-        {
-            Guard.AgainstNullAndEmpty(nameof(partitionKeyPath), partitionKeyPath);
-
             settings.Set(new PartitionKeyPath(partitionKeyPath));
-        }
 
-        readonly SettingsHolder settings;
+            return persistenceExtensions;
+        }
     }
 }
