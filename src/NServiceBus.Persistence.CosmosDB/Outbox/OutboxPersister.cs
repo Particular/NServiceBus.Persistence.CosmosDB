@@ -50,15 +50,13 @@
                 return Task.CompletedTask;
             }
 
-            var partitionKeyPath = context.Get<PartitionKeyPath>();
-
             cosmosTransaction.StorageSession.AddOperation(new OutboxStore(new OutboxRecord
                 {
                     Id = message.MessageId,
                     TransportOperations = message.TransportOperations
                 },
                 cosmosTransaction.PartitionKey.Value,
-                partitionKeyPath,
+                containerHolder.PartitionKeyPath,
                 serializer,
                 context));
             return Task.CompletedTask;

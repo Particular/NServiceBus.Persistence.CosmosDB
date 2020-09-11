@@ -50,7 +50,6 @@
             {
                 var contextBag = new ContextBag();
                 contextBag.Set(new PartitionKey(partitionKey));
-                contextBag.Set(new PartitionKeyPath(containerHolder.PartitionKeyPath));
                 contextBag.Set(SetupFixture.Container);
                 return contextBag;
             };
@@ -59,7 +58,6 @@
             {
                 var contextBag = new ContextBag();
                 contextBag.Set(new PartitionKey(partitionKey));
-                contextBag.Set(new PartitionKeyPath(containerHolder.PartitionKeyPath));
                 contextBag.Set(SetupFixture.Container);
                 return contextBag;
             };
