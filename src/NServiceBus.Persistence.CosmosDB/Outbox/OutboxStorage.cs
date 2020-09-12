@@ -8,7 +8,11 @@
     {
         OutboxStorage()
         {
-            Defaults(s => s.EnableFeatureByDefault<SynchronizedStorage>());
+            Defaults(s =>
+            {
+                s.SetDefault(SettingsKeys.OutboxTimeToLiveInSeconds, (int)TimeSpan.FromDays(7).TotalSeconds);
+                s.EnableFeatureByDefault<SynchronizedStorage>();
+            });
             DependsOn<SynchronizedStorage>();
             DependsOn<Outbox>();
         }
