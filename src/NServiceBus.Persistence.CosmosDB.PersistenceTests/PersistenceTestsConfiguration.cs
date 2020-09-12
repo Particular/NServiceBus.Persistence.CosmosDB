@@ -44,7 +44,7 @@
 
             SynchronizedStorage = new StorageSessionFactory(containerHolder);
             SagaStorage = new SagaPersister(containerHolder, serializer);
-            OutboxStorage = new OutboxPersister(containerHolder, serializer);
+            OutboxStorage = new OutboxPersister(containerHolder, serializer, 100);
 
             GetContextBagForSagaStorage = () =>
             {

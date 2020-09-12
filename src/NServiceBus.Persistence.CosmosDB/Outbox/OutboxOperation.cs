@@ -53,15 +53,18 @@
 
     class OutboxDelete : OutboxOperation
     {
-        public OutboxDelete(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
+        readonly int ttlInSeconds;
+
+        public OutboxDelete(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, int ttlInSeconds, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
         {
+            this.ttlInSeconds = ttlInSeconds;
         }
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
             var jObject = JObject.FromObject(Record, Serializer);
-            // TODO: Make TTL configurable
-            jObject.Add("ttl", 100);
+
+            jObject.Add("ttl", ttlInSeconds);
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 

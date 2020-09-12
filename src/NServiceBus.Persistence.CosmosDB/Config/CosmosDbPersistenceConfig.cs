@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus
 {
+    using System;
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;
@@ -57,6 +58,18 @@
 
             settings.Set(SettingsKeys.ContainerName, containerName);
             settings.Set(new PartitionKeyPath(partitionKeyPath));
+
+            return persistenceExtensions;
+        }
+
+        /// <summary>
+        /// Sets the time to live for outbox deduplication records
+        /// </summary>
+        public static PersistenceExtensions<CosmosDbPersistence> TimeToKeepOutboxDeduplicationData(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, TimeSpan timeToKeepOutboxDeduplicationData)
+        {
+            Guard.AgainstNegativeAndZero(nameof(timeToKeepOutboxDeduplicationData), timeToKeepOutboxDeduplicationData);
+
+            persistenceExtensions.GetSettings().Set(SettingsKeys.OutboxTimeToLiveInSeconds, (int)timeToKeepOutboxDeduplicationData.TotalSeconds);
 
             return persistenceExtensions;
         }
