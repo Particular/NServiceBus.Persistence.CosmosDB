@@ -61,17 +61,5 @@
 
             return persistenceExtensions;
         }
-
-        /// <summary>
-        /// Sets the time to live for outbox deduplication records
-        /// </summary>
-        public static PersistenceExtensions<CosmosDbPersistence> TimeToKeepOutboxDeduplicationData(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, TimeSpan timeToKeepOutboxDeduplicationData)
-        {
-            Guard.AgainstNegativeAndZero(nameof(timeToKeepOutboxDeduplicationData), timeToKeepOutboxDeduplicationData);
-
-            persistenceExtensions.GetSettings().Set(SettingsKeys.OutboxTimeToLiveInSeconds, (int)timeToKeepOutboxDeduplicationData.TotalSeconds);
-
-            return persistenceExtensions;
-        }
     }
 }
