@@ -14,6 +14,7 @@
         {
             Defaults(s =>
             {
+                s.SetDefault(new InstallerSettings());
                 s.SetDefault(SettingsKeys.DatabaseName, "NServiceBus");
                 s.SetDefault(SettingsKeys.ContainerName, s.EndpointName());
                 s.SetDefault(new PartitionKeyPath("/Id"));

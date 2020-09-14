@@ -5,13 +5,13 @@
     using Installation;
     using Logging;
     using Microsoft.Azure.Cosmos;
-    using Settings;
 
     class CosmosDBPersistenceInstaller : INeedToInstallSomething
     {
-        public CosmosDBPersistenceInstaller(ReadOnlySettings settings)
+        public CosmosDBPersistenceInstaller(ClientHolder clientHolder, InstallerSettings installerSettings)
         {
-            installerSettings = settings.GetOrDefault<InstallerSettings>();
+            this.clientHolder = clientHolder;
+            this.installerSettings = installerSettings;
         }
 
         public async Task Install(string identity)
@@ -23,7 +23,7 @@
 
             try
             {
-                await CreateContainerIfNotExists(installerSettings).ConfigureAwait(false);
+                await CreateContainerIfNotExists().ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -32,13 +32,12 @@
             }
         }
 
-        internal static async Task CreateContainerIfNotExists(InstallerSettings installerSettings)
+        async Task CreateContainerIfNotExists()
         {
-            // TODO we can probably assume the client can be injected
-            await installerSettings.Client.CreateDatabaseIfNotExistsAsync(installerSettings.DatabaseName)
+            await clientHolder.Client.CreateDatabaseIfNotExistsAsync(installerSettings.DatabaseName)
                 .ConfigureAwait(false);
 
-            var database = installerSettings.Client.GetDatabase(installerSettings.DatabaseName);
+            var database = clientHolder.Client.GetDatabase(installerSettings.DatabaseName);
 
             // TODO: Should we sanity check properties?
             // var container = database.GetContainer(containerName);
@@ -69,7 +68,9 @@
                 .ConfigureAwait(false);
         }
 
-        InstallerSettings installerSettings;
+
+        readonly ClientHolder clientHolder;
+        readonly InstallerSettings installerSettings;
         static ILog log = LogManager.GetLogger<CosmosDBPersistenceInstaller>();
     }
 }

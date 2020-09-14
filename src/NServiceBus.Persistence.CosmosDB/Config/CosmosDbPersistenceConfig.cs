@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus
 {
+    using System;
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;
@@ -17,7 +18,15 @@
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(cosmosClient), cosmosClient);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = cosmosClient});
+            var settings = persistenceExtensions.GetSettings();
+
+            if (settings.HasExplicitValue(SettingsKeys.CosmosClient) || settings.HasExplicitValue(SettingsKeys.ResolveClientFromContainer))
+            {
+                throw new InvalidOperationException(clientRegistrationExceptionMessage);
+            }
+
+            settings.Set(SettingsKeys.CosmosClient, new ClientHolder {Client = cosmosClient});
+
             return persistenceExtensions;
         }
 
@@ -29,7 +38,32 @@
         {
             Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = new CosmosClient(connectionString)});
+            var settings = persistenceExtensions.GetSettings();
+
+            if (settings.HasExplicitValue(SettingsKeys.CosmosClient) || settings.HasExplicitValue(SettingsKeys.ResolveClientFromContainer))
+            {
+                throw new InvalidOperationException(clientRegistrationExceptionMessage);
+            }
+
+            settings.Set(SettingsKeys.CosmosClient, new ClientHolder {Client = new CosmosClient(connectionString)});
+
+            return persistenceExtensions;
+        }
+
+        /// <summary>
+        /// Resolve CosmosClient from dependency injection container.
+        /// </summary>
+        /// <param name="persistenceExtensions"></param>
+        public static PersistenceExtensions<CosmosDbPersistence> ResolveClientFromContainer(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions)
+        {
+            var settings = persistenceExtensions.GetSettings();
+
+            if (settings.HasExplicitValue(SettingsKeys.CosmosClient))
+            {
+                throw new InvalidOperationException(clientRegistrationExceptionMessage);
+            }
+
+            settings.Set(SettingsKeys.ResolveClientFromContainer, true);
 
             return persistenceExtensions;
         }
@@ -71,5 +105,7 @@
             var installerSettings = configuration.GetSettings().GetOrCreate<InstallerSettings>();
             installerSettings.Disabled = true;
         }
+
+        static readonly string clientRegistrationExceptionMessage = $"Cosmos DB client has been already configured using .{nameof(CosmosClient)}(), .{nameof(ConnectionString)}() or .{nameof(ResolveClientFromContainer)}().";
     }
 }
