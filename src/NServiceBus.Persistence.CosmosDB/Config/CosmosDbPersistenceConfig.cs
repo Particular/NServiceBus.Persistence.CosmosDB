@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus
 {
-    using System;
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;

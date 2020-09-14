@@ -1,9 +1,9 @@
 namespace NServiceBus
 {
     using System;
-    using NServiceBus.Configuration.AdvancedExtensibility;
-    using NServiceBus.Outbox;
-    using NServiceBus.Persistence.CosmosDB;
+    using Configuration.AdvancedExtensibility;
+    using Outbox;
+    using Persistence.CosmosDB;
 
     /// <summary>
     /// Cosmos DB outbox settings
