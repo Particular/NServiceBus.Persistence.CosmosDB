@@ -14,7 +14,7 @@
             {
                 if (batchOutcomeResponse.Count > 1)
                 {
-                    throw new Exception("The transactional batch can only have one operation.");
+                    throw new Exception($"The transactional batch was expected to have a single operation but contained {batchOutcomeResponse.Count} operations.");
                 }
 
                 var result = batchOutcomeResponse[0];
