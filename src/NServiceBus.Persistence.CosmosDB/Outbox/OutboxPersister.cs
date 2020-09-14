@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -81,13 +80,7 @@
 
             using (var transactionalBatch = new TransactionalBatchDecorator(containerHolder.Container.CreateTransactionalBatch(partitionKey)))
             {
-                var dictionary = new Dictionary<int, Operation>
-                {
-                    {0, operation}
-                };
-                operation.Apply(transactionalBatch);
-
-                await transactionalBatch.Execute(dictionary).ConfigureAwait(false);
+                await transactionalBatch.Execute(operation).ConfigureAwait(false);
             }
         }
 

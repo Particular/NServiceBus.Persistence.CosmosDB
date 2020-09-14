@@ -48,13 +48,6 @@
             {
                 using (var transactionalBatch = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(batchOfOperations.Key)))
                 {
-                    var batchedOperations = batchOfOperations.Value.Values;
-
-                    foreach (var operation in batchedOperations)
-                    {
-                        operation.Apply(transactionalBatch);
-                    }
-
                     await transactionalBatch.Execute(batchOfOperations.Value).ConfigureAwait(false);
                 }
             }
