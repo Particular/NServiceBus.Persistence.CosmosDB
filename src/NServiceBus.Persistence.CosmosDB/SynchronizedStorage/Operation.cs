@@ -30,7 +30,7 @@
             switch (result.StatusCode)
             {
                 case HttpStatusCode.BadRequest:
-                    throw new TransactionalBatchOperationException("Bad request. Likely the partition key did not match", result);
+                    throw new TransactionalBatchOperationException("Bad request. Likely the partition key did not match.", result);
                 case HttpStatusCode.Conflict:
                 case HttpStatusCode.PreconditionFailed:
                     throw new TransactionalBatchOperationException("Concurrency conflict.", result);

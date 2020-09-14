@@ -63,7 +63,7 @@
             // Outbox operating at the logical stage
             if (!context.Extensions.TryGet<PartitionKey>(out var partitionKey) && partitionKey != PartitionKey.Null)
             {
-                throw new Exception("For the outbox to work the following information must be provided at latest up to the incoming physical or logical message stage. A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`");
+                throw new Exception("For the outbox to work the following information must be provided at latest up to the incoming physical or logical message stage. A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`.");
             }
 
             outboxTransaction.PartitionKey = partitionKey;
@@ -136,7 +136,7 @@
                 return new MulticastAddressTag(Type.GetType(eventType, true));
             }
 
-            throw new Exception("Could not find routing strategy to deserialize");
+            throw new Exception("Could not find routing strategy to deserialize.");
         }
 
         JsonSerializer serializer;
