@@ -7,10 +7,6 @@
         public const string ConnectionString =  nameof(baseName) + nameof(ConnectionString);
         public const string DatabaseName = nameof(baseName) + nameof(DatabaseName);
         public const string ContainerName = nameof(baseName) + nameof(ContainerName);
-
-        internal static class Sagas
-        {
-            public const string JsonSerializerSettings =  nameof(baseName) + nameof(Sagas) + "." + nameof(JsonSerializerSettings);
-        }
+        public const string OutboxTimeToLiveInSeconds = nameof(baseName) + nameof(OutboxTimeToLiveInSeconds);
     }
 }

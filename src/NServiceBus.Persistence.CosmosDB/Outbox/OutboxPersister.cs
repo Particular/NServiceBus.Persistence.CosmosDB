@@ -9,10 +9,11 @@
 
     class OutboxPersister : IOutboxStorage
     {
-        public OutboxPersister(ContainerHolder containerHolder, JsonSerializer serializer)
+        public OutboxPersister(ContainerHolder containerHolder, JsonSerializer serializer, int ttlInSeconds)
         {
             this.containerHolder = containerHolder;
             this.serializer = serializer;
+            this.ttlInSeconds = ttlInSeconds;
         }
 
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
@@ -76,7 +77,7 @@
             {
                 Id = messageId,
                 Dispatched = true
-            }, partitionKey, containerHolder.PartitionKeyPath, serializer, context);
+            }, partitionKey, containerHolder.PartitionKeyPath, serializer, ttlInSeconds, context);
 
             using (var transactionalBatch = new TransactionalBatchDecorator(containerHolder.Container.CreateTransactionalBatch(partitionKey)))
             {
@@ -91,6 +92,7 @@
         }
 
         readonly JsonSerializer serializer;
+        readonly int ttlInSeconds;
         readonly ContainerHolder containerHolder;
 
         internal static readonly string SchemaVersion = "1.0.0";
