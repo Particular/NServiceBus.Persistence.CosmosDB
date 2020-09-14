@@ -60,5 +60,16 @@
 
             return persistenceExtensions;
         }
+
+        /// <summary>
+        /// Disables the container creation.
+        /// </summary>
+        public static void DisableContainerCreation(this PersistenceExtensions<CosmosDbPersistence> configuration)
+        {
+            Guard.AgainstNull(nameof(configuration), configuration);
+
+            var installerSettings = configuration.GetSettings().GetOrCreate<InstallerSettings>();
+            installerSettings.Disabled = true;
+        }
     }
 }
