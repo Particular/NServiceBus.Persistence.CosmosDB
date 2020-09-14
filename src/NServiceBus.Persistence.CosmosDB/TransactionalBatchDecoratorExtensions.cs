@@ -2,43 +2,58 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Net;
     using System.Threading.Tasks;
 
     static class TransactionalBatchDecoratorExtensions
     {
+        internal static async Task Execute(this TransactionalBatchDecorator transactionalBatch, Operation operation)
+        {
+            operation.Apply(transactionalBatch);
+
+            using (var batchOutcomeResponse = await transactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
+            {
+                if (batchOutcomeResponse.Count > 1)
+                {
+                    throw new Exception("The transactional batch can only have one operation.");
+                }
+
+                var result = batchOutcomeResponse[0];
+
+                if (result.IsSuccessStatusCode)
+                {
+                    operation.Success(result);
+                    return;
+                }
+
+                // guaranteed to throw
+                operation.Conflict(result);
+            }
+        }
+
         internal static async Task Execute(this TransactionalBatchDecorator transactionalBatch, Dictionary<int, Operation> operationMappings)
         {
+            foreach (var operation in operationMappings.Values)
+            {
+                operation.Apply(transactionalBatch);
+            }
+
             using (var batchOutcomeResponse = await transactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
             {
                 for (var i = 0; i < batchOutcomeResponse.Count; i++)
                 {
                     var result = batchOutcomeResponse[i];
 
-                    if (operationMappings.TryGetValue(i, out var operation))
-                    {
-                        if (result.IsSuccessStatusCode)
-                        {
-                            operation.Success(result);
-                            continue;
-                        }
+                    operationMappings.TryGetValue(i, out var operation);
+                    operation = operation ?? ThrowOnConflictOperation.Instance;
 
-                        if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
-                        {
-                            // guaranteed to throw
-                            operation.Conflict(result);
-                        }
+                    if (result.IsSuccessStatusCode)
+                    {
+                        operation.Success(result);
+                        continue;
                     }
 
-                    if (result.StatusCode == HttpStatusCode.Conflict || result.StatusCode == HttpStatusCode.PreconditionFailed)
-                    {
-                        throw new Exception("Concurrency conflict.");
-                    }
-
-                    if (result.StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        throw new Exception("Bad request. Quite likely the partition key did not match");
-                    }
+                    // guaranteed to throw
+                    operation.Conflict(result);
                 }
             }
         }
