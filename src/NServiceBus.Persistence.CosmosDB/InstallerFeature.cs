@@ -27,7 +27,7 @@
 
             if (client is null)
             {
-                throw new Exception("You must configure a CosmosClient or provide a connection string");
+                throw new Exception("You must configure a CosmosClient or provide a connection string.");
             }
 
             settings.ContainerName = containerName;
