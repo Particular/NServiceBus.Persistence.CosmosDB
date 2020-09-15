@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox\NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox.csproj", "{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.SagaId", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.SagaId\NServiceBus.Persistence.CosmosDB.AcceptanceTests.SagaId.csproj", "{144FE639-E1F9-40EA-830D-60487D92A73F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas\NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas.csproj", "{144FE639-E1F9-40EA-830D-60487D92A73F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
