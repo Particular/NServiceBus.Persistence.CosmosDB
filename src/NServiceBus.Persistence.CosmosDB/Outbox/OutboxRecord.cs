@@ -1,7 +1,7 @@
-﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
-    using NServiceBus.Outbox;
+    using Outbox;
 
     class OutboxRecord
     {

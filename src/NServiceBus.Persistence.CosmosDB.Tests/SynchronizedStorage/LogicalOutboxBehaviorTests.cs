@@ -11,12 +11,11 @@
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Scripts;
     using Newtonsoft.Json;
-    using NServiceBus.Outbox;
-    using NUnit.Framework;
     using Outbox;
+    using NUnit.Framework;
     using Testing;
     using Transport;
-    using TransportOperation = NServiceBus.Outbox.TransportOperation;
+    using TransportOperation = Outbox.TransportOperation;
 
     [TestFixture]
     public class LogicalOutboxBehaviorTests

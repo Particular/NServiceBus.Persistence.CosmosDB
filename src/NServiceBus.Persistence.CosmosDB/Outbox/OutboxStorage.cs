@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
     using Features;

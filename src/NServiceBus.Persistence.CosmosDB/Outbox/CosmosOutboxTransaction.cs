@@ -1,8 +1,8 @@
-﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
-    using NServiceBus.Outbox;
+    using Outbox;
 
     class CosmosOutboxTransaction : OutboxTransaction
     {

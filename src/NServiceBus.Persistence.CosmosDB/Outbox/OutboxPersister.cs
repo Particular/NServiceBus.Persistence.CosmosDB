@@ -1,10 +1,10 @@
-﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
-    using NServiceBus.Outbox;
+    using Outbox;
 
     class OutboxPersister : IOutboxStorage
     {

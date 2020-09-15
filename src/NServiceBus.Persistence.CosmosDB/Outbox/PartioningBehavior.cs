@@ -10,7 +10,6 @@
     using DeliveryConstraints;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
-    using NServiceBus.Outbox;
     using Outbox;
     using Performance.TimeToBeReceived;
     using Pipeline;
