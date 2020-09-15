@@ -10,15 +10,15 @@
 
     abstract class OutboxOperation : Operation
     {
-        public OutboxRecord Record { get;  }
+        protected readonly OutboxRecord record;
 
         protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
         {
-            Record = record;
+            this.record = record;
         }
         public override void Success(TransactionalBatchOperationResult result)
         {
-            Context.Set($"cosmos_etag:{Record.Id}", result.ETag);
+            Context.Set($"cosmos_etag:{record.Id}", result.ETag);
         }
     }
 
@@ -30,7 +30,7 @@
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
-            var jObject = JObject.FromObject(Record, Serializer);
+            var jObject = JObject.FromObject(record, Serializer);
 
             var metadata = new JObject
             {
@@ -62,7 +62,7 @@
 
         public override void Apply(TransactionalBatchDecorator transactionalBatch)
         {
-            var jObject = JObject.FromObject(Record, Serializer);
+            var jObject = JObject.FromObject(record, Serializer);
 
             jObject.Add("ttl", ttlInSeconds);
 
@@ -79,7 +79,7 @@
 
         public override void Conflict(TransactionalBatchOperationResult result)
         {
-            throw new Exception($"The outbox record with id '{Record.Id}' could not be marked as dispatched, it was updated by another process.");
+            throw new Exception($"The outbox record with id '{record.Id}' could not be marked as dispatched, it was updated by another process.");
         }
     }
 }
