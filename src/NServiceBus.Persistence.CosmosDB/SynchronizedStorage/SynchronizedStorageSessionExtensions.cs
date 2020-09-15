@@ -19,7 +19,10 @@
 
             if (session is IWorkWithSharedTransactionalBatch storageSession)
             {
-                var partitionKey = storageSession.CurrentContextBag.GetPartitionKey();
+                if (!storageSession.CurrentContextBag.TryGet<PartitionKey>(out var partitionKey))
+                {
+                    throw new Exception("To use the shared transactional batch a partition key must be set using a custom pipeline behavior.");
+                }
                 return new SharedTransactionalBatch(storageSession, partitionKey);
             }
 
