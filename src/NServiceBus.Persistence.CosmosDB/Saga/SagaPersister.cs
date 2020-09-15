@@ -73,9 +73,6 @@
 
         public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
         {
-            // TODO: currently we delete the item by ID. The idea is to use a document TTL to let CosmosDB remove the item.
-            // TODO: this will allow developers to see that saga will be removed rather than not find it and wonder what happened.
-
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
