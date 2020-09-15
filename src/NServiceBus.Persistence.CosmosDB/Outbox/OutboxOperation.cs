@@ -11,7 +11,7 @@
     abstract class OutboxOperation : Operation
     {
         protected readonly OutboxRecord record;
-        protected MemoryStream stream;
+        protected Stream stream = Stream.Null;
 
         protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
         {

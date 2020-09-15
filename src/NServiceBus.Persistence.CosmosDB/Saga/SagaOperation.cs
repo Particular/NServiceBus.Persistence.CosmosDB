@@ -12,6 +12,7 @@
     abstract class SagaOperation : Operation
     {
         public IContainSagaData SagaData { get; }
+        protected Stream stream = Stream.Null;
 
         protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
         {
@@ -22,12 +23,15 @@
         {
             Context.Set($"cosmos_etag:{SagaData.Id}", result.ETag);
         }
+
+        public override void Dispose()
+        {
+            stream.Dispose();
+        }
     }
 
     sealed class SagaSave : SagaOperation
     {
-        MemoryStream stream;
-
         public SagaCorrelationProperty CorrelationProperty { get; }
 
         public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
@@ -61,17 +65,10 @@
             };
             transactionalBatch.CreateItemStream(stream, options);
         }
-
-        public override void Dispose()
-        {
-            stream.Dispose();
-        }
     }
 
     sealed class SagaUpdate : SagaOperation
     {
-        MemoryStream stream;
-
         public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, serializer, context)
         {
         }
@@ -104,11 +101,6 @@
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
             transactionalBatch.ReplaceItemStream(SagaData.Id.ToString(), stream, options);
-        }
-
-        public override void Dispose()
-        {
-            stream.Dispose();
         }
     }
 
