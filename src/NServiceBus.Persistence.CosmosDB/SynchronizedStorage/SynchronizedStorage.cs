@@ -9,7 +9,14 @@
         {
             if (!context.Container.HasComponent<IProvideCosmosClient>())
             {
-                context.Container.ConfigureComponent<IProvideCosmosClient>(() => new ThrowIfNoCosmosClientIsProvided(), DependencyLifecycle.SingleInstance);
+                if (context.Settings.TryGet<ClientHolder>(out var clientHolder))
+                {
+                    context.Container.ConfigureComponent<IProvideCosmosClient>(() => new CosmosClientProvidedByConfiguration { Client = clientHolder.Client }, DependencyLifecycle.SingleInstance);
+                }
+                else
+                {
+                    context.Container.ConfigureComponent<IProvideCosmosClient>(() => new ThrowIfNoCosmosClientIsProvided(), DependencyLifecycle.SingleInstance);
+                }
             }
 
             var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
