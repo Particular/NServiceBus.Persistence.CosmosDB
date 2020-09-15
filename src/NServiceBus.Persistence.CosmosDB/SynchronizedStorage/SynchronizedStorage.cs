@@ -9,9 +9,9 @@
         {
             if (!context.Container.HasComponent<IProvideCosmosClient>())
             {
-                if (context.Settings.TryGet<ClientHolder>(out var clientHolder))
+                if (context.Settings.TryGet<CosmosClientProvidedByConfiguration>(out var configurationCosmosClientProvider))
                 {
-                    context.Container.ConfigureComponent<IProvideCosmosClient>(() => new CosmosClientProvidedByConfiguration { Client = clientHolder.Client }, DependencyLifecycle.SingleInstance);
+                    context.Container.ConfigureComponent<IProvideCosmosClient>(() => configurationCosmosClientProvider, DependencyLifecycle.SingleInstance);
                 }
                 else
                 {
