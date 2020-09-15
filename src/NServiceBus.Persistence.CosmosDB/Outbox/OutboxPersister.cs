@@ -17,7 +17,7 @@
 
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
         {
-            var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolder.Container);
+            var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolder, context);
 
             if (context.TryGet<PartitionKey>(out var partitionKey))
             {
@@ -78,10 +78,9 @@
                 Dispatched = true
             }, partitionKey, containerHolder.PartitionKeyPath, serializer, ttlInSeconds, context);
 
-            using (var transactionalBatch = new TransactionalBatchDecorator(containerHolder.Container.CreateTransactionalBatch(partitionKey)))
-            {
-                await transactionalBatch.Execute(operation).ConfigureAwait(false);
-            }
+            var transactionalBatch = containerHolder.Container.CreateTransactionalBatch(partitionKey);
+
+            await transactionalBatch.ExecuteOperationAsync(operation).ConfigureAwait(false);
         }
 
         readonly JsonSerializer serializer;

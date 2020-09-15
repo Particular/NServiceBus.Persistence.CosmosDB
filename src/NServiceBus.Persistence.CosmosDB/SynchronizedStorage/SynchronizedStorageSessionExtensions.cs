@@ -13,13 +13,17 @@
         /// <summary>
         /// Retrieves the current transactional batch from the context.
         /// </summary>
-        public static TransactionalBatch GetTransactionalBatch(this SynchronizedStorageSession session)
+        public static TransactionalBatch GetSharedTransactionalBatch(this SynchronizedStorageSession session)
         {
             Guard.AgainstNull(nameof(session), session);
 
-            if (session is ITransactionalBatchProvider storageSession)
+            if (session is IWorkWithSharedTransactionalBatch storageSession)
             {
-                return storageSession.TransactionalBatch;
+                if (!storageSession.CurrentContextBag.TryGet<PartitionKey>(out var partitionKey))
+                {
+                    throw new Exception("To use the shared transactional batch a partition key must be set using a custom pipeline behavior.");
+                }
+                return new SharedTransactionalBatch(storageSession, partitionKey);
             }
 
             throw new Exception($"Cannot access the synchronized storage session. Ensure that 'EndpointConfiguration.UsePersistence<{nameof(CosmosDbPersistence)}>()' has been called.");

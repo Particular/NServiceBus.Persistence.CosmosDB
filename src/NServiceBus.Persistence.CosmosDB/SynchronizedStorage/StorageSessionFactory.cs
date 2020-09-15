@@ -12,6 +12,6 @@
             this.containerHolder = containerHolder;
         }
 
-        public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag) => Task.FromResult<CompletableSynchronizedStorageSession>(new StorageSession(containerHolder.Container, true));
+        public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag) => Task.FromResult<CompletableSynchronizedStorageSession>(new StorageSession(containerHolder, contextBag, true));
     }
 }

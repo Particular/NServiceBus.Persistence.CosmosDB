@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System.Threading.Tasks;
+    using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Outbox;
 
@@ -12,9 +13,9 @@
         // By default, store and commit are enabled
         public bool SuppressStoreAndCommit { get; set; }
 
-        public CosmosOutboxTransaction(Container container)
+        public CosmosOutboxTransaction(ContainerHolder containerHolder, ContextBag context)
         {
-            StorageSession = new StorageSession(container, false);
+            StorageSession = new StorageSession(containerHolder, context, false);
         }
 
         public Task Commit()

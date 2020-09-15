@@ -7,9 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.Tests", "NServiceBus.Persistence.CosmosDB.Tests\NServiceBus.Persistence.CosmosDB.Tests.csproj", "{DB73B275-FB19-4681-9FB6-AFE35A12309A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.PersistenceTests", "NServiceBus.Persistence.CosmosDB.PersistenceTests\NServiceBus.Persistence.CosmosDB.PersistenceTests.csproj", "{BCA68BFA-84B4-401C-A37B-50A978669E7F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.PersistenceTests", "NServiceBus.Persistence.CosmosDB.PersistenceTests\NServiceBus.Persistence.CosmosDB.PersistenceTests.csproj", "{BCA68BFA-84B4-401C-A37B-50A978669E7F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.AcceptanceTests\NServiceBus.Persistence.CosmosDB.AcceptanceTests.csproj", "{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox\NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox.csproj", "{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox\NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox.csproj", "{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas\NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas.csproj", "{144FE639-E1F9-40EA-830D-60487D92A73F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +37,14 @@ Global
 		{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{144FE639-E1F9-40EA-830D-60487D92A73F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{144FE639-E1F9-40EA-830D-60487D92A73F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{144FE639-E1F9-40EA-830D-60487D92A73F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{144FE639-E1F9-40EA-830D-60487D92A73F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

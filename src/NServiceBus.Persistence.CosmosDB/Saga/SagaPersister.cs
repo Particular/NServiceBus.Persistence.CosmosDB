@@ -22,7 +22,7 @@
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaSave(sagaData, correlationProperty, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
+            storageSession.AddOperation(new SagaSave(sagaData, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
             return Task.CompletedTask;
         }
 
@@ -40,7 +40,7 @@
             var storageSession = (StorageSession)session;
 
             // reads need to go directly
-            var container = storageSession.Container;
+            var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
             var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);

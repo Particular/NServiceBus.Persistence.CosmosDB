@@ -1,25 +1,31 @@
 ﻿namespace NServiceBus.Testing
 {
     using Microsoft.Azure.Cosmos;
+    using Extensibility;
     using Persistence;
     using Persistence.CosmosDB;
 
     /// <summary>
     /// A fake implementation for <see cref="SynchronizedStorageSession"/> for testing purposes.
     /// </summary>
-    public class TestableCosmosSynchronizedStorageSession : SynchronizedStorageSession, ITransactionalBatchProvider
+    public class TestableCosmosSynchronizedStorageSession : SynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {
         /// <summary>
-        /// Creates a new instance of <see cref="TestableCosmosSynchronizedStorageSession"/> using the provided <see cref="TransactionalBatch"/>.
+        ///
         /// </summary>
-        public TestableCosmosSynchronizedStorageSession(TransactionalBatch transactionalBatch)
+        /// <param name="partitionKey"></param>
+        public TestableCosmosSynchronizedStorageSession(PartitionKey partitionKey)
         {
-            TransactionalBatch = transactionalBatch;
+            var contextBag = new ContextBag();
+            contextBag.Set(partitionKey);
+            ((IWorkWithSharedTransactionalBatch)this).CurrentContextBag = contextBag;
         }
 
-        /// <summary>
-        /// The transactional batch which is retrieved by calling <see cref="SynchronizedStorageSessionExtensions.GetTransactionalBatch"/>.
-        /// </summary>
-        public TransactionalBatch TransactionalBatch { get; }
+        ContextBag IWorkWithSharedTransactionalBatch.CurrentContextBag { get; set; }
+
+        void IWorkWithSharedTransactionalBatch.AddOperation(Operation operation)
+        {
+            //Do nothing (for now?)
+        }
     }
 }

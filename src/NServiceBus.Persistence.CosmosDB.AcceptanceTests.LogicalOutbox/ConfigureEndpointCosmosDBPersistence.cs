@@ -6,6 +6,8 @@ using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Features;
+using NServiceBus.Persistence.CosmosDB;
 using NServiceBus.Pipeline;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
@@ -23,8 +25,6 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         persistence.Container(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
 
-        configuration.Pipeline.Register(typeof(PartitionKeyProviderBehavior), "Populates the partition key");
-
         return Task.FromResult(0);
     }
 
@@ -33,7 +33,21 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    class PartitionKeyProviderBehavior : Behavior<ITransportReceiveContext>
+    class PartitionKeyProviderFeature : Feature
+    {
+        public PartitionKeyProviderFeature()
+        {
+            EnableByDefault();
+            DependsOn(nameof(OutboxStorage));
+        }
+
+        protected override void Setup(FeatureConfigurationContext context)
+        {
+            context.Pipeline.Register(new PartitionKeyProviderBehavior.PartitionKeyProviderBehaviorRegisterStep());
+        }
+    }
+
+    class PartitionKeyProviderBehavior : Behavior<IIncomingLogicalMessageContext>
     {
         ScenarioContext scenarioContext;
 
@@ -42,11 +56,18 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             this.scenarioContext = scenarioContext;
         }
 
-        public override Task Invoke(ITransportReceiveContext context, Func<Task> next)
+        public override Task Invoke(IIncomingLogicalMessageContext context, Func<Task> next)
         {
             context.Extensions.Set(new PartitionKey(scenarioContext.TestRunId.ToString()));
-            context.Extensions.Set(new PartitionKeyPath(SetupFixture.PartitionPathKey));
             return next();
+        }
+
+        public class PartitionKeyProviderBehaviorRegisterStep : RegisterStep
+        {
+            public PartitionKeyProviderBehaviorRegisterStep() : base(nameof(PartitionKeyProviderBehavior), typeof(PartitionKeyProviderBehavior), "Populates the partition key", b => new PartitionKeyProviderBehavior(b.Build<ScenarioContext>()))
+            {
+                InsertBefore("LogicalOutboxBehavior");
+            }
         }
     }
 }

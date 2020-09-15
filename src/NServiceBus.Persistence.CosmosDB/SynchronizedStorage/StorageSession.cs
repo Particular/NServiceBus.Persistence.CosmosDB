@@ -4,14 +4,16 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
+    using Extensibility;
 
-    class StorageSession : CompletableSynchronizedStorageSession
+    class StorageSession : CompletableSynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {
         // When outbox is involved, commitOnComplete will be false
-        public StorageSession(Container container, bool commitOnComplete)
+        public StorageSession(ContainerHolder containerHolder, ContextBag context, bool commitOnComplete)
         {
-            Container = container;
+            ContainerHolder = containerHolder;
             this.commitOnComplete = commitOnComplete;
+            CurrentContextBag = context;
         }
 
         Task CompletableSynchronizedStorageSession.CompleteAsync()
@@ -46,20 +48,28 @@
         {
             foreach (var batchOfOperations in operations)
             {
-                using (var transactionalBatch = new TransactionalBatchDecorator(Container.CreateTransactionalBatch(batchOfOperations.Key)))
-                {
-                    await transactionalBatch.Execute(batchOfOperations.Value).ConfigureAwait(false);
-                }
+                var transactionalBatch = ContainerHolder.Container.CreateTransactionalBatch(batchOfOperations.Key);
+
+                await transactionalBatch.ExecuteOperationsAsync(batchOfOperations.Value).ConfigureAwait(false);
             }
         }
 
         public void Dispose()
         {
+            foreach (var batchOfOperations in operations)
+            {
+                foreach (var operation in batchOfOperations.Value.Values)
+                {
+                    operation.Dispose();
+                }
+            }
+
             operations.Clear();
         }
 
         readonly bool commitOnComplete;
-        public Container Container { get; }
+        public ContainerHolder ContainerHolder { get; }
+        public ContextBag CurrentContextBag { get; set; }
 
         readonly Dictionary<PartitionKey, Dictionary<int, Operation>> operations = new Dictionary<PartitionKey, Dictionary<int, Operation>>();
     }
