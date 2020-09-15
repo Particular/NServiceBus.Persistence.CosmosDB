@@ -45,12 +45,13 @@
                 }
             };
 
-            var behavior = new LogicalOutboxBehavior(new JsonSerializer());
+            var containerHolder = new ContainerHolder(fakeCosmosClient.Container, new PartitionKeyPath(null));
+
+            var behavior = new LogicalOutboxBehavior(containerHolder, new JsonSerializer());
 
             var testableContext = new TestableIncomingLogicalMessageContext();
 
             testableContext.Extensions.Set(new PartitionKey(""));
-            testableContext.Extensions.Set<Container>(fakeCosmosClient.Container);
             testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(fakeCosmosClient.Container));
 
             var pendingTransportOperations = new PendingTransportOperations();

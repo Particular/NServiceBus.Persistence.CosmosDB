@@ -33,9 +33,10 @@
             setter = Expression.Lambda<Action<PendingTransportOperations>>(assignExp, targetExp).Compile();
         }
 
-        internal LogicalOutboxBehavior(JsonSerializer serializer)
+        internal LogicalOutboxBehavior(ContainerHolder containerHolder, JsonSerializer serializer)
         {
             this.serializer = serializer;
+            this.container = containerHolder.Container;
         }
 
         /// <inheritdoc />
@@ -67,8 +68,6 @@
             }
 
             outboxTransaction.PartitionKey = partitionKey;
-
-            var container = context.Extensions.Get<Container>();
 
             var outboxRecord = await container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions)
                 .ConfigureAwait(false);
@@ -139,7 +138,8 @@
             throw new Exception("Could not find routing strategy to deserialize.");
         }
 
-        JsonSerializer serializer;
+        readonly JsonSerializer serializer;
+        readonly Container container;
         static Action<PendingTransportOperations> setter;
     }
 }
