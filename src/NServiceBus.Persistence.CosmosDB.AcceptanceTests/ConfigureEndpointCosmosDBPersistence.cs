@@ -45,7 +45,6 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         public override Task Invoke(ITransportReceiveContext context, Func<Task> next)
         {
             context.Extensions.Set(new PartitionKey(scenarioContext.TestRunId.ToString()));
-            context.Extensions.Set(new PartitionKeyPath(SetupFixture.PartitionPathKey));
             return next();
         }
     }
