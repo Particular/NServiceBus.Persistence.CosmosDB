@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.PersistenceTests", "NServiceBus.Persistence.CosmosDB.PersistenceTests\NServiceBus.Persistence.CosmosDB.PersistenceTests.csproj", "{BCA68BFA-84B4-401C-A37B-50A978669E7F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.AcceptanceTests\NServiceBus.Persistence.CosmosDB.AcceptanceTests.csproj", "{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox\NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox.csproj", "{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox\NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox.csproj", "{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}"
 EndProject
