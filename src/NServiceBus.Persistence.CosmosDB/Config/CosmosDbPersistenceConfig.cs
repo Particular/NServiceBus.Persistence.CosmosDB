@@ -22,19 +22,6 @@
         }
 
         /// <summary>
-        /// Connection string to use for sagas storage.
-        /// </summary>
-        /// TODO: Discuss if we can drop this in favor of just providing CosmosClient above.
-        public static PersistenceExtensions<CosmosDbPersistence> ConnectionString(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string connectionString)
-        {
-            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
-
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = new CosmosClient(connectionString)});
-
-            return persistenceExtensions;
-        }
-
-        /// <summary>
         /// Sets the database name
         /// </summary>
         public static PersistenceExtensions<CosmosDbPersistence> DatabaseName(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string databaseName)
