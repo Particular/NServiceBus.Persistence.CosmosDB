@@ -3,7 +3,6 @@
     using Features;
     using Persistence;
     using Persistence.CosmosDB;
-    using Persistence.CosmosDB.Outbox;
 
     /// <summary>
     /// CosmosDB Core API persistence

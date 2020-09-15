@@ -9,7 +9,6 @@
     using NServiceBus.Sagas;
     using Persistence;
     using Persistence.CosmosDB;
-    using Persistence.CosmosDB.Outbox;
 
     public partial class PersistenceTestsConfiguration
     {

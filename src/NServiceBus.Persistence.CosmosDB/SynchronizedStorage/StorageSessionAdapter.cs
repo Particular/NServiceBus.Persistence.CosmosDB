@@ -2,7 +2,6 @@
 {
     using System.Threading.Tasks;
     using Extensibility;
-    using NServiceBus.Outbox;
     using Outbox;
     using Transport;
 
