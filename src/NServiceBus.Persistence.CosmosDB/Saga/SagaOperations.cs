@@ -7,21 +7,20 @@
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
-    using Sagas;
 
     abstract class SagaOperation : Operation
     {
-        public IContainSagaData SagaData { get; }
+        protected readonly IContainSagaData sagaData;
         protected Stream stream = Stream.Null;
 
         protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
         {
-            SagaData = sagaData;
+            this.sagaData = sagaData;
         }
 
         public override void Success(TransactionalBatchOperationResult result)
         {
-            Context.Set($"cosmos_etag:{SagaData.Id}", result.ETag);
+            Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
         }
 
         public override void Dispose()
@@ -32,22 +31,19 @@
 
     sealed class SagaSave : SagaOperation
     {
-        public SagaCorrelationProperty CorrelationProperty { get; }
-
-        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
+        public SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
             : base(sagaData, partitionKey, partitionKeyPath, serializer, context)
         {
-            CorrelationProperty = correlationProperty;
         }
 
         public override void Conflict(TransactionalBatchOperationResult result)
         {
-            throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' could not be created possibly due to a concurrency conflict.");
+            throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be created possibly due to a concurrency conflict.");
         }
 
         public override void Apply(TransactionalBatch transactionalBatch)
         {
-            var jObject = JObject.FromObject(SagaData, Serializer);
+            var jObject = JObject.FromObject(sagaData, Serializer);
 
             var metadata = new JObject
             {
@@ -75,12 +71,12 @@
 
         public override void Conflict(TransactionalBatchOperationResult result)
         {
-            throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' was updated by another process or no longer exists.");
+            throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' was updated by another process or no longer exists.");
         }
 
         public override void Apply(TransactionalBatch transactionalBatch)
         {
-            var jObject = JObject.FromObject(SagaData, Serializer);
+            var jObject = JObject.FromObject(sagaData, Serializer);
 
             var metadata = new JObject
             {
@@ -91,7 +87,7 @@
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 
             // only update if we have the same version as in CosmosDB
-            Context.TryGet<string>($"cosmos_etag:{SagaData.Id}", out var updateEtag);
+            Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);
             var options = new TransactionalBatchItemRequestOptions
             {
                 IfMatchEtag = updateEtag,
@@ -100,7 +96,7 @@
 
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
-            transactionalBatch.ReplaceItemStream(SagaData.Id.ToString(), stream, options);
+            transactionalBatch.ReplaceItemStream(sagaData.Id.ToString(), stream, options);
         }
     }
 
@@ -112,15 +108,15 @@
 
         public override void Conflict(TransactionalBatchOperationResult result)
         {
-            throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' can't be completed because it was updated by another process.");
+            throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed because it was updated by another process.");
         }
 
         public override void Apply(TransactionalBatch transactionalBatch)
         {
             // only delete if we have the same version as in CosmosDB
-            Context.TryGet<string>($"cosmos_etag:{SagaData.Id}", out var deleteEtag);
+            Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var deleteEtag);
             var deleteOptions = new TransactionalBatchItemRequestOptions { IfMatchEtag = deleteEtag };
-            transactionalBatch.DeleteItem(SagaData.Id.ToString(), deleteOptions);
+            transactionalBatch.DeleteItem(sagaData.Id.ToString(), deleteOptions);
         }
     }
 }

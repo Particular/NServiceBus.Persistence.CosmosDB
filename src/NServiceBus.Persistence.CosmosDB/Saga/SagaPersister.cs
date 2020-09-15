@@ -22,7 +22,7 @@
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaSave(sagaData, correlationProperty, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
+            storageSession.AddOperation(new SagaSave(sagaData, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
             return Task.CompletedTask;
         }
 
