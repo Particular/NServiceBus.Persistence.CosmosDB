@@ -3,14 +3,15 @@
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Cosmos;
 
-    static class TransactionalBatchDecoratorExtensions
+    static class TransactionalBatchExtensions
     {
-        internal static async Task Execute(this TransactionalBatchDecorator transactionalBatch, Operation operation)
+        internal static async Task ExecuteOperationAsync(this TransactionalBatch transactionalBatch, Operation operation)
         {
             operation.Apply(transactionalBatch);
 
-            using (var batchOutcomeResponse = await transactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
+            using (var batchOutcomeResponse = await transactionalBatch.ExecuteAsync().ConfigureAwait(false))
             {
                 if (batchOutcomeResponse.Count > 1)
                 {
@@ -30,14 +31,14 @@
             }
         }
 
-        internal static async Task Execute(this TransactionalBatchDecorator transactionalBatch, Dictionary<int, Operation> operationMappings)
+        internal static async Task ExecuteOperationsAsync(this TransactionalBatch transactionalBatch, Dictionary<int, Operation> operationMappings)
         {
             foreach (var operation in operationMappings.Values)
             {
                 operation.Apply(transactionalBatch);
             }
 
-            using (var batchOutcomeResponse = await transactionalBatch.Inner.ExecuteAsync().ConfigureAwait(false))
+            using (var batchOutcomeResponse = await transactionalBatch.ExecuteAsync().ConfigureAwait(false))
             {
                 for (var i = 0; i < batchOutcomeResponse.Count; i++)
                 {

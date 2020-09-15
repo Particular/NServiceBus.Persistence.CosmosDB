@@ -1,11 +1,12 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System;
     using System.Net;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
 
-    abstract class Operation
+    abstract class Operation : IDisposable
     {
         protected Operation(PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
         {
@@ -39,7 +40,8 @@
             }
         }
 
-        public abstract void Apply(TransactionalBatchDecorator transactionalBatch);
+        public abstract void Apply(TransactionalBatch transactionalBatch);
+        public virtual void Dispose() { }
     }
 
     class ThrowOnConflictOperation : Operation
@@ -50,7 +52,7 @@
 
         public static Operation Instance { get; } = new ThrowOnConflictOperation();
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch)
         {
         }
     }

@@ -11,14 +11,16 @@
     abstract class OutboxOperation : Operation
     {
         protected readonly OutboxRecord record;
+        protected MemoryStream stream;
 
         protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
         {
             this.record = record;
         }
-        public override void Success(TransactionalBatchOperationResult result)
+
+        public override void Dispose()
         {
-            Context.Set($"cosmos_etag:{record.Id}", result.ETag);
+            stream.Dispose();
         }
     }
 
@@ -28,7 +30,7 @@
         {
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch)
         {
             var jObject = JObject.FromObject(record, Serializer);
 
@@ -41,7 +43,7 @@
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 
             // has to be kept open
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
+            stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
             var options = new TransactionalBatchItemRequestOptions
             {
                 EnableContentResponseOnWrite = false
@@ -60,7 +62,7 @@
             this.ttlInSeconds = ttlInSeconds;
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch)
         {
             var jObject = JObject.FromObject(record, Serializer);
 
@@ -69,7 +71,7 @@
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 
             // has to be kept open
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes(jObject.ToString(Formatting.None)));
+            stream = new MemoryStream(Encoding.UTF8.GetBytes(jObject.ToString(Formatting.None)));
             var options = new TransactionalBatchItemRequestOptions
             {
                 EnableContentResponseOnWrite = false

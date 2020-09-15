@@ -11,6 +11,7 @@
         {
             if (transaction is CosmosOutboxTransaction cosmosOutboxTransaction)
             {
+                cosmosOutboxTransaction.StorageSession.CurrentContextBag = context;
                 return Task.FromResult((CompletableSynchronizedStorageSession)cosmosOutboxTransaction.StorageSession);
             }
 

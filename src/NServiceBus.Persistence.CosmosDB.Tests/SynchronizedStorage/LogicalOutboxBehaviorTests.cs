@@ -51,7 +51,8 @@
             var testableContext = new TestableIncomingLogicalMessageContext();
 
             testableContext.Extensions.Set(new PartitionKey(""));
-            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(fakeCosmosClient.Container));
+
+            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(containerHolder, testableContext.Extensions));
 
             var pendingTransportOperations = new PendingTransportOperations();
             pendingTransportOperations.Add(new Transport.TransportOperation(new OutgoingMessage(null, null, null), null));

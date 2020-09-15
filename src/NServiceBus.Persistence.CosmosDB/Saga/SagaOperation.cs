@@ -26,6 +26,8 @@
 
     sealed class SagaSave : SagaOperation
     {
+        MemoryStream stream;
+
         public SagaCorrelationProperty CorrelationProperty { get; }
 
         public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
@@ -39,7 +41,7 @@
             throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' could not be created possibly due to a concurrency conflict.");
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch)
         {
             var jObject = JObject.FromObject(SagaData, Serializer);
 
@@ -52,17 +54,24 @@
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
 
             // Has to be kept open for transaction batch to be able to use the stream
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
+            stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
             var options = new TransactionalBatchItemRequestOptions
             {
                 EnableContentResponseOnWrite = false
             };
             transactionalBatch.CreateItemStream(stream, options);
         }
+
+        public override void Dispose()
+        {
+            stream.Dispose();
+        }
     }
 
     sealed class SagaUpdate : SagaOperation
     {
+        MemoryStream stream;
+
         public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, serializer, context)
         {
         }
@@ -72,7 +81,7 @@
             throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' was updated by another process or no longer exists.");
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch)
         {
             var jObject = JObject.FromObject(SagaData, Serializer);
 
@@ -93,8 +102,13 @@
             };
 
             // has to be kept open
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
+            stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
             transactionalBatch.ReplaceItemStream(SagaData.Id.ToString(), stream, options);
+        }
+
+        public override void Dispose()
+        {
+            stream.Dispose();
         }
     }
 
@@ -109,7 +123,7 @@
             throw new Exception($"The '{SagaData.GetType().Name}' saga with id '{SagaData.Id}' can't be completed because it was updated by another process.");
         }
 
-        public override void Apply(TransactionalBatchDecorator transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch)
         {
             // only delete if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{SagaData.Id}", out var deleteEtag);

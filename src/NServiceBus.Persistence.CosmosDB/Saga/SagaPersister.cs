@@ -40,7 +40,7 @@
             var storageSession = (StorageSession)session;
 
             // reads need to go directly
-            var container = storageSession.Container;
+            var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
             var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
