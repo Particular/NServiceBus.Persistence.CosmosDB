@@ -22,7 +22,7 @@
         }
     }
 
-    class OutboxStore : OutboxOperation
+    sealed class OutboxStore : OutboxOperation
     {
         public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
         {
@@ -51,7 +51,7 @@
     }
 
 
-    class OutboxDelete : OutboxOperation
+    sealed class OutboxDelete : OutboxOperation
     {
         readonly int ttlInSeconds;
 
