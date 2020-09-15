@@ -23,6 +23,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         persistence.Container(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
 
+        // This populates the partition key at the physical stage to test the conventional outbox use-case
         configuration.Pipeline.Register(typeof(PartitionKeyProviderBehavior), "Populates the partition key");
 
         return Task.FromResult(0);

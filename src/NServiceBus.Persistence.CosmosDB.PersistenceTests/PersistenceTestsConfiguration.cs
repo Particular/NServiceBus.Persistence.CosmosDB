@@ -48,6 +48,7 @@
             GetContextBagForSagaStorage = () =>
             {
                 var contextBag = new ContextBag();
+                // This populates the partition key required to participate in a shared transaction
                 contextBag.Set(new PartitionKey(partitionKey));
                 contextBag.Set(SetupFixture.Container);
                 return contextBag;
@@ -56,6 +57,7 @@
             GetContextBagForOutbox = () =>
             {
                 var contextBag = new ContextBag();
+                // This populates the partition key required to participate in a shared transaction
                 contextBag.Set(new PartitionKey(partitionKey));
                 contextBag.Set(SetupFixture.Container);
                 return contextBag;
