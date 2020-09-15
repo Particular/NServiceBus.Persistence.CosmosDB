@@ -7,7 +7,7 @@
     {
         protected readonly TransactionalBatchItemRequestOptions options;
 
-        public UserOperation(TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(partitionKey, new PartitionKeyPath(""), null, null)
+        protected UserOperation(TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(partitionKey, new PartitionKeyPath(""), null, null)
         {
             this.options = options;
         }
@@ -17,7 +17,7 @@
     {
         protected readonly Stream streamPayload;
 
-        public StreamUserOperation(Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey)
+        protected StreamUserOperation(Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey)
         {
             this.streamPayload = streamPayload;
         }
@@ -36,7 +36,7 @@
 
         public override void Apply(TransactionalBatch transactionalBatch)
         {
-            transactionalBatch.CreateItem<T>(item, options);
+            transactionalBatch.CreateItem(item, options);
         }
     }
 
@@ -78,7 +78,7 @@
 
         public override void Apply(TransactionalBatch transactionalBatch)
         {
-            transactionalBatch.UpsertItem<T>(item, options);
+            transactionalBatch.UpsertItem(item, options);
         }
     }
 
@@ -107,7 +107,7 @@
 
         public override void Apply(TransactionalBatch transactionalBatch)
         {
-            transactionalBatch.ReplaceItem<T>(id, item, options);
+            transactionalBatch.ReplaceItem(id, item, options);
         }
     }
 

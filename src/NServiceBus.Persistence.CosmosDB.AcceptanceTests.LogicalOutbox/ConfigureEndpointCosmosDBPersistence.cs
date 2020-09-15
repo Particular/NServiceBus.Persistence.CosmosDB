@@ -7,8 +7,6 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Features;
-using NServiceBus.ObjectBuilder;
-using NServiceBus.Persistence.CosmosDB;
 using NServiceBus.Persistence.CosmosDB.Outbox;
 using NServiceBus.Pipeline;
 

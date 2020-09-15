@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class StorageSession : CompletableSynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {

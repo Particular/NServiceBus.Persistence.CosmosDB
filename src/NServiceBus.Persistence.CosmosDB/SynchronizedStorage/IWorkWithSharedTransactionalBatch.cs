@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     // Required for testing
     internal interface IWorkWithSharedTransactionalBatch

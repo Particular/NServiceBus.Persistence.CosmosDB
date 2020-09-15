@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Testing
 {
     using Microsoft.Azure.Cosmos;
-    using NServiceBus.Extensibility;
+    using Extensibility;
     using Persistence;
     using Persistence.CosmosDB;
 

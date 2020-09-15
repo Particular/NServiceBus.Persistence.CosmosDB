@@ -35,7 +35,7 @@
         internal LogicalOutboxBehavior(ContainerHolder containerHolder, JsonSerializer serializer)
         {
             this.serializer = serializer;
-            this.container = containerHolder.Container;
+            container = containerHolder.Container;
         }
 
         /// <inheritdoc />
