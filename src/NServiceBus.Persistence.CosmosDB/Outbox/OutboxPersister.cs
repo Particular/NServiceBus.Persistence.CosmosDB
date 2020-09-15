@@ -63,8 +63,7 @@
                 },
                 cosmosTransaction.PartitionKey.Value,
                 containerHolder.PartitionKeyPath,
-                serializer,
-                context));
+                serializer));
             return Task.CompletedTask;
         }
 
@@ -76,7 +75,7 @@
             {
                 Id = messageId,
                 Dispatched = true
-            }, partitionKey, containerHolder.PartitionKeyPath, serializer, ttlInSeconds, context);
+            }, partitionKey, containerHolder.PartitionKeyPath, serializer, ttlInSeconds);
 
             using (var transactionalBatch = new TransactionalBatchDecorator(containerHolder.Container.CreateTransactionalBatch(partitionKey)))
             {

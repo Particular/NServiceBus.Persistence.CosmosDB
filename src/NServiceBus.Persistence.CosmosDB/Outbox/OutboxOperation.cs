@@ -12,7 +12,7 @@
     {
         public OutboxRecord Record { get;  }
 
-        protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
+        protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer) : base(partitionKey, partitionKeyPath, serializer)
         {
             Record = record;
         }
@@ -24,7 +24,7 @@
 
     class OutboxStore : OutboxOperation
     {
-        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
+        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer) : base(record, partitionKey, partitionKeyPath, serializer)
         {
         }
 
@@ -55,7 +55,7 @@
     {
         readonly int ttlInSeconds;
 
-        public OutboxDelete(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, int ttlInSeconds, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
+        public OutboxDelete(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, int ttlInSeconds) : base(record, partitionKey, partitionKeyPath, serializer)
         {
             this.ttlInSeconds = ttlInSeconds;
         }

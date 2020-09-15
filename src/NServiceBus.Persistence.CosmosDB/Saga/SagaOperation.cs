@@ -13,7 +13,7 @@
     {
         public IContainSagaData SagaData { get; }
 
-        protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
+        protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer) : base(partitionKey, partitionKeyPath, serializer)
         {
             SagaData = sagaData;
         }
@@ -28,8 +28,8 @@
     {
         public SagaCorrelationProperty CorrelationProperty { get; }
 
-        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
-            : base(sagaData, partitionKey, partitionKeyPath, serializer, context)
+        public SagaSave(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer)
+            : base(sagaData, partitionKey, partitionKeyPath, serializer)
         {
             CorrelationProperty = correlationProperty;
         }

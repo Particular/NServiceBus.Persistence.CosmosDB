@@ -1,22 +1,18 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System.Net;
-    using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
 
     abstract class Operation
     {
-        protected Operation(PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
+        protected Operation(PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer)
         {
             PartitionKey = partitionKey;
             PartitionKeyPath = partitionKeyPath;
             Serializer = serializer;
-            Context = context;
         }
 
-        //TODO: what's the purpose of the context bag here?
-        public ContextBag Context { get; }
         public PartitionKey PartitionKey { get; }
         public PartitionKeyPath PartitionKeyPath { get; }
         public JsonSerializer Serializer { get; }
@@ -44,7 +40,7 @@
 
     class ThrowOnConflictOperation : Operation
     {
-        private ThrowOnConflictOperation() : base(PartitionKey.Null, default, null, null)
+        private ThrowOnConflictOperation() : base(PartitionKey.Null, default, null)
         {
         }
 
