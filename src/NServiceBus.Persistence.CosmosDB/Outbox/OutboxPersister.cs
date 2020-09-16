@@ -23,23 +23,22 @@
             {
                 cosmosOutboxTransaction.PartitionKey = partitionKey;
             }
-            else
-            {
-                // hack so it is possible to override it in the logical phase
-                context.Set(PartitionKey.Null);
-            }
-
 
             return Task.FromResult((OutboxTransaction)cosmosOutboxTransaction);
         }
 
         public async Task<OutboxMessage> Get(string messageId, ContextBag context)
         {
+            var setAsDispatchedPartitionKeyHolder = new SetAsDispatchedPartitionKeyHolder();
+            context.Set(setAsDispatchedPartitionKeyHolder);
+
             if (!context.TryGet<PartitionKey>(out var partitionKey))
             {
                 // we return null here to enable outbox work at logical stage
                 return null;
             }
+
+            setAsDispatchedPartitionKeyHolder.PartitionKey = partitionKey;
 
             var outboxRecord = await containerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
                 .ConfigureAwait(false);
@@ -70,7 +69,7 @@
 
         public async Task SetAsDispatched(string messageId, ContextBag context)
         {
-            var partitionKey = context.Get<PartitionKey>();
+            var partitionKey = context.Get<SetAsDispatchedPartitionKeyHolder>().PartitionKey;
 
             var operation = new OutboxDelete(new OutboxRecord
             {
