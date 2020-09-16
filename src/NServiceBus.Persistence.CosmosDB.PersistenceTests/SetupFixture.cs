@@ -29,14 +29,18 @@
 
             CosmosDbClient = builder.Build();
 
-            await CosmosDBPersistenceInstaller.CreateContainerIfNotExists(new InstallerSettings
+            var installer = new CosmosDBPersistenceInstaller(new CosmosClientProvidedByConfiguration
             {
-                Client = CosmosDbClient,
+                Client = CosmosDbClient
+            }, new InstallerSettings
+            {
                 ContainerName = ContainerName,
                 DatabaseName = DatabaseName,
                 Disabled = false,
                 PartitionKeyPath = PartitionPathKey
             });
+
+            await installer.Install("");
 
             var database = CosmosDbClient.GetDatabase(DatabaseName);
             Container = database.GetContainer(ContainerName);

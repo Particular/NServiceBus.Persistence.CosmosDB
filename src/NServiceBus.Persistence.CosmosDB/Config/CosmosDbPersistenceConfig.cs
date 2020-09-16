@@ -12,25 +12,13 @@
         /// <summary>
         /// Override the default CosmosClient creation by providing a pre-configured CosmosClient
         /// </summary>
+        /// <remarks>The lifetime of the provided client is assumed to be controlled by the caller of this method and thus the client will not be disposed.</remarks>
         public static PersistenceExtensions<CosmosDbPersistence> CosmosClient(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, CosmosClient cosmosClient)
         {
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(cosmosClient), cosmosClient);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = cosmosClient});
-            return persistenceExtensions;
-        }
-
-        /// <summary>
-        /// Connection string to use for sagas storage.
-        /// </summary>
-        /// TODO: Discuss if we can drop this in favor of just providing CosmosClient above.
-        public static PersistenceExtensions<CosmosDbPersistence> ConnectionString(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string connectionString)
-        {
-            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
-
-            persistenceExtensions.GetSettings().Set(SettingsKeys.CosmosClient, new ClientHolder {Client = new CosmosClient(connectionString)});
-
+            persistenceExtensions.GetSettings().Set<IProvideCosmosClient>(new CosmosClientProvidedByConfiguration { Client = cosmosClient });
             return persistenceExtensions;
         }
 

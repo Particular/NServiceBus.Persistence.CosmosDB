@@ -2,8 +2,7 @@
 {
     using Microsoft.Azure.Cosmos;
 
-    // otherwise the client gets disposed
-    class ClientHolder
+    class CosmosClientProvidedByConfiguration : IProvideCosmosClient
     {
         public CosmosClient Client { get; set; }
     }
