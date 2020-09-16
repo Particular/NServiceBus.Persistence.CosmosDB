@@ -9,11 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.PersistenceTests", "NServiceBus.Persistence.CosmosDB.PersistenceTests\NServiceBus.Persistence.CosmosDB.PersistenceTests.csproj", "{BCA68BFA-84B4-401C-A37B-50A978669E7F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox\NServiceBus.Persistence.CosmosDB.AcceptanceTests.PhysicalOutbox.csproj", "{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests\NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests.csproj", "{830695F3-1B4A-4FB0-ACBE-4DBA3F3132D8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox\NServiceBus.Persistence.CosmosDB.AcceptanceTests.LogicalOutbox.csproj", "{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests\NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests.csproj", "{7BE4A99D-CE2A-4FCE-9CFB-9AC98B688D34}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas", "NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas\NServiceBus.Persistence.CosmosDB.AcceptanceTests.NonTransactionalSagas.csproj", "{144FE639-E1F9-40EA-830D-60487D92A73F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests\NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests.csproj", "{144FE639-E1F9-40EA-830D-60487D92A73F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
