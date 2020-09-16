@@ -1,9 +1,9 @@
-﻿using Microsoft.Azure.Cosmos;
-
-namespace NServiceBus
+﻿namespace NServiceBus
 {
+    using Microsoft.Azure.Cosmos;
+
     /// <summary>
-    /// Public interface for providing a CosmosClient via dependency injection
+    /// Provides a CosmosClient via dependency injection
     /// </summary>
     public interface IProvideCosmosClient
     {
