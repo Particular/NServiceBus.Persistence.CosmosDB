@@ -13,6 +13,7 @@
         protected override void Setup(FeatureConfigurationContext context)
         {
             var settings = context.Settings.Get<InstallerSettings>();
+            context.Container.ConfigureComponent(() => settings, DependencyLifecycle.SingleInstance);
             if (settings.Disabled)
             {
                 return;
@@ -25,8 +26,6 @@
             settings.ContainerName = containerName;
             settings.DatabaseName = databaseName;
             settings.PartitionKeyPath = partitionKeyPath;
-
-            context.Container.ConfigureComponent(() => settings, DependencyLifecycle.SingleInstance);
         }
     }
 }
