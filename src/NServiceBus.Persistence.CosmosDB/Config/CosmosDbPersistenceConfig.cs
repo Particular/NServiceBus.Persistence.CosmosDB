@@ -12,6 +12,7 @@
         /// <summary>
         /// Override the default CosmosClient creation by providing a pre-configured CosmosClient
         /// </summary>
+        /// <remarks>The lifetime of the provided client is assumed to be controlled by the caller of this method and thus the client will not be disposed.</remarks>
         public static PersistenceExtensions<CosmosDbPersistence> CosmosClient(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, CosmosClient cosmosClient)
         {
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
