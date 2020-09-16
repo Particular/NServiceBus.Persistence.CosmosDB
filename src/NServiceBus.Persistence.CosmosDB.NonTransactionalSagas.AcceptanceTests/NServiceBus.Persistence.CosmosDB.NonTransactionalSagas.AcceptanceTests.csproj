@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\SharedAcceptanceTests.All\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="\**\ConfigureEndpointInMemoryPersistence.cs" />
     <Compile Remove="\**\ConfigureEndpointLearningPersistence.cs" />
     <Compile Remove="\**\ConventionEnforcementTests.cs" />
