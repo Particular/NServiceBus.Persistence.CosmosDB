@@ -49,6 +49,7 @@
             {
                 var contextBag = new ContextBag();
                 // This populates the partition key required to participate in a shared transaction
+                contextBag.Set(new SetAsDispatchedPartitionKeyHolder { PartitionKey = new PartitionKey(partitionKey) });
                 contextBag.Set(new PartitionKey(partitionKey));
                 contextBag.Set(SetupFixture.Container);
                 return contextBag;
@@ -58,6 +59,7 @@
             {
                 var contextBag = new ContextBag();
                 // This populates the partition key required to participate in a shared transaction
+                contextBag.Set(new SetAsDispatchedPartitionKeyHolder { PartitionKey = new PartitionKey(partitionKey) });
                 contextBag.Set(new PartitionKey(partitionKey));
                 contextBag.Set(SetupFixture.Container);
                 return contextBag;
