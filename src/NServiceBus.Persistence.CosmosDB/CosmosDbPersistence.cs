@@ -16,6 +16,7 @@
                 s.SetDefault(SettingsKeys.DatabaseName, "NServiceBus");
                 s.SetDefault(SettingsKeys.ContainerName, s.EndpointName());
                 s.SetDefault(new PartitionKeyPath("/Id"));
+                s.EnableFeatureByDefault<InstallerFeature>();
             });
 
             Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<CosmosDbSagaPersistence>());
