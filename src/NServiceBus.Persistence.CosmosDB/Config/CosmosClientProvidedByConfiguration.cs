@@ -1,7 +1,7 @@
-﻿using Microsoft.Azure.Cosmos;
-
-namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using Microsoft.Azure.Cosmos;
+
     class CosmosClientProvidedByConfiguration : IProvideCosmosClient
     {
         public CosmosClient Client { get; set; }
