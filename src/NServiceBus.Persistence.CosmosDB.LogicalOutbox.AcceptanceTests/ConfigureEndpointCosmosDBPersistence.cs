@@ -6,8 +6,6 @@ using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
-using NServiceBus.Features;
-using NServiceBus.Persistence.CosmosDB;
 using NServiceBus.Pipeline;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
@@ -26,26 +24,14 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         persistence.Container(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
 
+        configuration.Pipeline.Register(new PartitionKeyProviderBehavior.PartitionKeyProviderBehaviorRegisterStep());
+
         return Task.FromResult(0);
     }
 
     public Task Cleanup()
     {
         return Task.CompletedTask;
-    }
-
-    class PartitionKeyProviderFeature : Feature
-    {
-        public PartitionKeyProviderFeature()
-        {
-            EnableByDefault();
-            DependsOn(nameof(OutboxStorage));
-        }
-
-        protected override void Setup(FeatureConfigurationContext context)
-        {
-            context.Pipeline.Register(new PartitionKeyProviderBehavior.PartitionKeyProviderBehaviorRegisterStep());
-        }
     }
 
     class PartitionKeyProviderBehavior : Behavior<IIncomingLogicalMessageContext>
@@ -65,9 +51,11 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         public class PartitionKeyProviderBehaviorRegisterStep : RegisterStep
         {
-            public PartitionKeyProviderBehaviorRegisterStep() : base(nameof(PartitionKeyProviderBehavior), typeof(PartitionKeyProviderBehavior), "Populates the partition key", b => new PartitionKeyProviderBehavior(b.Build<ScenarioContext>()))
+            public PartitionKeyProviderBehaviorRegisterStep() : base(nameof(PartitionKeyProviderBehavior),
+                typeof(PartitionKeyProviderBehavior),
+                "Populates the partition key",
+                b => new PartitionKeyProviderBehavior(b.Build<ScenarioContext>()))
             {
-                InsertBefore("LogicalOutboxBehavior");
             }
         }
     }
