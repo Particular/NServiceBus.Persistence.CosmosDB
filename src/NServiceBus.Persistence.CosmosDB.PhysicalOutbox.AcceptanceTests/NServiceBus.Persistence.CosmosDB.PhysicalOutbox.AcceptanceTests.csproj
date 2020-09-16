@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Compile Include="..\SharedAcceptanceTests.All\*.*" />
+    <Compile Include="..\SharedAcceptanceTests.RequirePartitionKey\*.*" />
   </ItemGroup>
 
   <ItemGroup>

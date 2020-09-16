@@ -7,11 +7,17 @@
 
     class StorageSessionAdapter : ISynchronizedStorageAdapter
     {
+        public StorageSessionAdapter(CurrentSharedTransactionalBatchHolder currentSharedTransactionalBatchHolder)
+        {
+            this.currentSharedTransactionalBatchHolder = currentSharedTransactionalBatchHolder;
+        }
+
         public Task<CompletableSynchronizedStorageSession> TryAdapt(OutboxTransaction transaction, ContextBag context)
         {
             if (transaction is CosmosOutboxTransaction cosmosOutboxTransaction)
             {
                 cosmosOutboxTransaction.StorageSession.CurrentContextBag = context;
+                currentSharedTransactionalBatchHolder?.SetCurrent(cosmosOutboxTransaction.StorageSession);
                 return Task.FromResult((CompletableSynchronizedStorageSession)cosmosOutboxTransaction.StorageSession);
             }
 
@@ -24,5 +30,6 @@
         }
 
         static readonly Task<CompletableSynchronizedStorageSession> emptyResult = Task.FromResult((CompletableSynchronizedStorageSession)null);
+        readonly CurrentSharedTransactionalBatchHolder currentSharedTransactionalBatchHolder;
     }
 }
