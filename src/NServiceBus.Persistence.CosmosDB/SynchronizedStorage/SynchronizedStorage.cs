@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
-    using System;
     using Features;
 
     class SynchronizedStorage : Feature

@@ -1,7 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
-    using Microsoft.Azure.Cosmos;
-
     class InstallerSettings
     {
         public bool Disabled { get; set; }
