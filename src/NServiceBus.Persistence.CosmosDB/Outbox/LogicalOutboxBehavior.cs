@@ -61,11 +61,13 @@
             }
 
             // Outbox operating at the logical stage
-            if (!context.Extensions.TryGet<PartitionKey>(out var partitionKey) && partitionKey != PartitionKey.Null)
+            if (!context.Extensions.TryGet<PartitionKey>(out var partitionKey))
             {
                 throw new Exception("For the outbox to work the following information must be provided at latest up to the incoming physical or logical message stage. A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`.");
             }
 
+
+            context.Extensions.Get<SetAsDispatchedPartitionKeyHolder>().PartitionKey = partitionKey;
             outboxTransaction.PartitionKey = partitionKey;
 
             var outboxRecord = await container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions)

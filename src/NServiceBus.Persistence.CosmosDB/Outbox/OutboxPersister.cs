@@ -21,12 +21,13 @@
 
             if (context.TryGet<PartitionKey>(out var partitionKey))
             {
+                context.Set(new SetAsDispatchedPartitionKeyHolder { PartitionKey = partitionKey });
                 cosmosOutboxTransaction.PartitionKey = partitionKey;
             }
             else
             {
                 // hack so it is possible to override it in the logical phase
-                context.Set(PartitionKey.Null);
+                context.Set(new SetAsDispatchedPartitionKeyHolder());
             }
 
 
@@ -70,7 +71,7 @@
 
         public async Task SetAsDispatched(string messageId, ContextBag context)
         {
-            var partitionKey = context.Get<PartitionKey>();
+            var partitionKey = context.Get<SetAsDispatchedPartitionKeyHolder>().PartitionKey;
 
             var operation = new OutboxDelete(new OutboxRecord
             {
