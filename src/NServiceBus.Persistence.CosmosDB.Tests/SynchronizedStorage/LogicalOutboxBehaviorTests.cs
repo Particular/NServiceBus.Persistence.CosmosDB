@@ -51,7 +51,6 @@
             var testableContext = new TestableIncomingLogicalMessageContext();
 
             testableContext.Extensions.Set(new PartitionKey(""));
-            testableContext.Extensions.Set(new SetAsDispatchedPartitionKeyHolder());
 
             testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(containerHolder, testableContext.Extensions));
 

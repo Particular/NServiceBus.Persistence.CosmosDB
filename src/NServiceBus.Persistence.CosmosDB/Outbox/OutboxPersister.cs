@@ -29,8 +29,7 @@
 
         public async Task<OutboxMessage> Get(string messageId, ContextBag context)
         {
-            var setAsDispatchedPartitionKeyHolder = new SetAsDispatchedPartitionKeyHolder();
-            context.Set(setAsDispatchedPartitionKeyHolder);
+            context.Set(PartitionKey.Null);
 
             if (!context.TryGet<PartitionKey>(out var partitionKey))
             {
@@ -38,7 +37,7 @@
                 return null;
             }
 
-            setAsDispatchedPartitionKeyHolder.PartitionKey = partitionKey;
+            context.Set(partitionKey);
 
             var outboxRecord = await containerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
                 .ConfigureAwait(false);
@@ -69,7 +68,7 @@
 
         public async Task SetAsDispatched(string messageId, ContextBag context)
         {
-            var partitionKey = context.Get<SetAsDispatchedPartitionKeyHolder>().PartitionKey;
+            var partitionKey = context.Get<PartitionKey>();
 
             var operation = new OutboxDelete(new OutboxRecord
             {
