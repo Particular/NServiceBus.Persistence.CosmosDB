@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus
 {
     using System;
+    using Microsoft.Azure.Cosmos;
     using Persistence;
     using Persistence.CosmosDB;
 
@@ -10,15 +11,15 @@
     public static class SynchronizedStorageSessionExtensions
     {
         /// <summary>
-        /// Retrieves the current session from the context.
+        /// Retrieves the shared <see cref="TransactionalBatch"/> from the <see cref="SynchronizedStorageSession"/>.
         /// </summary>
-        public static ICosmosDBStorageSession GetCosmosDBStorageSession(this SynchronizedStorageSession session)
+        public static TransactionalBatch GetSharedTransactionalBatch(this SynchronizedStorageSession session)
         {
             Guard.AgainstNull(nameof(session), session);
 
             if (session is IWorkWithSharedTransactionalBatch workWith)
             {
-                return workWith.Create();
+                return workWith.Create().Batch;
             }
 
             throw new Exception($"Cannot access the synchronized storage session. Ensure that 'EndpointConfiguration.UsePersistence<{nameof(CosmosDbPersistence)}>()' has been called.");

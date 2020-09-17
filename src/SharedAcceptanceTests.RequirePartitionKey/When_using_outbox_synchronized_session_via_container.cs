@@ -34,14 +34,10 @@
                 EndpointSetup<DefaultServer>(config =>
                 {
                     config.EnableOutbox();
+                    config.UsePersistence<CosmosDbPersistence>().RegisterSharedTransactionalBatchForDependencyInjection();
                     config.RegisterComponents(c =>
                     {
                         c.ConfigureComponent<MyRepository>(DependencyLifecycle.InstancePerUnitOfWork);
-                        c.ConfigureComponent(b =>
-                        {
-                            var session = b.Build<ICosmosDBStorageSession>();
-                            return session?.Batch;
-                        }, DependencyLifecycle.InstancePerUnitOfWork);
                     });
                 });
             }

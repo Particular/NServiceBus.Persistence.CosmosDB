@@ -37,16 +37,9 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(config =>
+                EndpointSetup<DefaultServer>((config, run) =>
                 {
-                    config.RegisterComponents(c =>
-                    {
-                        c.ConfigureComponent(b =>
-                        {
-                            var session = b.Build<ICosmosDBStorageSession>();
-                            return session.Batch;
-                        }, DependencyLifecycle.InstancePerUnitOfWork);
-                    });
+                    config.UsePersistence<CosmosDbPersistence>().RegisterSharedTransactionalBatchForDependencyInjection();
                 });
             }
 
