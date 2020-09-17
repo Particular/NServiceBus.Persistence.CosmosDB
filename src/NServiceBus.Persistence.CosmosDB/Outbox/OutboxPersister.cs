@@ -8,16 +8,16 @@
 
     class OutboxPersister : IOutboxStorage
     {
-        public OutboxPersister(ContainerHolder containerHolder, JsonSerializer serializer, int ttlInSeconds)
+        public OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds)
         {
-            this.containerHolder = containerHolder;
+            this.containerHolderResolver = containerHolderResolver;
             this.serializer = serializer;
             this.ttlInSeconds = ttlInSeconds;
         }
 
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
         {
-            var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolder, context);
+            var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
             if (context.TryGet<PartitionKey>(out var partitionKey))
             {
@@ -29,8 +29,11 @@
 
         public async Task<OutboxMessage> Get(string messageId, ContextBag context)
         {
-            var setAsDispatchedPartitionKeyHolder = new SetAsDispatchedPartitionKeyHolder();
-            context.Set(setAsDispatchedPartitionKeyHolder);
+            var setAsDispatchedHolder = new SetAsDispatchedHolder
+            {
+                ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context)
+            };
+            context.Set(setAsDispatchedHolder);
 
             if (!context.TryGet<PartitionKey>(out var partitionKey))
             {
@@ -38,9 +41,9 @@
                 return null;
             }
 
-            setAsDispatchedPartitionKeyHolder.PartitionKey = partitionKey;
+            setAsDispatchedHolder.PartitionKey = partitionKey;
 
-            var outboxRecord = await containerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
+            var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
                 .ConfigureAwait(false);
 
             return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations) : null;
@@ -61,7 +64,6 @@
                     TransportOperations = message.TransportOperations
                 },
                 cosmosTransaction.PartitionKey.Value,
-                containerHolder.PartitionKeyPath,
                 serializer,
                 context));
             return Task.CompletedTask;
@@ -69,23 +71,26 @@
 
         public async Task SetAsDispatched(string messageId, ContextBag context)
         {
-            var partitionKey = context.Get<SetAsDispatchedPartitionKeyHolder>().PartitionKey;
+            var setAsDispatchedHolder = context.Get<SetAsDispatchedHolder>();
+
+            var partitionKey = setAsDispatchedHolder.PartitionKey;
+            var containerHolder = setAsDispatchedHolder.ContainerHolder;
 
             var operation = new OutboxDelete(new OutboxRecord
             {
                 Id = messageId,
                 Dispatched = true
-            }, partitionKey, containerHolder.PartitionKeyPath, serializer, ttlInSeconds, context);
+            }, partitionKey, serializer, ttlInSeconds, context);
 
             var transactionalBatch = containerHolder.Container.CreateTransactionalBatch(partitionKey);
 
-            await transactionalBatch.ExecuteOperationAsync(operation).ConfigureAwait(false);
+            await transactionalBatch.ExecuteOperationAsync(operation, containerHolder.PartitionKeyPath).ConfigureAwait(false);
         }
 
         readonly JsonSerializer serializer;
         readonly int ttlInSeconds;
-        readonly ContainerHolder containerHolder;
 
         internal static readonly string SchemaVersion = "1.0.0";
+        ContainerHolderResolver containerHolderResolver;
     }
 }

@@ -7,7 +7,7 @@
     {
         protected readonly TransactionalBatchItemRequestOptions options;
 
-        protected UserOperation(TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(partitionKey, new PartitionKeyPath(""), null, null)
+        protected UserOperation(TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(partitionKey, null, null)
         {
             this.options = options;
         }
@@ -34,7 +34,7 @@
             this.item = item;
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.CreateItem(item, options);
         }
@@ -46,7 +46,7 @@
         {
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.CreateItemStream(streamPayload, options);
         }
@@ -61,7 +61,7 @@
             this.id = id;
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.ReadItem(id, options);
         }
@@ -76,7 +76,7 @@
             this.item = item;
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.UpsertItem(item, options);
         }
@@ -88,7 +88,7 @@
         {
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.UpsertItemStream(streamPayload, options);
         }
@@ -105,7 +105,7 @@
             this.item = item;
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.ReplaceItem(id, item, options);
         }
@@ -120,7 +120,7 @@
             this.id = id;
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.ReplaceItemStream(id, streamPayload, options);
         }
@@ -135,7 +135,7 @@
             this.id = id;
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.DeleteItem(id, options);
         }

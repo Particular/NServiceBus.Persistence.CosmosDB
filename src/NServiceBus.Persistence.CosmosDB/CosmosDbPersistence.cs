@@ -14,10 +14,7 @@
             Defaults(s =>
             {
                 s.SetDefault(SettingsKeys.DatabaseName, "NServiceBus");
-                s.SetDefault(SettingsKeys.ContainerName, s.EndpointName());
-                s.SetDefault(new PartitionKeyPath("/Id"));
                 s.SetDefault<IProvideCosmosClient>(new ThrowIfNoCosmosClientIsProvided());
-
                 s.EnableFeatureByDefault<InstallerFeature>();
             });
 

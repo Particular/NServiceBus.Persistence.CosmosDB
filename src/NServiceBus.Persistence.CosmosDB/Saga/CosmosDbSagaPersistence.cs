@@ -21,7 +21,7 @@
         {
             var serializer = new JsonSerializer {ContractResolver = new CosmosDBContractResolver()};
 
-            context.Container.ConfigureComponent(builder => new SagaPersister(builder.Build<ContainerHolder>(), serializer), DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent(builder => new SagaPersister(serializer), DependencyLifecycle.SingleInstance);
         }
     }
 }

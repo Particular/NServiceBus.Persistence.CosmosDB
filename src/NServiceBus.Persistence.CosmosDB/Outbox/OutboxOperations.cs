@@ -13,7 +13,7 @@
         protected readonly OutboxRecord record;
         protected Stream stream = Stream.Null;
 
-        protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
+        protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context)
         {
             this.record = record;
         }
@@ -26,11 +26,11 @@
 
     sealed class OutboxStore : OutboxOperation
     {
-        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
+        public OutboxStore(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(record, partitionKey, serializer, context)
         {
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             var jObject = JObject.FromObject(record, Serializer);
 
@@ -40,7 +40,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
+            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
@@ -57,18 +57,18 @@
     {
         readonly int ttlInSeconds;
 
-        public OutboxDelete(OutboxRecord record, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, int ttlInSeconds, ContextBag context) : base(record, partitionKey, partitionKeyPath, serializer, context)
+        public OutboxDelete(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, int ttlInSeconds, ContextBag context) : base(record, partitionKey, serializer, context)
         {
             this.ttlInSeconds = ttlInSeconds;
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             var jObject = JObject.FromObject(record, Serializer);
 
             jObject.Add("ttl", ttlInSeconds);
 
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
+            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(jObject.ToString(Formatting.None)));

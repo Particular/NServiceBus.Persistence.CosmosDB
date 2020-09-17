@@ -22,8 +22,6 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        persistence.Container(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
-
         configuration.Pipeline.Register(new PartitionKeyProviderBehavior.PartitionKeyProviderBehaviorRegisterStep());
 
         return Task.FromResult(0);
@@ -46,6 +44,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         public override Task Invoke(IIncomingLogicalMessageContext context, Func<Task> next)
         {
             context.Extensions.Set(new PartitionKey(scenarioContext.TestRunId.ToString()));
+            context.Extensions.Set(new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
             return next();
         }
 
