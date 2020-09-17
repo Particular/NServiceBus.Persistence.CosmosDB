@@ -27,6 +27,11 @@
             context.Container.ConfigureComponent(b=> new StorageSessionFactory(b.Build<ContainerHolderResolver>(), currentSharedTransactionalBatchHolder), DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent(b=> new StorageSessionAdapter(currentSharedTransactionalBatchHolder), DependencyLifecycle.SingleInstance);
 
+            if (context.Settings.TryGet(SettingsKeys.RegisterSharedTransactionalBatch, out bool _))
+            {
+                context.Container.ConfigureComponent(b => b.Build<ICosmosDBStorageSession>()?.Batch, DependencyLifecycle.InstancePerUnitOfWork);
+            }
+
             context.Pipeline.Register(new CurrentSharedTransactionalBatchBehavior(currentSharedTransactionalBatchHolder), "Manages the lifecycle of the current storage session.");
         }
     }

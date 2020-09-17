@@ -2,6 +2,7 @@
 {
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
+    using NServiceBus.Settings;
     using Persistence.CosmosDB;
 
     /// <summary>
@@ -54,6 +55,16 @@
         public static PersistenceExtensions<CosmosDbPersistence> DefaultContainer(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string containerName, string partitionKeyPath)
         {
             return DefaultContainer(persistenceExtensions, new ContainerInformation(containerName, new PartitionKeyPath(partitionKeyPath)));
+        }
+
+        /// <summary>
+        /// Registers the shared transactional batch for dependency injection.
+        /// </summary>
+        public static PersistenceExtensions<CosmosDbPersistence> RegisterSharedTransactionalBatchForDependencyInjection(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions)
+        {
+            persistenceExtensions.GetSettings().Set(SettingsKeys.RegisterSharedTransactionalBatch, true);
+
+            return persistenceExtensions;
         }
 
         /// <summary>
