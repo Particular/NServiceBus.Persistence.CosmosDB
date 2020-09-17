@@ -37,14 +37,23 @@
         /// <summary>
         /// Sets the default container name and the partition key path that will be used.
         /// </summary>
-        /// <remarks>This method is optional. If the default container is not provided the container information needs to be provided as part of the message handling pipeline.</remarks>
-        public static PersistenceExtensions<CosmosDbPersistence> Container(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, ContainerInformation containerInformation)
+        /// <remarks>This method is optional. When the default container is not set the container information needs to be provided as part of the message handling pipeline.</remarks>
+        public static PersistenceExtensions<CosmosDbPersistence> DefaultContainer(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, ContainerInformation containerInformation)
         {
             var settings = persistenceExtensions.GetSettings();
 
             settings.Set(containerInformation);
 
             return persistenceExtensions;
+        }
+
+        /// <summary>
+        /// Sets the default container name and the partition key path that will be used.
+        /// </summary>
+        /// <remarks>This method is optional. When the default container is not set the container information needs to be provided as part of the message handling pipeline.</remarks>
+        public static PersistenceExtensions<CosmosDbPersistence> DefaultContainer(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string containerName, string partitionKeyPath)
+        {
+            return DefaultContainer(persistenceExtensions, new ContainerInformation(containerName, new PartitionKeyPath(partitionKeyPath)));
         }
 
         /// <summary>
