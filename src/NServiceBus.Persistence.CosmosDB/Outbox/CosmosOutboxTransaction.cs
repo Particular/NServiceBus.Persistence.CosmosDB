@@ -13,9 +13,9 @@
         // By default, store and commit are enabled
         public bool SuppressStoreAndCommit { get; set; }
 
-        public CosmosOutboxTransaction(ContainerHolder containerHolder, ContextBag context)
+        public CosmosOutboxTransaction(ContextBag context)
         {
-            StorageSession = new StorageSession(containerHolder, context, false);
+            StorageSession = new StorageSession(context, false);
         }
 
         public Task Commit()

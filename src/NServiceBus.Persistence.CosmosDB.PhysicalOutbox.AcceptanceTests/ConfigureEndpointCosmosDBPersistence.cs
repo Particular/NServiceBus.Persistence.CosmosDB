@@ -22,7 +22,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        persistence.Container(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
+        //persistence.Container(new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
 
         // This populates the partition key at the physical stage to test the conventional outbox use-case
         configuration.Pipeline.Register(typeof(PartitionKeyProviderBehavior), "Populates the partition key");
@@ -47,6 +47,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         public override Task Invoke(ITransportReceiveContext context, Func<Task> next)
         {
             context.Extensions.Set(new PartitionKey(scenarioContext.TestRunId.ToString()));
+            context.Extensions.Set(new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
             return next();
         }
     }

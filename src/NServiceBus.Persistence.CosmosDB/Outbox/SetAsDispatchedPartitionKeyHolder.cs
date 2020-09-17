@@ -6,5 +6,6 @@
     class SetAsDispatchedPartitionKeyHolder
     {
         public PartitionKey PartitionKey  { get; set; }
+        public ContainerHolder ContainerHolder { get; set; }
     }
 }

@@ -10,7 +10,7 @@
     using Persistence;
     using Persistence.CosmosDB;
 
-    public partial class PersistenceTestsConfiguration
+    public partial class PersistenceTestsConfiguration : IProvideCosmosClient
     {
         public bool SupportsDtc => false;
 
@@ -30,28 +30,32 @@
 
         public IOutboxStorage OutboxStorage { get; private set; }
 
+        public CosmosClient Client { get; } = SetupFixture.CosmosDbClient;
+
         public Task Configure()
         {
             // with this we have a partition key per run which makes things naturally isolated
             partitionKey = Guid.NewGuid().ToString();
 
-            var containerHolder = new ContainerHolder(SetupFixture.Container, new PartitionKeyPath(SetupFixture.PartitionPathKey));
             var serializer = new JsonSerializer
             {
                 ContractResolver = new CosmosDBContractResolver()
             };
 
-            SynchronizedStorage = new StorageSessionFactory(containerHolder, null);
-            SagaStorage = new SagaPersister(containerHolder, serializer);
-            OutboxStorage = new OutboxPersister(containerHolder, serializer, 100);
+            var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
+            var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);
+            SynchronizedStorage = new StorageSessionFactory(resolver, null);
+            SagaStorage = new SagaPersister( serializer);
+            OutboxStorage = new OutboxPersister(resolver, serializer, 100);
 
             GetContextBagForSagaStorage = () =>
             {
                 var contextBag = new ContextBag();
                 // This populates the partition key required to participate in a shared transaction
-                contextBag.Set(new SetAsDispatchedPartitionKeyHolder { PartitionKey = new PartitionKey(partitionKey) });
+                var setAsDispatchedPartitionKeyHolder = new SetAsDispatchedPartitionKeyHolder { PartitionKey = new PartitionKey(partitionKey)};
+                setAsDispatchedPartitionKeyHolder.ContainerHolder = resolver.ResolveAndSetIfAvailable(contextBag);
+                contextBag.Set(setAsDispatchedPartitionKeyHolder);
                 contextBag.Set(new PartitionKey(partitionKey));
-                contextBag.Set(SetupFixture.Container);
                 return contextBag;
             };
 
@@ -59,9 +63,10 @@
             {
                 var contextBag = new ContextBag();
                 // This populates the partition key required to participate in a shared transaction
-                contextBag.Set(new SetAsDispatchedPartitionKeyHolder { PartitionKey = new PartitionKey(partitionKey) });
+                var setAsDispatchedPartitionKeyHolder = new SetAsDispatchedPartitionKeyHolder { PartitionKey = new PartitionKey(partitionKey)};
+                setAsDispatchedPartitionKeyHolder.ContainerHolder = resolver.ResolveAndSetIfAvailable(contextBag);
+                contextBag.Set(setAsDispatchedPartitionKeyHolder);
                 contextBag.Set(new PartitionKey(partitionKey));
-                contextBag.Set(SetupFixture.Container);
                 return contextBag;
             };
 

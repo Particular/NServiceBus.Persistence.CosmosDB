@@ -9,9 +9,8 @@
     class StorageSession : CompletableSynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {
         // When outbox is involved, commitOnComplete will be false
-        public StorageSession(ContainerHolder containerHolder, ContextBag context, bool commitOnComplete)
+        public StorageSession(ContextBag context, bool commitOnComplete)
         {
-            ContainerHolder = containerHolder;
             this.commitOnComplete = commitOnComplete;
             CurrentContextBag = context;
         }
@@ -50,7 +49,7 @@
             {
                 var transactionalBatch = ContainerHolder.Container.CreateTransactionalBatch(batchOfOperations.Key);
 
-                await transactionalBatch.ExecuteOperationsAsync(batchOfOperations.Value).ConfigureAwait(false);
+                await transactionalBatch.ExecuteOperationsAsync(batchOfOperations.Value, ContainerHolder.PartitionKeyPath).ConfigureAwait(false);
             }
         }
 
@@ -68,8 +67,20 @@
         }
 
         readonly bool commitOnComplete;
-        public ContainerHolder ContainerHolder { get; }
         public ContextBag CurrentContextBag { get; set; }
+
+        public ContainerHolder ContainerHolder
+        {
+            get
+            {
+                if (!CurrentContextBag.TryGet<ContainerHolder>(out var containerHolder))
+                {
+                    // probably throw here?
+                }
+
+                return containerHolder;
+            }
+        }
 
         readonly Dictionary<PartitionKey, Dictionary<int, Operation>> operations = new Dictionary<PartitionKey, Dictionary<int, Operation>>();
     }

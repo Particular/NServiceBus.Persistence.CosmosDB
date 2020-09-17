@@ -13,7 +13,7 @@
         protected readonly IContainSagaData sagaData;
         protected Stream stream = Stream.Null;
 
-        protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(partitionKey, partitionKeyPath, serializer, context)
+        protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context)
         {
             this.sagaData = sagaData;
         }
@@ -31,8 +31,8 @@
 
     sealed class SagaSave : SagaOperation
     {
-        public SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
-            : base(sagaData, partitionKey, partitionKeyPath, serializer, context)
+        public SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+            : base(sagaData, partitionKey, serializer, context)
         {
         }
 
@@ -41,7 +41,7 @@
             throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be created possibly due to a concurrency conflict.");
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             var jObject = JObject.FromObject(sagaData, Serializer);
 
@@ -51,7 +51,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
+            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // Has to be kept open for transaction batch to be able to use the stream
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
@@ -65,7 +65,7 @@
 
     sealed class SagaUpdate : SagaOperation
     {
-        public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, serializer, context)
+        public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
         {
         }
 
@@ -74,7 +74,7 @@
             throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' was updated by another process or no longer exists.");
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             var jObject = JObject.FromObject(sagaData, Serializer);
 
@@ -84,7 +84,7 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), PartitionKeyPath);
+            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // only update if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);
@@ -102,7 +102,7 @@
 
     sealed class SagaDelete : SagaOperation
     {
-        public SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, ContextBag context) : base(sagaData, partitionKey, partitionKeyPath, null, context)
+        public SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, ContextBag context) : base(sagaData, partitionKey, null, context)
         {
         }
 
@@ -111,7 +111,7 @@
             throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed because it was updated by another process.");
         }
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             // only delete if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var deleteEtag);

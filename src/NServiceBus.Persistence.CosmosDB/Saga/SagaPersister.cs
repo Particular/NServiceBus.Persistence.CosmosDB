@@ -11,9 +11,8 @@
 
     class SagaPersister : ISagaPersister
     {
-        public SagaPersister(ContainerHolder containerHolder, JsonSerializer serializer)
+        public SagaPersister(JsonSerializer serializer)
         {
-            this.containerHolder = containerHolder;
             this.serializer = serializer;
         }
 
@@ -22,7 +21,7 @@
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaSave(sagaData, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
+            storageSession.AddOperation(new SagaSave(sagaData, partitionKey, serializer, context));
             return Task.CompletedTask;
         }
 
@@ -31,7 +30,7 @@
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, containerHolder.PartitionKeyPath, serializer, context));
+            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, serializer, context));
             return Task.CompletedTask;
         }
 
@@ -76,7 +75,7 @@
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaDelete(sagaData, partitionKey, containerHolder.PartitionKeyPath, context));
+            storageSession.AddOperation(new SagaDelete(sagaData, partitionKey, context));
 
             return Task.CompletedTask;
         }
@@ -91,7 +90,6 @@
             return partitionKey;
         }
 
-        readonly ContainerHolder containerHolder;
         JsonSerializer serializer;
 
         internal static readonly string SchemaVersion = "1.0.0";

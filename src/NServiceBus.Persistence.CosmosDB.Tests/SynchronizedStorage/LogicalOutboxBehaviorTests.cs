@@ -44,16 +44,22 @@
                 }
             };
 
-            var containerHolder = new ContainerHolder(fakeCosmosClient.Container, new PartitionKeyPath(null));
+            var containerHolderHolderResolver = new ContainerHolderResolver(new Provider()
+                {
+                    Client = fakeCosmosClient
+                },
+                new ContainerInformation("fakeContainer",
+                    new PartitionKeyPath("")),
+                "fakeDatabase");
 
-            var behavior = new LogicalOutboxBehavior(containerHolder, new JsonSerializer());
+            var behavior = new LogicalOutboxBehavior(containerHolderHolderResolver, new JsonSerializer());
 
             var testableContext = new TestableIncomingLogicalMessageContext();
 
             testableContext.Extensions.Set(new PartitionKey(""));
             testableContext.Extensions.Set(new SetAsDispatchedPartitionKeyHolder());
 
-            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(containerHolder, testableContext.Extensions));
+            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(testableContext.Extensions));
 
             var pendingTransportOperations = new PendingTransportOperations();
             pendingTransportOperations.Add(new Transport.TransportOperation(new OutgoingMessage(null, null, null), null));
@@ -76,6 +82,11 @@
         {
             return Task.CompletedTask;
         }
+    }
+
+    class Provider : IProvideCosmosClient
+    {
+        public CosmosClient Client { get; set; }
     }
 
     class FakeCosmosClient : CosmosClient

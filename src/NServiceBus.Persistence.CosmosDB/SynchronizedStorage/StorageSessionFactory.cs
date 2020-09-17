@@ -5,20 +5,21 @@
 
     class StorageSessionFactory : ISynchronizedStorage
     {
-        public StorageSessionFactory(ContainerHolder containerHolder, CurrentSharedTransactionalBatchHolder currentSharedTransactionalBatchHolder)
+        public StorageSessionFactory(ContainerHolderResolver containerHolderResolver, CurrentSharedTransactionalBatchHolder currentSharedTransactionalBatchHolder)
         {
+            this.containerHolderResolver = containerHolderResolver;
             this.currentSharedTransactionalBatchHolder = currentSharedTransactionalBatchHolder;
-            this.containerHolder = containerHolder;
         }
 
         public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag)
         {
-            var storageSession = new StorageSession(containerHolder, contextBag, true);
+            var storageSession = new StorageSession(contextBag, true);
             currentSharedTransactionalBatchHolder?.SetCurrent(storageSession);
+            containerHolderResolver.ResolveAndSetIfAvailable(contextBag);
             return Task.FromResult<CompletableSynchronizedStorageSession>(storageSession);
         }
 
-        readonly ContainerHolder containerHolder;
         readonly CurrentSharedTransactionalBatchHolder currentSharedTransactionalBatchHolder;
+        readonly ContainerHolderResolver containerHolderResolver;
     }
 }

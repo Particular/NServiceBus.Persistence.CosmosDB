@@ -32,10 +32,10 @@
             setter = Expression.Lambda<Action<PendingTransportOperations>>(assignExp, targetExp).Compile();
         }
 
-        internal LogicalOutboxBehavior(ContainerHolder containerHolder, JsonSerializer serializer)
+        internal LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer)
         {
+            this.containerHolderResolver = containerHolderResolver;
             this.serializer = serializer;
-            container = containerHolder.Container;
         }
 
         /// <inheritdoc />
@@ -66,11 +66,16 @@
                 throw new Exception("For the outbox to work the following information must be provided at latest up to the incoming physical or logical message stage. A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`.");
             }
 
+            var containerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context.Extensions);
 
-            context.Extensions.Get<SetAsDispatchedPartitionKeyHolder>().PartitionKey = partitionKey;
+            var setAsDispatchedPartitionKeyHolder = context.Extensions.Get<SetAsDispatchedPartitionKeyHolder>();
+            setAsDispatchedPartitionKeyHolder.PartitionKey = partitionKey;
+            setAsDispatchedPartitionKeyHolder.ContainerHolder = containerHolder;
+
+
             outboxTransaction.PartitionKey = partitionKey;
 
-            var outboxRecord = await container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions)
+            var outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions)
                 .ConfigureAwait(false);
 
             if (outboxRecord is null)
@@ -140,7 +145,7 @@
         }
 
         readonly JsonSerializer serializer;
-        readonly Container container;
         static Action<PendingTransportOperations> setter;
+        readonly ContainerHolderResolver containerHolderResolver;
     }
 }

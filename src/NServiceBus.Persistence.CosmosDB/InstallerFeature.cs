@@ -20,12 +20,16 @@
             }
 
             var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
-            var containerName = context.Settings.Get<string>(SettingsKeys.ContainerName);
-            var partitionKeyPath = context.Settings.Get<PartitionKeyPath>();
 
-            settings.ContainerName = containerName;
+            if (!context.Settings.TryGet<ContainerInformation>(out var containerInformation))
+            {
+                settings.Disabled = true;
+                return;
+            }
+            
+            settings.ContainerName = containerInformation.ContainerName;
             settings.DatabaseName = databaseName;
-            settings.PartitionKeyPath = partitionKeyPath;
+            settings.PartitionKeyPath = containerInformation.PartitionKeyPath;
         }
     }
 }

@@ -8,10 +8,9 @@
 
     abstract class Operation : IDisposable
     {
-        protected Operation(PartitionKey partitionKey, PartitionKeyPath partitionKeyPath, JsonSerializer serializer, ContextBag context)
+        protected Operation(PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
         {
             PartitionKey = partitionKey;
-            PartitionKeyPath = partitionKeyPath;
             Serializer = serializer;
             Context = context;
         }
@@ -19,7 +18,6 @@
         //TODO: what's the purpose of the context bag here?
         public ContextBag Context { get; }
         public PartitionKey PartitionKey { get; }
-        public PartitionKeyPath PartitionKeyPath { get; }
         public JsonSerializer Serializer { get; }
 
         public virtual void Success(TransactionalBatchOperationResult result)
@@ -40,19 +38,19 @@
             }
         }
 
-        public abstract void Apply(TransactionalBatch transactionalBatch);
+        public abstract void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath);
         public virtual void Dispose() { }
     }
 
     class ThrowOnConflictOperation : Operation
     {
-        private ThrowOnConflictOperation() : base(PartitionKey.Null, default, null, null)
+        private ThrowOnConflictOperation() : base(PartitionKey.Null, null,  null)
         {
         }
 
         public static Operation Instance { get; } = new ThrowOnConflictOperation();
 
-        public override void Apply(TransactionalBatch transactionalBatch)
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
         }
     }

@@ -7,9 +7,9 @@
 
     static class TransactionalBatchExtensions
     {
-        internal static async Task ExecuteOperationAsync(this TransactionalBatch transactionalBatch, Operation operation)
+        internal static async Task ExecuteOperationAsync(this TransactionalBatch transactionalBatch, Operation operation, PartitionKeyPath partitionKeyPath)
         {
-            operation.Apply(transactionalBatch);
+            operation.Apply(transactionalBatch, partitionKeyPath);
 
             using (var batchOutcomeResponse = await transactionalBatch.ExecuteAsync().ConfigureAwait(false))
             {
@@ -31,11 +31,11 @@
             }
         }
 
-        internal static async Task ExecuteOperationsAsync(this TransactionalBatch transactionalBatch, Dictionary<int, Operation> operationMappings)
+        internal static async Task ExecuteOperationsAsync(this TransactionalBatch transactionalBatch, Dictionary<int, Operation> operationMappings, PartitionKeyPath partitionKeyPath)
         {
             foreach (var operation in operationMappings.Values)
             {
-                operation.Apply(transactionalBatch);
+                operation.Apply(transactionalBatch, partitionKeyPath);
             }
 
             using (var batchOutcomeResponse = await transactionalBatch.ExecuteAsync().ConfigureAwait(false))
