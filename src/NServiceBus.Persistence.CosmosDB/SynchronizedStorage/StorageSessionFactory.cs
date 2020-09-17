@@ -13,9 +13,8 @@
 
         public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag)
         {
-            var storageSession = new StorageSession(contextBag, true);
+            var storageSession = new StorageSession(containerHolderResolver, contextBag, true);
             currentSharedTransactionalBatchHolder?.SetCurrent(storageSession);
-            containerHolderResolver.ResolveAndSetIfAvailable(contextBag);
             return Task.FromResult<CompletableSynchronizedStorageSession>(storageSession);
         }
 

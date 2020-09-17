@@ -17,14 +17,12 @@
 
         public Task<OutboxTransaction> BeginTransaction(ContextBag context)
         {
-            var cosmosOutboxTransaction = new CosmosOutboxTransaction(context);
+            var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
             if (context.TryGet<PartitionKey>(out var partitionKey))
             {
                 cosmosOutboxTransaction.PartitionKey = partitionKey;
             }
-
-            containerHolderResolver.ResolveAndSetIfAvailable(context);
 
             return Task.FromResult((OutboxTransaction)cosmosOutboxTransaction);
         }

@@ -72,8 +72,8 @@
             setAsDispatchedPartitionKeyHolder.PartitionKey = partitionKey;
             setAsDispatchedPartitionKeyHolder.ContainerHolder = containerHolder;
 
-
             outboxTransaction.PartitionKey = partitionKey;
+            outboxTransaction.StorageSession.ContainerHolder = containerHolder;
 
             var outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions)
                 .ConfigureAwait(false);

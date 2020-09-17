@@ -9,10 +9,11 @@
     class StorageSession : CompletableSynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {
         // When outbox is involved, commitOnComplete will be false
-        public StorageSession(ContextBag context, bool commitOnComplete)
+        public StorageSession(ContainerHolderResolver resolver, ContextBag context, bool commitOnComplete)
         {
             this.commitOnComplete = commitOnComplete;
             CurrentContextBag = context;
+            ContainerHolder = resolver.ResolveAndSetIfAvailable(context);
         }
 
         Task CompletableSynchronizedStorageSession.CompleteAsync()
@@ -45,6 +46,11 @@
 
         public async Task Commit()
         {
+            if (ContainerHolder == null)
+            {
+                throw new Exception("Unable to retrieve the container name and the partition key during processing. Make sure that either `persistence.Container()` is used or the relevant container information is available on the message handling pipeline.");
+            }
+
             foreach (var batchOfOperations in operations)
             {
                 var transactionalBatch = ContainerHolder.Container.CreateTransactionalBatch(batchOfOperations.Key);
@@ -69,18 +75,7 @@
         readonly bool commitOnComplete;
         public ContextBag CurrentContextBag { get; set; }
 
-        public ContainerHolder ContainerHolder
-        {
-            get
-            {
-                if (!CurrentContextBag.TryGet<ContainerHolder>(out var containerHolder))
-                {
-                    // probably throw here?
-                }
-
-                return containerHolder;
-            }
-        }
+        public ContainerHolder ContainerHolder { get; set; }
 
         readonly Dictionary<PartitionKey, Dictionary<int, Operation>> operations = new Dictionary<PartitionKey, Dictionary<int, Operation>>();
     }
