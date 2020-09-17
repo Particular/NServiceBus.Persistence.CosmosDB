@@ -68,9 +68,9 @@
 
             var containerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context.Extensions);
 
-            var setAsDispatchedPartitionKeyHolder = context.Extensions.Get<SetAsDispatchedPartitionKeyHolder>();
-            setAsDispatchedPartitionKeyHolder.PartitionKey = partitionKey;
-            setAsDispatchedPartitionKeyHolder.ContainerHolder = containerHolder;
+            var setAsDispatchedHolder = context.Extensions.Get<SetAsDispatchedHolder>();
+            setAsDispatchedHolder.PartitionKey = partitionKey;
+            setAsDispatchedHolder.ContainerHolder = containerHolder;
 
             outboxTransaction.PartitionKey = partitionKey;
             outboxTransaction.StorageSession.ContainerHolder = containerHolder;
