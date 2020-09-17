@@ -15,7 +15,6 @@
             {
                 s.SetDefault(SettingsKeys.DatabaseName, "NServiceBus");
                 s.SetDefault<IProvideCosmosClient>(new ThrowIfNoCosmosClientIsProvided());
-
                 s.EnableFeatureByDefault<InstallerFeature>();
             });
 

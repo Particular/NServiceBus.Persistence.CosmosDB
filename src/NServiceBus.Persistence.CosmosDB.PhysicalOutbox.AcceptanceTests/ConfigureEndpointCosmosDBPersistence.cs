@@ -22,8 +22,6 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        //persistence.Container(new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
-
         // This populates the partition key at the physical stage to test the conventional outbox use-case
         configuration.Pipeline.Register(typeof(PartitionKeyProviderBehavior), "Populates the partition key");
 
