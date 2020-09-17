@@ -22,7 +22,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        configuration.Pipeline.Register(new PartitionKeyProviderBehavior.PartitionKeyProviderBehaviorRegisterStep());
+        configuration.Pipeline.Register(b => new PartitionKeyProviderBehavior(b.Build<ScenarioContext>()), "Populates the partition key");
 
         return Task.FromResult(0);
     }
@@ -46,16 +46,6 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             context.Extensions.Set(new PartitionKey(scenarioContext.TestRunId.ToString()));
             context.Extensions.Set(new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
             return next();
-        }
-
-        public class PartitionKeyProviderBehaviorRegisterStep : RegisterStep
-        {
-            public PartitionKeyProviderBehaviorRegisterStep() : base(nameof(PartitionKeyProviderBehavior),
-                typeof(PartitionKeyProviderBehavior),
-                "Populates the partition key",
-                b => new PartitionKeyProviderBehavior(b.Build<ScenarioContext>()))
-            {
-            }
         }
     }
 }
