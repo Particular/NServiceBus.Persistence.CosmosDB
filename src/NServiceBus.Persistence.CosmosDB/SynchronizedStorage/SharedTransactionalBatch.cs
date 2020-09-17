@@ -6,16 +6,15 @@
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
 
-    sealed class SharedTransactionalBatch : TransactionalBatch
+    sealed class SharedTransactionalBatch : TransactionalBatch, ICosmosDBStorageSession
     {
-        readonly IWorkWithSharedTransactionalBatch operationsHolder;
-        readonly PartitionKey partitionKey;
-
         public SharedTransactionalBatch(IWorkWithSharedTransactionalBatch operationsHolder, PartitionKey partitionKey)
         {
             this.operationsHolder = operationsHolder;
             this.partitionKey = partitionKey;
         }
+
+        public TransactionalBatch Batch => this;
 
         public override TransactionalBatch CreateItem<T>(T item, TransactionalBatchItemRequestOptions requestOptions = null)
         {
@@ -92,5 +91,8 @@
         {
             throw new InvalidOperationException("Storage Session will execute the transaction");
         }
+
+        readonly IWorkWithSharedTransactionalBatch operationsHolder;
+        readonly PartitionKey partitionKey;
     }
 }

@@ -41,7 +41,7 @@
                 ContractResolver = new CosmosDBContractResolver()
             };
 
-            SynchronizedStorage = new StorageSessionFactory(containerHolder);
+            SynchronizedStorage = new StorageSessionFactory(containerHolder, null);
             SagaStorage = new SagaPersister(containerHolder, serializer);
             OutboxStorage = new OutboxPersister(containerHolder, serializer, 100);
 
