@@ -3,7 +3,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using EndpointTemplates;
-    using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
 
     [TestFixture]
@@ -37,11 +36,6 @@
                     config.RegisterComponents(c =>
                     {
                         c.ConfigureComponent<MyRepository>(DependencyLifecycle.InstancePerUnitOfWork);
-                        c.ConfigureComponent(b =>
-                        {
-                            var session = b.Build<ICosmosDBStorageSession>();
-                            return session?.Batch;
-                        }, DependencyLifecycle.InstancePerUnitOfWork);
                     });
                 });
             }
@@ -69,18 +63,18 @@
 
         public class MyRepository
         {
-            public MyRepository(TransactionalBatch batch, Context context)
+            public MyRepository(ICosmosDBStorageSession storageSession, Context context)
             {
-                this.batch = batch;
+                this.storageSession = storageSession;
                 this.context = context;
             }
 
             public void DoSomething()
             {
-                context.RepositoryHasBatch = batch != null;
+                context.RepositoryHasBatch = storageSession.Batch != null;
             }
 
-            TransactionalBatch batch;
+            ICosmosDBStorageSession storageSession;
             Context context;
         }
 

@@ -37,30 +37,20 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(config =>
-                {
-                    config.RegisterComponents(c =>
-                    {
-                        c.ConfigureComponent(b =>
-                        {
-                            var session = b.Build<ICosmosDBStorageSession>();
-                            return session.Batch;
-                        }, DependencyLifecycle.InstancePerUnitOfWork);
-                    });
-                });
+                EndpointSetup<DefaultServer>();
             }
 
             public class MyMessageHandler : IHandleMessages<MyMessage>
             {
-                public MyMessageHandler(TransactionalBatch batch, Context context)
+                public MyMessageHandler(ICosmosDBStorageSession storageSession, Context context)
                 {
-                    this.batch = batch;
+                    this.storageSession = storageSession;
                     this.context = context;
                 }
 
                 public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
                 {
-                    context.BatchInjectedToFirstHandler = batch;
+                    context.BatchInjectedToFirstHandler = storageSession.Batch;
                     return handlerContext.SendLocal(new MyFollowUpMessage
                     {
                         Property = message.Property
@@ -68,7 +58,7 @@
                 }
 
                 Context context;
-                TransactionalBatch batch;
+                ICosmosDBStorageSession storageSession;
             }
 
             public class MyOtherMessageHandler : IHandleMessages<MyMessage>
