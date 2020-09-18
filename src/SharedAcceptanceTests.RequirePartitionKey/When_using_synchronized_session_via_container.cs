@@ -37,30 +37,20 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(config =>
-                {
-                    config.RegisterComponents(c =>
-                    {
-                        c.ConfigureComponent(b =>
-                        {
-                            var session = b.Build<ICosmosDBStorageSession>();
-                            return session?.Batch;
-                        }, DependencyLifecycle.InstancePerUnitOfWork);
-                    });
-                });
+                EndpointSetup<DefaultServer>();
             }
 
             public class MyMessageHandler : IHandleMessages<MyMessage>
             {
-                public MyMessageHandler(TransactionalBatch batch, Context context)
+                public MyMessageHandler(ICosmosDBStorageSession session, Context context)
                 {
-                    this.batch = batch;
+                    this.session = session;
                     this.context = context;
                 }
 
                 public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
                 {
-                    context.BatchInjectedToFirstHandler = batch;
+                    context.BatchInjectedToFirstHandler = session.Batch;
                     return handlerContext.SendLocal(new MyFollowUpMessage
                     {
                         Property = message.Property
@@ -68,46 +58,46 @@
                 }
 
                 Context context;
-                TransactionalBatch batch;
+                ICosmosDBStorageSession session;
             }
 
             public class MyOtherMessageHandler : IHandleMessages<MyMessage>
             {
-                public MyOtherMessageHandler(TransactionalBatch batch, Context context)
+                public MyOtherMessageHandler(ICosmosDBStorageSession session, Context context)
                 {
-                    this.batch = batch;
+                    this.session = session;
                     this.context = context;
                 }
 
 
                 public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
                 {
-                    context.BatchInjectedToSecondHandler = batch;
+                    context.BatchInjectedToSecondHandler = session.Batch;
                     return Task.CompletedTask;
                 }
 
                 Context context;
-                TransactionalBatch batch;
+                ICosmosDBStorageSession session;
             }
 
             public class MyFollowUpMessageHandler : IHandleMessages<MyFollowUpMessage>
             {
-                public MyFollowUpMessageHandler(TransactionalBatch batch, Context context)
+                public MyFollowUpMessageHandler(ICosmosDBStorageSession session, Context context)
                 {
-                    this.batch = batch;
+                    this.session = session;
                     this.context = context;
                 }
 
 
                 public Task Handle(MyFollowUpMessage message, IMessageHandlerContext handlerContext)
                 {
-                    context.BatchInjectedToThirdHandler = batch;
+                    context.BatchInjectedToThirdHandler = session.Batch;
                     context.Done = true;
                     return Task.CompletedTask;
                 }
 
                 Context context;
-                TransactionalBatch batch;
+                ICosmosDBStorageSession session;
             }
         }
 
