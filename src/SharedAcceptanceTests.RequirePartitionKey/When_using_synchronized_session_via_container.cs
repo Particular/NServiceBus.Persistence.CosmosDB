@@ -3,7 +3,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using EndpointTemplates;
-    using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
 
     [TestFixture]
@@ -18,19 +17,13 @@
                 .Run()
                 .ConfigureAwait(false);
 
-            Assert.IsNotNull(context.BatchInjectedToFirstHandler);
-            Assert.IsNotNull(context.BatchInjectedToSecondHandler);
-            Assert.IsNotNull(context.BatchInjectedToThirdHandler);
-            Assert.AreSame(context.BatchInjectedToFirstHandler, context.BatchInjectedToSecondHandler);
-            Assert.AreNotSame(context.BatchInjectedToFirstHandler, context.BatchInjectedToThirdHandler);
+            Assert.True(context.HandlerHasBatch);
         }
 
         public class Context : ScenarioContext
         {
             public bool Done { get; set; }
-            public TransactionalBatch BatchInjectedToFirstHandler { get; set; }
-            public TransactionalBatch BatchInjectedToSecondHandler { get; set; }
-            public TransactionalBatch BatchInjectedToThirdHandler { get; set; }
+            public bool HandlerHasBatch { get; set; }
         }
 
         public class Endpoint : EndpointConfigurationBuilder
@@ -40,9 +33,9 @@
                 EndpointSetup<DefaultServer>();
             }
 
-            public class MyMessageHandler : IHandleMessages<MyMessage>
+            public class MyHandler : IHandleMessages<MyMessage>
             {
-                public MyMessageHandler(ICosmosDBStorageSession session, Context context)
+                public MyHandler(ICosmosDBStorageSession session, Context context)
                 {
                     this.session = session;
                     this.context = context;
@@ -50,49 +43,9 @@
 
                 public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
                 {
-                    context.BatchInjectedToFirstHandler = session.Batch;
-                    return handlerContext.SendLocal(new MyFollowUpMessage
-                    {
-                        Property = message.Property
-                    });
-                }
-
-                Context context;
-                ICosmosDBStorageSession session;
-            }
-
-            public class MyOtherMessageHandler : IHandleMessages<MyMessage>
-            {
-                public MyOtherMessageHandler(ICosmosDBStorageSession session, Context context)
-                {
-                    this.session = session;
-                    this.context = context;
-                }
-
-
-                public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
-                {
-                    context.BatchInjectedToSecondHandler = session.Batch;
-                    return Task.CompletedTask;
-                }
-
-                Context context;
-                ICosmosDBStorageSession session;
-            }
-
-            public class MyFollowUpMessageHandler : IHandleMessages<MyFollowUpMessage>
-            {
-                public MyFollowUpMessageHandler(ICosmosDBStorageSession session, Context context)
-                {
-                    this.session = session;
-                    this.context = context;
-                }
-
-
-                public Task Handle(MyFollowUpMessage message, IMessageHandlerContext handlerContext)
-                {
-                    context.BatchInjectedToThirdHandler = session.Batch;
                     context.Done = true;
+                    context.HandlerHasBatch = session.Batch != null;
+
                     return Task.CompletedTask;
                 }
 
@@ -102,11 +55,6 @@
         }
 
         public class MyMessage : IMessage
-        {
-            public string Property { get; set; }
-        }
-
-        public class MyFollowUpMessage : IMessage
         {
             public string Property { get; set; }
         }
