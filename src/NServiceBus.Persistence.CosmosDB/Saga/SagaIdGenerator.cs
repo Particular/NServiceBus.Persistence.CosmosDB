@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+
     using Sagas;
 
     class SagaIdGenerator : ISagaIdGenerator
