@@ -22,7 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\SharedAcceptanceTests.All\*.*" />
+    <Compile Include="..\SharedAcceptanceTests.All\*.cs" />
+    <None Include="..\SharedAcceptanceTests.All\*.txt" />
   </ItemGroup>
 
   <ItemGroup>
