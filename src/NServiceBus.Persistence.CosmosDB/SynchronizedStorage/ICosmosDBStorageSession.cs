@@ -2,8 +2,14 @@
 {
     using Microsoft.Azure.Cosmos;
 
-    interface ICosmosDBStorageSession
+    /// <summary>
+    ///
+    /// </summary>
+    public interface ICosmosDBStorageSession
     {
+        /// <summary>
+        ///
+        /// </summary>
         TransactionalBatch Batch { get; }
     }
 }
