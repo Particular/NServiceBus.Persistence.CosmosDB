@@ -59,12 +59,6 @@
 
             var containerProperties = new ContainerProperties(installerSettings.ContainerName, installerSettings.PartitionKeyPath);
 
-            // TODO should we check if saga feature is active?
-            containerProperties.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey
-            {
-                Paths = {"/Id"}
-            });
-
             await database.CreateContainerIfNotExistsAsync(containerProperties)
                 .ConfigureAwait(false);
         }
