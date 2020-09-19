@@ -99,11 +99,5 @@
         {
             public string Property { get; set; }
         }
-
-        class DataItem
-        {
-            public string id { get; set; }
-            public object deep { get; set; }
-        }
     }
 }
