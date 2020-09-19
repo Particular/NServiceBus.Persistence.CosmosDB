@@ -1,0 +1,64 @@
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests, PublicKey=00240000048000009400000006020000002400005253413100040000010001007f16e21368ff041183fab592d9e8ed37e7be355e93323147a1d29983d6e591b04282e4da0c9e18bd901e112c0033925eb7d7872c2f1706655891c5c9d57297994f707d16ee9a8f40d978f064ee1ffc73c0db3f4712691b23bf596f75130f4ec978cf78757ec034625a5f27e6bb50c618931ea49f6f628fd74271c32959efb1c5")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests, PublicKey=00240000048000009400000006020000002400005253413100040000010001007f16e21368ff041183fab592d9e8ed37e7be355e93323147a1d29983d6e591b04282e4da0c9e18bd901e112c0033925eb7d7872c2f1706655891c5c9d57297994f707d16ee9a8f40d978f064ee1ffc73c0db3f4712691b23bf596f75130f4ec978cf78757ec034625a5f27e6bb50c618931ea49f6f628fd74271c32959efb1c5")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Persistence.CosmosDB.PersistenceTests, PublicKey=00240000048000009400000006020000002400005253413100040000010001007f16e21368ff041183fab592d9e8ed37e7be355e93323147a1d29983d6e591b04282e4da0c9e18bd901e112c0033925eb7d7872c2f1706655891c5c9d57297994f707d16ee9a8f40d978f064ee1ffc73c0db3f4712691b23bf596f75130f4ec978cf78757ec034625a5f27e6bb50c618931ea49f6f628fd74271c32959efb1c5")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests, PublicKey=00240000048000009400000006020000002400005253413100040000010001007f16e21368ff041183fab592d9e8ed37e7be355e93323147a1d29983d6e591b04282e4da0c9e18bd901e112c0033925eb7d7872c2f1706655891c5c9d57297994f707d16ee9a8f40d978f064ee1ffc73c0db3f4712691b23bf596f75130f4ec978cf78757ec034625a5f27e6bb50c618931ea49f6f628fd74271c32959efb1c5")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Persistence.CosmosDB.Tests, PublicKey=00240000048000009400000006020000002400005253413100040000010001007f16e21368ff041183fab592d9e8ed37e7be355e93323147a1d29983d6e591b04282e4da0c9e18bd901e112c0033925eb7d7872c2f1706655891c5c9d57297994f707d16ee9a8f40d978f064ee1ffc73c0db3f4712691b23bf596f75130f4ec978cf78757ec034625a5f27e6bb50c618931ea49f6f628fd74271c32959efb1c5")]
+namespace NServiceBus
+{
+    public struct ContainerInformation
+    {
+        public ContainerInformation(string containerName, NServiceBus.PartitionKeyPath partitionKeyPath) { }
+        public string ContainerName { get; }
+        public NServiceBus.PartitionKeyPath PartitionKeyPath { get; }
+    }
+    public class static CosmosDBOutboxSettingsExtensions
+    {
+        public static void TimeToKeepOutboxDeduplicationData(this NServiceBus.Outbox.OutboxSettings outboxSettings, System.TimeSpan timeToKeepOutboxDeduplicationData) { }
+    }
+    public class CosmosDbPersistence : NServiceBus.Persistence.PersistenceDefinition { }
+    public class static CosmosDbPersistenceConfig
+    {
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> CosmosClient(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, Microsoft.Azure.Cosmos.CosmosClient cosmosClient) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> DatabaseName(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, string databaseName) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> DefaultContainer(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, string containerName, string partitionKeyPath) { }
+        public static void DisableContainerCreation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> configuration) { }
+    }
+    public interface ICosmosDBStorageSession
+    {
+        Microsoft.Azure.Cosmos.TransactionalBatch Batch { get; }
+    }
+    public interface IProvideCosmosClient
+    {
+        Microsoft.Azure.Cosmos.CosmosClient Client { get; }
+    }
+    public struct PartitionKeyPath
+    {
+        public PartitionKeyPath(string partitionKeyPath) { }
+        public static string op_Implicit(NServiceBus.PartitionKeyPath path) { }
+    }
+    public class static SynchronizedStorageSessionExtensions
+    {
+        public static Microsoft.Azure.Cosmos.TransactionalBatch GetSharedTransactionalBatch(this NServiceBus.Persistence.SynchronizedStorageSession session) { }
+    }
+}
+namespace NServiceBus.Persistence.CosmosDB
+{
+    public sealed class LogicalOutboxBehavior : NServiceBus.Pipeline.IBehavior, NServiceBus.Pipeline.IBehavior<NServiceBus.Pipeline.IIncomingLogicalMessageContext, NServiceBus.Pipeline.IIncomingLogicalMessageContext>
+    {
+        public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
+    }
+    public delegate Microsoft.Azure.Cosmos.PartitionKey Map<in T>(System.Collections.Generic.IReadOnlyDictionary<string, string> headers, string messageId, T message);
+    public class TransactionalBatchOperationException : System.Exception
+    {
+        public TransactionalBatchOperationException(Microsoft.Azure.Cosmos.TransactionalBatchOperationResult result) { }
+        public TransactionalBatchOperationException(string message, Microsoft.Azure.Cosmos.TransactionalBatchOperationResult result) { }
+        public Microsoft.Azure.Cosmos.TransactionalBatchOperationResult Result { get; }
+    }
+}
+namespace NServiceBus.Testing
+{
+    public class TestableCosmosSynchronizedStorageSession : NServiceBus.Persistence.SynchronizedStorageSession
+    {
+        public TestableCosmosSynchronizedStorageSession(Microsoft.Azure.Cosmos.PartitionKey partitionKey) { }
+    }
+}
