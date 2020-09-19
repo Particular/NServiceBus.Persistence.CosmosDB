@@ -18,7 +18,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        persistence.DefaultContainer(new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
+        persistence.DefaultContainer(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
 
         return Task.FromResult(0);
     }
