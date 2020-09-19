@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Particular.AzureStoragePersistenceSagaExporter</PackageId>
+    <Description>Tool to extract saga data from NServiceBus.Persistence.AzureStorage for import into NServiceBus.Persistence.CosmosDB</Description>
+    <ToolCommandName>export-aspsagas</ToolCommandName>
+    <PackAsTool>True</PackAsTool>
+    <RootNamespace>Particular.AzureStoragePersistenceSagaExporter</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WindowsAzure.Storage" Version="[9.0.0, 10.0.0)" />
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.4" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Particular.CodeRules" Version="0.3.0" PrivateAssets="All" />
+    <PackageReference Include="Particular.Packaging" Version="0.9.0" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>
