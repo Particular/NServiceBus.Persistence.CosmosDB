@@ -36,7 +36,8 @@
 
             var metadata = new JObject
             {
-                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion }
+                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
+                { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
             };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
@@ -66,12 +67,19 @@
         {
             var jObject = JObject.FromObject(record, Serializer);
 
+            var metadata = new JObject
+            {
+                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
+                { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
+            };
+            jObject.Add(MetadataExtensions.MetadataKey, metadata);
+
             jObject.Add("ttl", ttlInSeconds);
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // has to be kept open
-            stream = new MemoryStream(Encoding.UTF8.GetBytes(jObject.ToString(Formatting.None)));
+            stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
             var options = new TransactionalBatchItemRequestOptions
             {
                 EnableContentResponseOnWrite = false
