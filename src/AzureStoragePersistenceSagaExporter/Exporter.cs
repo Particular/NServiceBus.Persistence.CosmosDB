@@ -105,12 +105,13 @@
             var propertyName = match.Groups["PropertyName"].Value;
             var propertyValue = match.Groups["PropertyValue"].Value;
 
+            var newSagaId = SagaIdGenerator.Generate(sagaTypeFullName, propertyName, propertyValue);
+            var oldSagaId = entity["Id"].GuidValue;
+
             entity.Remove("NServiceBus_2ndIndexKey");
             entity.Remove("PartitionKey");
             entity.Remove("RowKey");
-
-            var newSagaId = SagaIdGenerator.Generate(sagaTypeFullName, propertyName, propertyValue);
-            var oldSagaId = entity["Id"].GuidValue;
+            entity.Remove("Id");
 
             var jObject = new JObject();
 
@@ -118,12 +119,12 @@
             var metadata = new JObject
             {
                 {"SagaDataContainer-SchemaVersion", "1.0.0"},
-                {"SagaDataContainer-FullTypeName", sagaTypeFullName}, // just some random proposals to move forward
+                {"SagaDataContainer-FullTypeName", sagaTypeFullName},
                 {"SagaDataContainer-OldSagaId", oldSagaId.ToString()} // just some random proposals to move forward
             };
             jObject.Add("_NServiceBus-Persistence-Metadata", metadata);
 
-            jObject.Add("_id", newSagaId);
+            jObject.Add("id", newSagaId);
 
             foreach (var (key, value) in entity)
             {
@@ -137,9 +138,8 @@
                         }
                         catch (JsonReaderException)
                         {
-                            // TODO: What to do here?
+                            jObject.Add(key, value.StringValue);
                         }
-
                         break;
                     case EdmType.String when probablyJObjectRegex.IsMatch(value.StringValue):
                         try
@@ -149,9 +149,8 @@
                         }
                         catch (JsonReaderException)
                         {
-                            // TODO: What to do here?
+                            jObject.Add(key, value.StringValue);
                         }
-
                         break;
                     case EdmType.Binary:
                         jObject.Add(key, value.BinaryValue);
@@ -162,13 +161,12 @@
                     case EdmType.DateTime:
                         if (value.DateTimeOffsetValue.HasValue)
                         {
-                            jObject.Add(key, value.DateTimeOffsetValue.Value);
+                            jObject.Add(key, value.DateTimeOffsetValue);
                         }
                         else
                         {
                             jObject.Add(key, value.DateTime);
                         }
-
                         break;
                     case EdmType.Double:
                         jObject.Add(key, value.DoubleValue);
