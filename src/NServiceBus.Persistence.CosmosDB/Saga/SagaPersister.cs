@@ -11,9 +11,10 @@
 
     class SagaPersister : ISagaPersister
     {
-        public SagaPersister(JsonSerializer serializer)
+        public SagaPersister(JsonSerializer serializer, bool migrationModeEnabled)
         {
             this.serializer = serializer;
+            this.migrationModeEnabled = migrationModeEnabled;
         }
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
@@ -34,7 +35,7 @@
             return Task.CompletedTask;
         }
 
-        public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
+        async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context, bool generatedSagaId) where TSagaData : class, IContainSagaData
         {
             var storageSession = (StorageSession)session;
 
@@ -42,7 +43,7 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
+            var responseMessage = await GetOrQuerySagaData(sagaId, partitionKey, container, generatedSagaId).ConfigureAwait(false);
 
             if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {
@@ -62,12 +63,32 @@
             }
         }
 
+        async Task<ResponseMessage> GetOrQuerySagaData(Guid sagaId, PartitionKey partitionKey, Container container, bool generatedSagaId)
+        {
+            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
+
+            var sagaFound = responseMessage.StatusCode != HttpStatusCode.NotFound && responseMessage.Content != null;
+
+            if (sagaFound || !migrationModeEnabled || generatedSagaId)
+            {
+                return responseMessage;
+            }
+
+            var query = $"SELECT * FROM c WHERE c.{MetadataExtensions.MetadataKey}.{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey} = '{sagaId}'";
+            var queryDefinition = new QueryDefinition(query);
+            var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
+
+            return await queryStreamIterator.ReadNextAsync().ConfigureAwait(false);
+        }
+
+        public Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData => Get<TSagaData>(sagaId, session, context, false);
+
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
             var sagaId = SagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
 
-            return Get<TSagaData>(sagaId, session, context);
+            return Get<TSagaData>(sagaId, session, context, true);
         }
 
         public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
@@ -91,5 +112,6 @@
         }
 
         JsonSerializer serializer;
+        readonly bool migrationModeEnabled;
     }
 }

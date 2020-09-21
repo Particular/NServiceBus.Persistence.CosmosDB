@@ -40,6 +40,8 @@
         /// <remarks>When the default container is not set the container information needs to be provided as part of the message handling pipeline.</remarks>
         public static PersistenceExtensions<CosmosDbPersistence> DefaultContainer(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions, string containerName, string partitionKeyPath)
         {
+            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+
             persistenceExtensions.GetSettings().Set(new ContainerInformation(containerName, new PartitionKeyPath(partitionKeyPath)));
 
             return persistenceExtensions;
@@ -48,12 +50,22 @@
         /// <summary>
         /// Disables the container creation.
         /// </summary>
-        public static void DisableContainerCreation(this PersistenceExtensions<CosmosDbPersistence> configuration)
+        public static void DisableContainerCreation(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions)
         {
-            Guard.AgainstNull(nameof(configuration), configuration);
+            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
 
-            var installerSettings = configuration.GetSettings().GetOrCreate<InstallerSettings>();
+            var installerSettings = persistenceExtensions.GetSettings().GetOrCreate<InstallerSettings>();
             installerSettings.Disabled = true;
+        }
+
+        /// <summary>
+        /// Enable support for sagas migrated from Azure Storage Persistence.
+        /// </summary>
+        public static void EnableMigrationMode(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions)
+        {
+            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+
+            persistenceExtensions.GetSettings().Set(SettingsKeys.EnableMigrationMode, true);
         }
     }
 }

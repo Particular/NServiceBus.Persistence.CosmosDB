@@ -21,7 +21,9 @@
         {
             var serializer = new JsonSerializer {ContractResolver = new CosmosDBContractResolver()};
 
-            context.Container.ConfigureComponent(builder => new SagaPersister(serializer), DependencyLifecycle.SingleInstance);
+            var migrationModeEnabled = context.Settings.GetOrDefault<bool>(SettingsKeys.EnableMigrationMode);
+
+            context.Container.ConfigureComponent(builder => new SagaPersister(serializer, migrationModeEnabled), DependencyLifecycle.SingleInstance);
         }
     }
 }
