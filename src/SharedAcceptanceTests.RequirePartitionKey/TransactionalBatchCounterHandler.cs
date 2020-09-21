@@ -4,7 +4,7 @@ using Microsoft.Azure.Cosmos;
 
 class TransactionalBatchCounterHandler : RequestHandler
 {
-    public static double TotalTransactionalBatches;
+    public static int TotalTransactionalBatches;
 
     public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken)
     {
