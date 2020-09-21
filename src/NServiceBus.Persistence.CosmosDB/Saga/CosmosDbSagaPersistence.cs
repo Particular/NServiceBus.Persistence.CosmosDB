@@ -19,7 +19,7 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var serializer = new JsonSerializer {ContractResolver = new CosmosDBContractResolver()};
+            var serializer = JsonSerializer.CreateDefault();
 
             context.Container.ConfigureComponent(builder => new SagaPersister(serializer), DependencyLifecycle.SingleInstance);
         }

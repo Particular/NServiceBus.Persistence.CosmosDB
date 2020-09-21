@@ -40,6 +40,8 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
+            jObject.Add("id", record.Id);
+
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // has to be kept open
@@ -67,6 +69,8 @@
             var jObject = JObject.FromObject(record, Serializer);
 
             jObject.Add("ttl", ttlInSeconds);
+
+            jObject.Add("id", record.Id);
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 

@@ -37,10 +37,7 @@
             // with this we have a partition key per run which makes things naturally isolated
             partitionKey = Guid.NewGuid().ToString();
 
-            var serializer = new JsonSerializer
-            {
-                ContractResolver = new CosmosDBContractResolver()
-            };
+            var serializer = JsonSerializer.CreateDefault();
 
             var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
             var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);

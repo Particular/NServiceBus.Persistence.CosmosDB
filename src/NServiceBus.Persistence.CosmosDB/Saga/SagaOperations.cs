@@ -51,6 +51,8 @@
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
+            jObject.Add("id", sagaData.Id);
+
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // Has to be kept open for transaction batch to be able to use the stream
@@ -83,6 +85,8 @@
                 { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
+
+            jObject.Add("id", sagaData.Id);
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
