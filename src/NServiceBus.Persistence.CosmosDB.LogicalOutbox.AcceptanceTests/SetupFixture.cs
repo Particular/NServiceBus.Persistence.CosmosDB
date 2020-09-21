@@ -25,7 +25,7 @@
             ContainerName = $"{DateTime.UtcNow.Ticks}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
 
             var builder = new CosmosClientBuilder(connectionString);
-            builder.AddCustomHandlers(new LoggingHandler());
+            builder.AddCustomHandlers(new LoggingHandler(), new TransactionalBatchCounterHandler());
 
             CosmosDbClient = builder.Build();
 

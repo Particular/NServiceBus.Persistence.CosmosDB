@@ -26,6 +26,11 @@
 
         public virtual void Conflict(TransactionalBatchOperationResult result)
         {
+            if ((int)result.StatusCode == 424) // HttpStatusCode.FailedDependency:
+            {
+                return;
+            }
+
             switch (result.StatusCode)
             {
                 case HttpStatusCode.BadRequest:
@@ -44,7 +49,7 @@
 
     class ThrowOnConflictOperation : Operation
     {
-        private ThrowOnConflictOperation() : base(PartitionKey.Null, null,  null)
+        private ThrowOnConflictOperation() : base(PartitionKey.Null, null, null)
         {
         }
 

@@ -19,13 +19,13 @@
             var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
             if (string.IsNullOrEmpty(connectionString))
             {
-                connectionString = "AccountEndpoint = https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+                connectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
             }
 
             ContainerName = $"{DateTime.UtcNow.Ticks}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
 
             var builder = new CosmosClientBuilder(connectionString);
-            builder.AddCustomHandlers(new LoggingHandler());
+            builder.AddCustomHandlers(new LoggingHandler(), new TransactionalBatchCounterHandler());
 
             CosmosDbClient = builder.Build();
 

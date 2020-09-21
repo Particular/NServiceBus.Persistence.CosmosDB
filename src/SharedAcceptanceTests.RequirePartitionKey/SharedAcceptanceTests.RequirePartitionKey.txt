@@ -1,0 +1,1 @@
+src\SharedAcceptanceTests.RequirePartitionKey contains tests shared betweet NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests and NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests projects
