@@ -91,7 +91,5 @@
         }
 
         JsonSerializer serializer;
-
-        internal static readonly string SchemaVersion = "1.0.0";
     }
 }
