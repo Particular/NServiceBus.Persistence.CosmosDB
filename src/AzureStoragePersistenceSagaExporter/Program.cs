@@ -4,8 +4,7 @@
     using System.Linq;
     using System.Threading.Tasks;
     using McMaster.Extensions.CommandLineUtils;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.Azure.Cosmos.Table;
 
     class Program
     {
@@ -13,20 +12,12 @@
         {
             var app = new CommandLineApplication
             {
-                Name = "migrate-timeouts"
+                Name = "migrate"
             };
 
             var verboseOption = app.Option("-v|--verbose", "Show verbose output", CommandOptionType.NoValue, true);
-
-            var sagaDataTypeOption = new CommandOption($"-t|--{ApplicationOptions.SagaDataFullTypeName}", CommandOptionType.SingleValue)
-            {
-                Description = "The full type name (namespace + type) of the saga data to export"
-            };
-
-            var connectionStringOption = new CommandOption($"-c|--{ApplicationOptions.ConnectionString}", CommandOptionType.SingleValue)
-            {
-                Description = "The connection string to the Azure Storage account with the saga data."
-            };
+            var sagaDataTypeOption = app.Option<string>($"-t|--{ApplicationOptions.SagaDataFullTypeName}", "The full type name (namespace + type) of the saga data to export", CommandOptionType.SingleValue);
+            var connectionStringOption = app.Option<string>($"-c|--{ApplicationOptions.ConnectionString}", "The connection string to the Azure Storage account with the saga data.", CommandOptionType.SingleValue);
 
             app.HelpOption(inherited: true);
             var runParameters = new Dictionary<string, string>();
@@ -44,11 +35,13 @@
 
                 var query = new TableQuery<DictionaryTableEntity>();
 
-                var tableEntities = new List<DictionaryTableEntity>();
-
-                tableEntities.AddRange((await table.ExecuteQueryAsync(query).ConfigureAwait(false)).ToList());
-
-                tableEntities = tableEntities.Where(r => !r.PartitionKey.StartsWith("Index_")).ToList();
+                await foreach (var entity in table.ExecuteQueryAsync(query, ct: cancellationToken))
+                {
+                    if (entity.PartitionKey.StartsWith("Index_"))
+                    {
+                        continue;
+                    }
+                }
 
                 //Each tableEntity
                 //  - Record primary key as old saga id

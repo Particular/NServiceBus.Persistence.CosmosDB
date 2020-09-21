@@ -1,17 +1,16 @@
 ﻿namespace Particular.AzureStoragePersistenceSagaExporter
 {
     using System.Collections.Generic;
-    using System.Linq;
+    using System.Runtime.CompilerServices;
     using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.Azure.Cosmos.Table;
 
     static class CloudTableExtensions
     {
-        public static async Task<IList<T>> ExecuteQueryAsync<T>(this CloudTable table, TableQuery<T> query, int take = int.MaxValue, CancellationToken ct = default(CancellationToken)) where T : ITableEntity, new()
+        public static async IAsyncEnumerable<T> ExecuteQueryAsync<T>(this CloudTable table, TableQuery<T> query, int take = int.MaxValue, [EnumeratorCancellation] CancellationToken ct = default) where T : ITableEntity, new()
         {
-            var items = new List<T>();
             TableContinuationToken token = null;
+            var alreadyTaken = 0;
 
             do
             {
@@ -24,18 +23,19 @@
                     .ConfigureAwait(false);
                 token = seg.ContinuationToken;
 
-                if (items.Count + seg.Results.Count > take)
+                foreach (var entity in seg.Results)
                 {
-                    var numberToTake = items.Count + seg.Results.Count - take;
-                    items.AddRange(seg.Take(seg.Results.Count - numberToTake));
+                    if (alreadyTaken < take && !ct.IsCancellationRequested)
+                    {
+                        alreadyTaken++;
+                        yield return entity;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                else
-                {
-                    items.AddRange(seg);
-                }
-            } while (token != null && !ct.IsCancellationRequested && items.Count < take);
-
-            return items;
+            } while (token != null && !ct.IsCancellationRequested && alreadyTaken < take);
         }
     }
 }
