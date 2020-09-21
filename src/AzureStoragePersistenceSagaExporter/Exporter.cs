@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Text.RegularExpressions;
     using System.Threading;
@@ -15,27 +14,29 @@
 
     static class Exporter
     {
-        static readonly Regex secondaryIndexRegex = new Regex("Index_(?:.*)_(?<PropertyName>.*)_\"(?<PropertyValue>.*)\"#", RegexOptions.Compiled);
+        static readonly Regex secondaryIndexRegex = new Regex("Index_(?<SagaDataType>.*)_(?<PropertyName>.*)_\"(?<PropertyValue>.*)\"#", RegexOptions.Compiled);
         static readonly Regex probablyJArrayRegex = new Regex("\\[.*\\]", RegexOptions.Multiline | RegexOptions.Compiled);
         static readonly Regex probablyJObjectRegex = new Regex("\\{.*\\}", RegexOptions.Multiline | RegexOptions.Compiled);
 
-        public static async Task Run(ILogger logger, string connectionString, string sagaTypeFullName, CancellationToken cancellationToken)
+        public static async Task Run(ILogger logger, string connectionString, string tableName, CancellationToken cancellationToken)
         {
             var account = CloudStorageAccount.Parse(connectionString);
             var client = account.CreateCloudTableClient();
 
-            var tableName = sagaTypeFullName.Split('.').Last();
-
             if (!Directory.Exists(tableName))
             {
                 Directory.CreateDirectory(tableName);
+            }
+            else
+            {
+                logger.LogWarning($"The sub-directory '{tableName}' already exists and might contain unrelated files.");
             }
 
             var table = client.GetTableReference(tableName);
 
             var query = new TableQuery<DictionaryTableEntity>();
 
-            await foreach (var fileWritten in StreamToFiles(logger, table, query, sagaTypeFullName, tableName, cancellationToken))
+            await foreach (var fileWritten in StreamToFiles(logger, table, query, tableName, cancellationToken))
             {
                 logger.Log(LogLevel.Information, $"Writing of '{fileWritten}' done.");
             }
@@ -44,7 +45,6 @@
         static async IAsyncEnumerable<string> StreamToFiles(ILogger logger,
             CloudTable table,
             TableQuery<DictionaryTableEntity> query,
-            string sagaTypeFullName,
             string tableName,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
@@ -58,7 +58,7 @@
                     continue;
                 }
 
-                tasks.Add(WriteEntityToFile(sagaTypeFullName, entity, tableName, throttler, cancellationToken));
+                tasks.Add(WriteEntityToFile(entity, tableName, throttler, cancellationToken));
             }
 
             while (tasks.Count > 0)
@@ -71,13 +71,13 @@
             }
         }
 
-        static async Task<string> WriteEntityToFile(string sagaTypeFullName, DictionaryTableEntity entity, string tableName, SemaphoreSlim throttler, CancellationToken cancellationToken)
+        static async Task<string> WriteEntityToFile(DictionaryTableEntity entity, string tableName, SemaphoreSlim throttler, CancellationToken cancellationToken)
         {
             try
             {
                 await throttler.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                var (jObject, newSagaId) = Convert(entity, sagaTypeFullName);
+                var (jObject, newSagaId) = Convert(entity);
 
                 var filePath = Path.Combine(tableName, $"{newSagaId}.json");
                 await using var fileWriter = File.CreateText(filePath);
@@ -96,16 +96,18 @@
             }
         }
 
-        static (JObject converted, Guid newSagaId) Convert(DictionaryTableEntity entity, string sagaTypeFullName)
+        static (JObject converted, Guid newSagaId) Convert(DictionaryTableEntity entity)
         {
-            // NServiceBus_2ndIndexKey
-            // Index_OrderSagaData_OrderId_"a3413eda-fb98-46c1-a44e-89da9efada16"#
+            // The rows we're processing would have the following column name and example value structure:
+            // Column name:   NServiceBus_2ndIndexKey
+            // Value example: Index_Samples.OrderSagaData_OrderId_"a3413eda-fb98-46c1-a44e-89da9efada16"#
 
             var match = secondaryIndexRegex.Match(entity["NServiceBus_2ndIndexKey"].StringValue);
+            var sagaDataTypeFullName = match.Groups["SagaDataType"].Value;
             var propertyName = match.Groups["PropertyName"].Value;
             var propertyValue = match.Groups["PropertyValue"].Value;
 
-            var newSagaId = SagaIdGenerator.Generate(sagaTypeFullName, propertyName, propertyValue);
+            var newSagaId = SagaIdGenerator.Generate(sagaDataTypeFullName, propertyName, propertyValue);
             var oldSagaId = entity["Id"].GuidValue;
 
             entity.Remove("NServiceBus_2ndIndexKey");
