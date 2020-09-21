@@ -16,6 +16,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB\MetadataExtensions.cs" Link="MetadataExtensions.Common.cs" />
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\MetadataExtensions.cs" Link="MetadataExtensions.Sagas.cs" />
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\SagaSchemaVersion.cs" Link="SagaSchemaVersion.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos.Table" Version="1.0.8" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.4" />

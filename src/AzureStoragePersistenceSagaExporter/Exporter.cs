@@ -117,14 +117,13 @@
 
             var jObject = new JObject();
 
-            // maybe somehow use the constants from the persister, currently hardcoded to move forward
             var metadata = new JObject
             {
-                {"SagaDataContainer-SchemaVersion", "1.0.0"},
-                {"SagaDataContainer-FullTypeName", sagaTypeFullName},
-                {"SagaDataContainer-OldSagaId", oldSagaId.ToString()} // just some random proposals to move forward
+                {NServiceBus.Persistence.CosmosDB.MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, NServiceBus.Persistence.CosmosDB.SagaSchemaVersion.Current},
+                {NServiceBus.Persistence.CosmosDB.MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataTypeFullName},
+                {NServiceBus.Persistence.CosmosDB.MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, oldSagaId.ToString()}
             };
-            jObject.Add("_NServiceBus-Persistence-Metadata", metadata);
+            jObject.Add(NServiceBus.Persistence.CosmosDB.MetadataExtensions.MetadataKey, metadata);
 
             jObject.Add("id", newSagaId);
 
