@@ -47,7 +47,8 @@
 
             var metadata = new JObject
             {
-                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
+                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion },
+                { MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaData.GetType().FullName }
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
@@ -80,7 +81,8 @@
 
             var metadata = new JObject
             {
-                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion }
+                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaPersister.SchemaVersion },
+                { MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaData.GetType().FullName }
             };
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
