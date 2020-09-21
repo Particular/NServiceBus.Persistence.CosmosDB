@@ -22,10 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\SharedAcceptanceTests.All\*.cs" />
+    <Compile Include="..\SharedAcceptanceTests.All\*.cs"/>
     <Compile Include="..\SharedAcceptanceTests.RequirePartitionKey\*.cs" />
-    <None Include="..\SharedAcceptanceTests.All\*.txt" />
-    <None Include="..\SharedAcceptanceTests.RequirePartitionKey\*.txt" />
   </ItemGroup>
 
   <ItemGroup>
