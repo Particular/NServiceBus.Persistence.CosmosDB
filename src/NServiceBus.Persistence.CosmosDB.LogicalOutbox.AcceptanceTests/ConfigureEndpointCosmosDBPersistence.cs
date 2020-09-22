@@ -56,7 +56,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
                 "Populates the partition key",
                 b => new PartitionKeyProviderBehavior(b.Build<ScenarioContext>()))
             {
-                InsertBefore(nameof(LogicalOutboxBehavior));
+                InsertBeforeExists(nameof(LogicalOutboxBehavior));
             }
         }
     }
