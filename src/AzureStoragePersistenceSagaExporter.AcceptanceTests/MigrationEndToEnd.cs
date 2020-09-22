@@ -151,7 +151,6 @@
                     Data.DoubleValue = 1.24;
                     Data.BinaryValue = Encoding.UTF8.GetBytes("Hello World");
                     Data.DateTimeValue = new DateTime(2020, 09, 21, 5, 5, 5, 5, DateTimeKind.Utc);
-                    Data.DateTimeOffsetValue = new DateTimeOffset(Data.DateTimeValue);
                     Data.BooleanValue = true;
                     Data.FloatValue = 1.24f;
                     Data.DecimalValue = 1.24m;
@@ -192,7 +191,6 @@
                 public double DoubleValue { get; set; }
                 public byte[] BinaryValue { get; set; }
                 public DateTime DateTimeValue { get; set; }
-                public DateTimeOffset DateTimeOffsetValue { get; set; }
                 public bool BooleanValue { get; set; }
                 public decimal DecimalValue { get; set; }
                 public float FloatValue { get; set; }

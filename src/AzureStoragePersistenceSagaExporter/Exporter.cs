@@ -17,7 +17,6 @@
         static readonly Regex secondaryIndexRegex = new Regex("Index_(?<SagaDataType>.*)_(?<PropertyName>.*)_\"(?<PropertyValue>.*)\"#", RegexOptions.Compiled);
         static readonly Regex probablyJArrayRegex = new Regex("\\[.*\\]", RegexOptions.Multiline | RegexOptions.Compiled);
         static readonly Regex probablyJObjectRegex = new Regex("\\{.*\\}", RegexOptions.Multiline | RegexOptions.Compiled);
-        static readonly Regex probablyJokenValueRegex = new Regex("\".*\"", RegexOptions.Singleline | RegexOptions.Compiled);
 
         public static async Task Run(ILogger logger, string connectionString, string tableName, string workingPath, CancellationToken cancellationToken)
         {
@@ -151,17 +150,6 @@
                         {
                             var propertyAsJObject = JObject.Parse(value.StringValue);
                             jObject.Add(key, propertyAsJObject);
-                        }
-                        catch (JsonReaderException)
-                        {
-                            jObject.Add(key, value.StringValue);
-                        }
-                        break;
-                    case EdmType.String when probablyJokenValueRegex.IsMatch(value.StringValue):
-                        try
-                        {
-                            var propertyAsJToken = JToken.Parse(value.StringValue);
-                            jObject.Add(key, propertyAsJToken);
                         }
                         catch (JsonReaderException)
                         {
