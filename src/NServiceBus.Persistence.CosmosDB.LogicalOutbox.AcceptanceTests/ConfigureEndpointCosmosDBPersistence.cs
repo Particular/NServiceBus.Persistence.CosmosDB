@@ -6,6 +6,7 @@ using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Persistence.CosmosDB;
 using NServiceBus.Pipeline;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
@@ -55,6 +56,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
                 "Populates the partition key",
                 b => new PartitionKeyProviderBehavior(b.Build<ScenarioContext>()))
             {
+                InsertBeforeIfExists(nameof(LogicalOutboxBehavior));
             }
         }
     }
