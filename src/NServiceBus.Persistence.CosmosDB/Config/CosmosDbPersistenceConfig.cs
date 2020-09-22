@@ -59,7 +59,7 @@
         }
 
         /// <summary>
-        /// Enable support for sagas migrated from Azure Storage Persistence.
+        /// Enable support for sagas migrated from other persistence technologies by querying the saga from storage using a migrated saga id.
         /// </summary>
         public static void EnableMigrationMode(this PersistenceExtensions<CosmosDbPersistence> persistenceExtensions)
         {
