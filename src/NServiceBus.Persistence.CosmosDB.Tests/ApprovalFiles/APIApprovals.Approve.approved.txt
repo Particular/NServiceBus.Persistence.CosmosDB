@@ -21,7 +21,8 @@ namespace NServiceBus
         public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> CosmosClient(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, Microsoft.Azure.Cosmos.CosmosClient cosmosClient) { }
         public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> DatabaseName(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, string databaseName) { }
         public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> DefaultContainer(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, string containerName, string partitionKeyPath) { }
-        public static void DisableContainerCreation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> configuration) { }
+        public static void DisableContainerCreation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions) { }
+        public static void EnableMigrationMode(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions) { }
     }
     public interface ICosmosDBStorageSession
     {
