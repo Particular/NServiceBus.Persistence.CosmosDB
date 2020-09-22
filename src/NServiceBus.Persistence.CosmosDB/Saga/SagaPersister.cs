@@ -56,7 +56,7 @@
                 {
                     var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
 
-                    context.Set($"cosmos_etag:{sagaId}", responseMessage.Headers.ETag);
+                    context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
 
                     return sagaData;
                 }
