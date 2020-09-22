@@ -70,7 +70,7 @@
                         {
                             var iteratorResult = await JObject.LoadAsync(jsonReader).ConfigureAwait(false);
 
-                            if (!(iteratorResult["Documents"] is JArray documents))
+                            if (!(iteratorResult["Documents"] is JArray documents) || !documents.HasValues)
                             {
                                 return default;
                             }
