@@ -21,5 +21,6 @@
   "FloatValue": 1.24,
   "PretendsToBeAnArray": "[ Garbage ]",
   "PretendsToBeAnObject": "{ \"Garbage\" }",
+  "Status": "Failed",
   "Originator": "Migrationendtoend.MigratingEndpoint",
 }

@@ -157,6 +157,7 @@
                     Data.DecimalValue = 1.24m;
                     Data.PretendsToBeAnArray = "[ Garbage ]";
                     Data.PretendsToBeAnObject = "{ \"Garbage\" }";
+                    Data.Status = Status.Failed;
 
                     testContext.CompleteSagaRequestSent = true;
                     await context.Send(new CompleteSagaRequest());
@@ -197,12 +198,19 @@
                 public float FloatValue { get; set; }
                 public string PretendsToBeAnArray { get; set; }
                 public string PretendsToBeAnObject { get; set; }
+                public Status Status { get; set; }
             }
 
             public class Nested
             {
                 public string Foo { get; set; } = "Foo";
                 public string Bar { get; set; } = "Bar";
+            }
+
+            public enum Status
+            {
+                Completed,
+                Failed,
             }
         }
 
