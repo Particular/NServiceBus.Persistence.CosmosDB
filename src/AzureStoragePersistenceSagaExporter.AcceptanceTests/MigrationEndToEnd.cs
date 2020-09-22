@@ -151,7 +151,7 @@
                     Data.DoubleValue = 1.24;
                     Data.BinaryValue = Encoding.UTF8.GetBytes("Hello World");
                     Data.DateTimeValue = new DateTime(2020, 09, 21, 5, 5, 5, 5, DateTimeKind.Utc);
-                    Data.DateTimeOffsetValue = new DateTimeOffset(2020, 09, 21, 5, 5, 5, 5, TimeSpan.FromHours(2));
+                    Data.DateTimeOffsetValue = new DateTimeOffset(Data.DateTimeValue);
                     Data.BooleanValue = true;
                     Data.FloatValue = 1.24f;
                     Data.DecimalValue = 1.24m;
