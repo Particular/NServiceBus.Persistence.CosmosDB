@@ -35,7 +35,7 @@
             return Task.CompletedTask;
         }
 
-        async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context, bool generatedSagaId) where TSagaData : class, IContainSagaData
+        async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context, bool isGeneratedSagaId) where TSagaData : class, IContainSagaData
         {
             var storageSession = (StorageSession)session;
 
@@ -43,7 +43,7 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            var responseMessage = await GetOrQuerySagaData(sagaId, partitionKey, container, generatedSagaId).ConfigureAwait(false);
+            var responseMessage = await GetOrQuerySagaData(sagaId, partitionKey, container, isGeneratedSagaId).ConfigureAwait(false);
 
             if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {
