@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -12,6 +13,7 @@
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTesting.Customization;
     using NUnit.Framework;
+    using Particular.Approvals;
     using Particular.AzureStoragePersistenceSagaExporter;
 
     class MigrationEndToEnd : NServiceBusAcceptanceTest
@@ -63,7 +65,7 @@
             await ImportIntoCosmosDB(filePath);
 
             // Assert
-            await Scenario.Define<Context>(c => c.MyId = testContext.MyId)
+            testContext = await Scenario.Define<Context>(c => c.MyId = testContext.MyId)
                 .WithEndpoint<MigratingEndpoint>(b => b.CustomConfig(ec =>
                 {
                     var routing = ec.ConfigureTransport().Routing();
@@ -78,6 +80,11 @@
                 .WithEndpoint<SomeOtherEndpoint>()
                 .Done(ctx => ctx.CompleteSagaResponseReceived)
                 .Run();
+
+            Approver.Verify(testContext.SagaData, s =>
+            {
+                return string.Join(Environment.NewLine, s.Split(Environment.NewLine).Where(l => !l.Contains("Id\":")));
+            });
         }
 
         string DetermineAndVerifyExport(Context testContext)
@@ -111,6 +118,8 @@
         {
             public bool CompleteSagaRequestSent { get; set; }
             public bool CompleteSagaResponseReceived { get; set; }
+
+            public MigratingEndpoint.MigratingSagaData SagaData { get; set; }
             public Guid MyId { get; internal set; }
         }
 
@@ -130,16 +139,33 @@
                     this.testContext = testContext;
                 }
 
-                public Task Handle(StartSaga message, IMessageHandlerContext context)
+                public async Task Handle(StartSaga message, IMessageHandlerContext context)
                 {
                     Data.MyId = message.MyId;
+
+                    Data.ListOfStrings = new List<string> {"Hello World"};
+                    Data.ListOfINts = new List<int> {43, 42};
+                    Data.Nested = new Nested();
+                    Data.IntValue = 1;
+                    Data.LongValue = 1;
+                    Data.DoubleValue = 1.24;
+                    Data.BinaryValue = Encoding.UTF8.GetBytes("Hello World");
+                    Data.DateTimeValue = new DateTime(2020, 09, 21, 5, 5, 5, 5, DateTimeKind.Utc);
+                    Data.BooleanValue = true;
+                    Data.FloatValue = 1.24f;
+                    Data.DecimalValue = 1.24m;
+                    Data.PretendsToBeAnArray = "[ Garbage ]";
+                    Data.PretendsToBeAnObject = "{ \"Garbage\" }";
+
                     testContext.CompleteSagaRequestSent = true;
-                    return context.Send(new CompleteSagaRequest());
+                    await context.Send(new CompleteSagaRequest());
                 }
 
                 public Task Handle(CompleteSagaResponse message, IMessageHandlerContext context)
                 {
+                    testContext.SagaData = Data;
                     testContext.CompleteSagaResponseReceived = true;
+
                     MarkAsComplete();
                     return Task.CompletedTask;
                 }
@@ -155,29 +181,20 @@
             public class MigratingSagaData : ContainSagaData
             {
                 public Guid MyId { get; set; }
-                public List<string> ListOfStrings { get; set; } = new List<string>
-                {
-                    "Hello World"
-                };
+                public List<string> ListOfStrings { get; set; }
+                public List<int> ListOfINts { get; set; }
+                public Nested Nested { get; set; }
 
-                public List<int> ListOfINts { get; set; } = new List<int>
-                {
-                    43, 42
-                };
-
-                public Nested Nested { get; set; } = new Nested();
-
-                public int IntValue { get; set; } = 1;
-                public long LongValue { get; set; } = 1;
-                public double DoubleValue { get; set; } = 1.24;
-                public byte[] BinaryValue { get; set; } = Encoding.UTF8.GetBytes("Hello World");
-                public DateTime DateTimeValue { get; set; } = new DateTime(2020, 09, 21, 5, 5, 5, 5);
-                public bool BooleanValue { get; set; } = true;
-                public decimal DecimalValue { get; set; } = 1.2m;
-                public float FloatValue { get; set; } = 1.2f;
-
-                public string PretendsToBeAnArray { get; set; } = "[ Garbage ]";
-                public string PretendsToBeAnObject { get; set; } = "{ \"Garbage\" }";
+                public int IntValue { get; set; }
+                public long LongValue { get; set; }
+                public double DoubleValue { get; set; }
+                public byte[] BinaryValue { get; set; }
+                public DateTime DateTimeValue { get; set; }
+                public bool BooleanValue { get; set; }
+                public decimal DecimalValue { get; set; }
+                public float FloatValue { get; set; }
+                public string PretendsToBeAnArray { get; set; }
+                public string PretendsToBeAnObject { get; set; }
             }
 
             public class Nested

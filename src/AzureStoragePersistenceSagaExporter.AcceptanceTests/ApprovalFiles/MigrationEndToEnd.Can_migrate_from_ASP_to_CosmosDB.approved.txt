@@ -1,0 +1,24 @@
+{
+  "ListOfStrings": [
+    "Hello World"
+  ],
+  "ListOfINts": [
+    43,
+    42
+  ],
+  "Nested": {
+    "Foo": "Foo",
+    "Bar": "Bar"
+  },
+  "IntValue": 1,
+  "LongValue": 1,
+  "DoubleValue": 1.24,
+  "BinaryValue": "SGVsbG8gV29ybGQ=",
+  "DateTimeValue": "2020-09-21T07:05:05.005+02:00",
+  "BooleanValue": true,
+  "DecimalValue": 1.24,
+  "FloatValue": 1.24,
+  "PretendsToBeAnArray": "[ Garbage ]",
+  "PretendsToBeAnObject": "{ \"Garbage\" }",
+  "Originator": "Migrationendtoend.MigratingEndpoint",
+}
