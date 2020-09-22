@@ -74,7 +74,7 @@
                 return responseMessage;
             }
 
-            var query = $"SELECT * FROM c WHERE c.{MetadataExtensions.MetadataKey}.{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey} = '{sagaId}'";
+            var query = $@"SELECT * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
             var queryDefinition = new QueryDefinition(query);
             var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
 
