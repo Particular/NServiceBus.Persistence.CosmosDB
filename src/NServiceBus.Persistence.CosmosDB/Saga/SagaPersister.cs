@@ -68,11 +68,9 @@
                         using (var streamReader = new StreamReader(iteratorResponse.Content))
                         using (var jsonReader = new JsonTextReader(streamReader))
                         {
-                            var iteratorResult = JObject.Load(jsonReader);
+                            var iteratorResult = await JObject.LoadAsync(jsonReader).ConfigureAwait(false);
 
-                            var documents = iteratorResult["Documents"] as JArray;
-
-                            if (documents == null)
+                            if (!(iteratorResult["Documents"] is JArray documents))
                             {
                                 return default;
                             }
