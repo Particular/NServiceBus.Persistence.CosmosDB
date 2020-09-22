@@ -75,7 +75,7 @@
                                 return default;
                             }
 
-                            var sagaData = documents[0].ToObject<TSagaData>();
+                            var sagaData = documents[0].ToObject<TSagaData>(serializer);
                             context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
                             return sagaData;
                         }
