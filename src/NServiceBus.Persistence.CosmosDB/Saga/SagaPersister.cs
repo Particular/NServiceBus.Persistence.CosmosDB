@@ -58,7 +58,7 @@
 
             if (sagaNotFound && migrationModeEnabled && !isGeneratedSagaId)
             {
-                var query = $@"SELECT * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
+                var query = $@"SELECT TOP 1 * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
                 var queryDefinition = new QueryDefinition(query);
                 var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
 
