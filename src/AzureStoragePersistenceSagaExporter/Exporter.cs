@@ -163,14 +163,7 @@
                         jObject.Add(key, value.BooleanValue);
                         break;
                     case EdmType.DateTime:
-                        if (value.DateTimeOffsetValue.HasValue)
-                        {
-                            jObject.Add(key, value.DateTimeOffsetValue);
-                        }
-                        else
-                        {
-                            jObject.Add(key, value.DateTime);
-                        }
+                        jObject.Add(key, value.DateTime);
                         break;
                     case EdmType.Double:
                         jObject.Add(key, value.DoubleValue);

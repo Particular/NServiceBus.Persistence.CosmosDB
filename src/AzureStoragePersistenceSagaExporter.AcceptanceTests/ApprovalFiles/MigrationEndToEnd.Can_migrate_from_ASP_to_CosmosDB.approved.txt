@@ -14,7 +14,7 @@
   "LongValue": 1,
   "DoubleValue": 1.24,
   "BinaryValue": "SGVsbG8gV29ybGQ=",
-  "DateTimeValue": "2020-09-21T07:05:05.005+02:00",
+  "DateTimeValue": "2020-09-21T05:05:05.005Z",
   "BooleanValue": true,
   "DecimalValue": 1.24,
   "FloatValue": 1.24,
