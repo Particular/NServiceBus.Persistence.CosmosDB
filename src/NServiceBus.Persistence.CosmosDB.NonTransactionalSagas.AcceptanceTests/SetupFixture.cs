@@ -16,11 +16,8 @@
         public async Task OneTimeSetUp()
         {
             var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
-            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName);
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                connectionString = "AccountEndpoint = https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
-            }
+            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName,
+                fallbackEmulatorConnectionString: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==");
 
             ContainerName = $"{DateTime.UtcNow.Ticks}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
 
@@ -53,10 +50,12 @@
             CosmosDbClient.Dispose();
         }
 
-        static string GetEnvironmentVariable(string variable)
+        static string GetEnvironmentVariable(string variable, string fallbackEmulatorConnectionString)
         {
             var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
-            return string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
+            var environmentVariableConnectionString = string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
+
+            return string.IsNullOrEmpty(environmentVariableConnectionString) ? fallbackEmulatorConnectionString : environmentVariableConnectionString;
         }
 
         public const string DatabaseName = "CosmosDBPersistence";
