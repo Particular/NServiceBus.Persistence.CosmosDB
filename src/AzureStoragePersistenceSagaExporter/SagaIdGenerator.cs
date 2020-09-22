@@ -4,7 +4,7 @@
     using System.Security.Cryptography;
     using System.Text;
 
-    static class SagaIdGenerator
+    public static class SagaIdGenerator
     {
         public static Guid Generate(string sagaEntityType, string correlationPropertyName, string correlationPropertyValue)
         {

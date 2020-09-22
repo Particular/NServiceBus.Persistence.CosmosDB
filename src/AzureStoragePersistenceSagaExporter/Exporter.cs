@@ -12,7 +12,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    static class Exporter
+    public static class Exporter
     {
         static readonly Regex secondaryIndexRegex = new Regex("Index_(?<SagaDataType>.*)_(?<PropertyName>.*)_\"(?<PropertyValue>.*)\"#", RegexOptions.Compiled);
         static readonly Regex probablyJArrayRegex = new Regex("\\[.*\\]", RegexOptions.Multiline | RegexOptions.Compiled);
