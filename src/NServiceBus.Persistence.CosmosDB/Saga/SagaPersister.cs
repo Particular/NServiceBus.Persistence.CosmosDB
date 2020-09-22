@@ -3,10 +3,12 @@
     using System;
     using System.IO;
     using System.Net;
+    using System.Text;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using Sagas;
 
     class SagaPersister : ISagaPersister
@@ -43,14 +45,46 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            var responseMessage = await GetOrQuerySagaData(sagaId, partitionKey, container, isGeneratedSagaId).ConfigureAwait(false);
+            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
 
-            if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+            var sagaStream = responseMessage.Content;
+
+            var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+
+            if (sagaNotFound && !migrationModeEnabled)
             {
                 return default;
             }
 
-            using (var streamReader = new StreamReader(responseMessage.Content))
+            if (sagaNotFound && migrationModeEnabled && !isGeneratedSagaId)
+            {
+                var query = $@"SELECT * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
+                var queryDefinition = new QueryDefinition(query);
+                var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
+
+                var iteratorResponse = await queryStreamIterator.ReadNextAsync().ConfigureAwait(false);
+
+                iteratorResponse.EnsureSuccessStatusCode();
+
+                using (var streamReader = new StreamReader(iteratorResponse.Content))
+                {
+                    using (var jsonReader = new JsonTextReader(streamReader))
+                    {
+                        var iteratorResult = JObject.Load(jsonReader);
+
+                        var documents = iteratorResult["Documents"] as JArray;
+
+                        if (!documents.HasValues)
+                        {
+                            return default;
+                        }
+
+                        sagaStream = new MemoryStream(Encoding.UTF8.GetBytes(documents[0].ToString()));
+                    }
+                }
+            }
+
+            using (var streamReader = new StreamReader(sagaStream))
             {
                 using (var jsonReader = new JsonTextReader(streamReader))
                 {
@@ -61,24 +95,6 @@
                     return sagaData;
                 }
             }
-        }
-
-        async Task<ResponseMessage> GetOrQuerySagaData(Guid sagaId, PartitionKey partitionKey, Container container, bool generatedSagaId)
-        {
-            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
-
-            var sagaFound = responseMessage.StatusCode != HttpStatusCode.NotFound && responseMessage.Content != null;
-
-            if (sagaFound || !migrationModeEnabled || generatedSagaId)
-            {
-                return responseMessage;
-            }
-
-            var query = $@"SELECT * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
-            var queryDefinition = new QueryDefinition(query);
-            var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
-
-            return await queryStreamIterator.ReadNextAsync().ConfigureAwait(false);
         }
 
         public Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData => Get<TSagaData>(sagaId, session, context, false);
