@@ -45,7 +45,7 @@
             var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
             var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);
             SynchronizedStorage = new StorageSessionFactory(resolver, null);
-            SagaStorage = new SagaPersister( serializer);
+            SagaStorage = new SagaPersister(serializer, false);
             OutboxStorage = new OutboxPersister(resolver, serializer, 100);
 
             GetContextBagForSagaStorage = () =>
