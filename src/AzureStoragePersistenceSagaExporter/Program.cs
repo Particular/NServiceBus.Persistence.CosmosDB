@@ -1,5 +1,6 @@
 ﻿namespace Particular.AzureStoragePersistenceSagaExporter
 {
+    using System.IO;
     using System.Threading.Tasks;
     using McMaster.Extensions.CommandLineUtils;
 
@@ -22,7 +23,7 @@
             {
                 var logger = new ConsoleLogger(verboseOption.HasValue());
 
-                return Exporter.Run(logger, connectionStringOption.Value(), sagaDataNameOption.Value(), cancellationToken);
+                return Exporter.Run(logger, connectionStringOption.Value(), sagaDataNameOption.Value(), Directory.GetCurrentDirectory(), cancellationToken);
             });
 
             return await app.ExecuteAsync(args).ConfigureAwait(false);

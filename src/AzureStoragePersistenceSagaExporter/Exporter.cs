@@ -18,14 +18,16 @@
         static readonly Regex probablyJArrayRegex = new Regex("\\[.*\\]", RegexOptions.Multiline | RegexOptions.Compiled);
         static readonly Regex probablyJObjectRegex = new Regex("\\{.*\\}", RegexOptions.Multiline | RegexOptions.Compiled);
 
-        public static async Task Run(ILogger logger, string connectionString, string tableName, CancellationToken cancellationToken)
+        public static async Task Run(ILogger logger, string connectionString, string tableName, string workingPath, CancellationToken cancellationToken)
         {
             var account = CloudStorageAccount.Parse(connectionString);
             var client = account.CreateCloudTableClient();
 
-            if (!Directory.Exists(tableName))
+            var tablePath = Path.Combine(workingPath, tableName);
+
+            if (!Directory.Exists(tablePath))
             {
-                Directory.CreateDirectory(tableName);
+                Directory.CreateDirectory(tablePath);
             }
             else
             {
@@ -36,7 +38,7 @@
 
             var query = new TableQuery<DictionaryTableEntity>();
 
-            await foreach (var fileWritten in StreamToFiles(logger, table, query, tableName, cancellationToken))
+            await foreach (var fileWritten in StreamToFiles(logger, table, query, tableName, workingPath, cancellationToken))
             {
                 logger.Log(LogLevel.Information, $"Writing of '{fileWritten}' done.");
             }
@@ -46,6 +48,7 @@
             CloudTable table,
             TableQuery<DictionaryTableEntity> query,
             string tableName,
+            string workingPath,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using var throttler = new SemaphoreSlim(50);
@@ -58,7 +61,7 @@
                     continue;
                 }
 
-                tasks.Add(WriteEntityToFile(entity, tableName, throttler, cancellationToken));
+                tasks.Add(WriteEntityToFile(entity, tableName, throttler, workingPath, cancellationToken));
             }
 
             while (tasks.Count > 0)
@@ -71,7 +74,7 @@
             }
         }
 
-        static async Task<string> WriteEntityToFile(DictionaryTableEntity entity, string tableName, SemaphoreSlim throttler, CancellationToken cancellationToken)
+        static async Task<string> WriteEntityToFile(DictionaryTableEntity entity, string tableName, SemaphoreSlim throttler, string workingPath, CancellationToken cancellationToken)
         {
             try
             {
@@ -79,7 +82,7 @@
 
                 var (jObject, newSagaId) = Convert(entity);
 
-                var filePath = Path.Combine(tableName, $"{newSagaId}.json");
+                var filePath = Path.Combine(workingPath, tableName, $"{newSagaId}.json");
                 await using var fileWriter = File.CreateText(filePath);
                 using var jsonTextWriter = new JsonTextWriter(fileWriter)
                 {
