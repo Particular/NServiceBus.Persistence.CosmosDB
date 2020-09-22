@@ -4,29 +4,49 @@
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Table;
     using NServiceBus;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTesting.Customization;
     using NUnit.Framework;
     using Particular.AzureStoragePersistenceSagaExporter;
 
     class MigrationEndToEnd : NServiceBusAcceptanceTest
     {
-        [Test]
-        public async Task Can_migrate_from_ASP_to_CosmosDB()
+        [SetUp]
+        public async Task Setup()
         {
             var account = CloudStorageAccount.Parse(AzureStoragePersistenceConnectionString);
             var client = account.CreateCloudTableClient();
 
-            var table = client.GetTableReference(typeof(MigratingEndpoint.MigratingSagaData).Name);
+            table = client.GetTableReference(nameof(MigratingEndpoint.MigratingSagaData));
 
             await table.CreateIfNotExistsAsync();
 
+            workingDir = Path.Combine(TestContext.CurrentContext.WorkDirectory, Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
+            Directory.CreateDirectory(workingDir);
+        }
+
+        [TearDown]
+        public async Task Teardown()
+        {
+            await table.DeleteIfExistsAsync();
+            Directory.Delete(workingDir, true);
+        }
+
+        [Test]
+        public async Task Can_migrate_from_ASP_to_CosmosDB()
+        {
+            // Arrange
             var testContext = await Scenario.Define<Context>(c => c.MyId = Guid.NewGuid())
                 .WithEndpoint<MigratingEndpoint>(b => b.CustomConfig(ec =>
                 {
-                    ec.UsePersistence<AzureStoragePersistence>()
-                    .ConnectionString(AzureStoragePersistenceConnectionString);
+                    var routing = ec.ConfigureTransport().Routing();
+                    routing.RouteToEndpoint(typeof(CompleteSagaRequest), typeof(SomeOtherEndpoint));
+
+                    var persistence = ec.UsePersistence<AzureStoragePersistence>();
+                    persistence.ConnectionString(AzureStoragePersistenceConnectionString);
                 }).When((s, c) => s.SendLocal(new StartSaga
                 {
                     MyId = c.MyId
@@ -34,45 +54,56 @@
                 .Done(ctx => ctx.CompleteSagaRequestSent)
                 .Run();
 
-            var workingDir = Path.GetTempPath();
-            Directory.CreateDirectory(workingDir);
+            // Act
+            await Exporter.Run(new ConsoleLogger(true), AzureStoragePersistenceConnectionString, nameof(MigratingEndpoint.MigratingSagaData), workingDir, CancellationToken.None);
 
-            var logger = new ConsoleLogger(true);
+            var filePath = DetermineAndVerifyExport(testContext);
+            await ImportIntoCosmosDB(filePath);
 
-            await Exporter.Run(logger, AzureStoragePersistenceConnectionString, typeof(MigratingEndpoint.MigratingSagaData).Name, workingDir, CancellationToken.None);
+            // Assert
+            await Scenario.Define<Context>(c => c.MyId = testContext.MyId)
+                .WithEndpoint<MigratingEndpoint>(b => b.CustomConfig(ec =>
+                {
+                    var routing = ec.ConfigureTransport().Routing();
+                    routing.RouteToEndpoint(typeof(CompleteSagaRequest), typeof(SomeOtherEndpoint));
 
+                    var persistence = ec.UsePersistence<CosmosDbPersistence>();
+                    persistence.CosmosClient(CosmosClient);
+                    persistence.DatabaseName(DatabaseName);
+                    persistence.DefaultContainer(ContainerName, PartitionPathKey);
+                    persistence.EnableMigrationMode();
+                }))
+                .WithEndpoint<SomeOtherEndpoint>()
+                .Done(ctx => ctx.CompleteSagaResponseReceived)
+                .Run();
+        }
+
+        string DetermineAndVerifyExport(Context testContext)
+        {
             var newId = SagaIdGenerator.Generate(typeof(MigratingEndpoint.MigratingSagaData).FullName, nameof(MigratingEndpoint.MigratingSagaData.MyId), testContext.MyId.ToString());
 
-            var filePath = Path.Combine(workingDir, typeof(MigratingEndpoint.MigratingSagaData).Name, $"{newId}.json");
+            var filePath = Path.Combine(workingDir, nameof(MigratingEndpoint.MigratingSagaData), $"{newId}.json");
 
             Assert.IsTrue(File.Exists(filePath), "File exported");
+            return filePath;
+        }
 
+        async Task ImportIntoCosmosDB(string filePath)
+        {
             var container = CosmosClient.GetContainer(DatabaseName, ContainerName);
 
             var partitionKey = Path.GetFileNameWithoutExtension(filePath);
 
             using (var stream = File.OpenRead(filePath))
             {
-                var response = await container.CreateItemStreamAsync(stream, new Microsoft.Azure.Cosmos.PartitionKey(partitionKey));
+                var response = await container.CreateItemStreamAsync(stream, new PartitionKey(partitionKey));
 
                 Assert.IsTrue(response.IsSuccessStatusCode, "Successfully imported");
             }
-
-            await Scenario.Define<Context>(c => c.MyId = testContext.MyId)
-                .WithEndpoint<MigratingEndpoint>(b => b.CustomConfig(ec =>
-                {
-                    ec.UsePersistence<CosmosDbPersistence>()
-                    .CosmosClient(CosmosClient)
-                    .DatabaseName(DatabaseName)
-                    .DefaultContainer(ContainerName, PartitionPathKey)
-                    .EnableMigrationMode();
-                }))
-                .WithEndpoint<SomeOtherEndpoint>()
-                .Done(ctx => ctx.CompleteSagaResponseReceived)
-                .Run();
-
-            await table.DeleteAsync();
         }
+
+        CloudTable table;
+        string workingDir;
 
         public class Context : ScenarioContext
         {
@@ -92,23 +123,16 @@
                 IAmStartedByMessages<StartSaga>,
                 IHandleMessages<CompleteSagaResponse>
             {
-                readonly Context testContext;
-
                 public MigratingSaga(Context testContext)
                 {
                     this.testContext = testContext;
-                }
-
-                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<MigratingSagaData> mapper)
-                {
-                    mapper.ConfigureMapping<StartSaga>(msg => msg.MyId).ToSaga(saga => saga.MyId);
                 }
 
                 public Task Handle(StartSaga message, IMessageHandlerContext context)
                 {
                     Data.MyId = message.MyId;
                     testContext.CompleteSagaRequestSent = true;
-                    return context.Send($"{nameof(MigrationEndToEnd)}.{nameof(SomeOtherEndpoint)}", new CompleteSagaRequest());
+                    return context.Send(new CompleteSagaRequest());
                 }
 
                 public Task Handle(CompleteSagaResponse message, IMessageHandlerContext context)
@@ -117,6 +141,13 @@
                     MarkAsComplete();
                     return Task.CompletedTask;
                 }
+
+                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<MigratingSagaData> mapper)
+                {
+                    mapper.ConfigureMapping<StartSaga>(msg => msg.MyId).ToSaga(saga => saga.MyId);
+                }
+
+                readonly Context testContext;
             }
 
             public class MigratingSagaData : ContainSagaData

@@ -15,7 +15,7 @@
                 .Delayed(delayed => delayed.NumberOfRetries(0))
                 .Immediate(immediate => immediate.NumberOfRetries(0));
 
-            var transport = endpointConfiguration.UseTransport<AcceptanceTestingTransport>();
+            endpointConfiguration.UseTransport<AcceptanceTestingTransport>();
 
             endpointConfiguration.RegisterComponentsAndInheritanceHierarchy(runDescriptor);
 
