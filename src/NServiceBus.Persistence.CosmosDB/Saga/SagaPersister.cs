@@ -3,7 +3,6 @@
     using System;
     using System.IO;
     using System.Net;
-    using System.Text;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -45,47 +44,48 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false);
-
-            var sagaStream = responseMessage.Content;
-
-            var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
-
-            if (sagaNotFound && !migrationModeEnabled)
+            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false))
             {
-                return default;
-            }
+                var sagaStream = responseMessage.Content;
 
-            if (sagaNotFound && migrationModeEnabled && !isGeneratedSagaId)
-            {
-                var query = $@"SELECT TOP 1 * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
-                var queryDefinition = new QueryDefinition(query);
-                var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
+                var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                var iteratorResponse = await queryStreamIterator.ReadNextAsync().ConfigureAwait(false);
-
-                iteratorResponse.EnsureSuccessStatusCode();
-
-                using (var streamReader = new StreamReader(iteratorResponse.Content))
+                if (sagaNotFound && !migrationModeEnabled)
                 {
-                    using (var jsonReader = new JsonTextReader(streamReader))
+                    return default;
+                }
+
+                if (sagaNotFound && migrationModeEnabled && !isGeneratedSagaId)
+                {
+                    var query = $@"SELECT TOP 1 * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
+                    var queryDefinition = new QueryDefinition(query);
+                    var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
+
+                    using (var iteratorResponse = await queryStreamIterator.ReadNextAsync().ConfigureAwait(false))
                     {
-                        var iteratorResult = JObject.Load(jsonReader);
+                        iteratorResponse.EnsureSuccessStatusCode();
 
-                        var documents = iteratorResult["Documents"] as JArray;
-
-                        if (!documents.HasValues)
+                        using (var streamReader = new StreamReader(iteratorResponse.Content))
+                        using (var jsonReader = new JsonTextReader(streamReader))
                         {
-                            return default;
-                        }
+                            var iteratorResult = JObject.Load(jsonReader);
 
-                        sagaStream = new MemoryStream(Encoding.UTF8.GetBytes(documents[0].ToString()));
+                            var documents = iteratorResult["Documents"] as JArray;
+
+                            if (documents == null)
+                            {
+                                return default;
+                            }
+
+                            var sagaData = documents[0].ToObject<TSagaData>();
+                            context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
+                            return sagaData;
+                        }
                     }
                 }
-            }
 
-            using (var streamReader = new StreamReader(sagaStream))
-            {
+                using(sagaStream)
+                using (var streamReader = new StreamReader(sagaStream))
                 using (var jsonReader = new JsonTextReader(streamReader))
                 {
                     var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
@@ -97,7 +97,8 @@
             }
         }
 
-        public Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData => Get<TSagaData>(sagaId, session, context, false);
+        public Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData =>
+            Get<TSagaData>(sagaId, session, context, false);
 
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
