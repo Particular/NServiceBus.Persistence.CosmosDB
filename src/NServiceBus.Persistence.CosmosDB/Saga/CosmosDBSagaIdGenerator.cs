@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
-    using System.Security.Cryptography;
     using System.Text;
+    using FastHashes;
     using Newtonsoft.Json;
 
     static class CosmosDBSagaIdGenerator
@@ -21,12 +21,10 @@
         {
             var stringBytes = Encoding.UTF8.GetBytes(src);
 
-            using (var sha1CryptoServiceProvider = new SHA1CryptoServiceProvider())
-            {
-                var hashedBytes = sha1CryptoServiceProvider.ComputeHash(stringBytes);
-                Array.Resize(ref hashedBytes, 16);
-                return new Guid(hashedBytes);
-            }
+            var hashedBytes = hashProvider.ComputeHash(stringBytes);
+            return new Guid(hashedBytes);
         }
+
+        static readonly FarmHash128 hashProvider = new FarmHash128(ulong.MinValue);
     }
 }
