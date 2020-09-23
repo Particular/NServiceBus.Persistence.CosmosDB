@@ -84,6 +84,12 @@
                 { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current },
                 { MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaData.GetType().FullName }
             };
+
+            if (Context.TryGet($"cosmos_migratedsagaid:{sagaData.Id}", out Guid migratedSagaId))
+            {
+                metadata.Add(MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, migratedSagaId);
+            }
+
             jObject.Add(MetadataExtensions.MetadataKey,metadata);
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);

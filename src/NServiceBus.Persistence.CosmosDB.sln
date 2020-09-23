@@ -15,11 +15,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests\NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests.csproj", "{144FE639-E1F9-40EA-830D-60487D92A73F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStoragePersistenceSagaExporter", "AzureStoragePersistenceSagaExporter\AzureStoragePersistenceSagaExporter.csproj", "{B220E9A3-8885-49DB-BBA0-47B0912219A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter", "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter\NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.csproj", "{B220E9A3-8885-49DB-BBA0-47B0912219A7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Migration", "Migration", "{89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureStoragePersistenceSagaExporter.AcceptanceTests", "AzureStoragePersistenceSagaExporter.AcceptanceTests\AzureStoragePersistenceSagaExporter.AcceptanceTests.csproj", "{E155D512-159E-42CF-9B21-47C009481ECA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests\NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests.csproj", "{E155D512-159E-42CF-9B21-47C009481ECA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,4 +1,4 @@
-﻿namespace AzureStoragePersistenceSagaExporter.AcceptanceTests
+﻿namespace NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests
 {
     using System;
     using System.IO;

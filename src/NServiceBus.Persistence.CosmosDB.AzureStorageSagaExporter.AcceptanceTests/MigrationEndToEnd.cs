@@ -1,4 +1,4 @@
-﻿namespace AzureStoragePersistenceSagaExporter.AcceptanceTests
+﻿namespace NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests
 {
     using System;
     using System.Collections.Generic;
@@ -12,9 +12,9 @@
     using NServiceBus;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTesting.Customization;
+    using NServiceBus.Persistence.CosmosDB;
     using NUnit.Framework;
     using Particular.Approvals;
-    using Particular.AzureStoragePersistenceSagaExporter;
 
     class MigrationEndToEnd : NServiceBusAcceptanceTest
     {
@@ -89,7 +89,7 @@
 
         string DetermineAndVerifyExport(Context testContext)
         {
-            var newId = SagaIdGenerator.Generate(typeof(MigratingEndpoint.MigratingSagaData).FullName, nameof(MigratingEndpoint.MigratingSagaData.MyId), testContext.MyId.ToString());
+            var newId = CosmosDBSagaIdGenerator.Generate(typeof(MigratingEndpoint.MigratingSagaData).FullName, nameof(MigratingEndpoint.MigratingSagaData.MyId), testContext.MyId.ToString());
 
             var filePath = Path.Combine(workingDir, nameof(MigratingEndpoint.MigratingSagaData), $"{newId}.json");
 

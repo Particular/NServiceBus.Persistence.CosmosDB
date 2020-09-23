@@ -1,4 +1,4 @@
-﻿namespace Particular.AzureStoragePersistenceSagaExporter
+﻿namespace NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter
 {
     class ApplicationOptions
     {

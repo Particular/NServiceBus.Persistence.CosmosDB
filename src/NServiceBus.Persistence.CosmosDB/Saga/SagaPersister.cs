@@ -77,6 +77,7 @@
 
                             var sagaData = documents[0].ToObject<TSagaData>(serializer);
                             context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
+                            context.Set($"cosmos_migratedsagaid:{sagaData.Id}", sagaId);
                             return sagaData;
                         }
                     }
@@ -101,7 +102,7 @@
         public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
-            var sagaId = SagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
+            var sagaId = CosmosDBSagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
 
             return Get<TSagaData>(sagaId, session, context, true);
         }
