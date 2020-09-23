@@ -1,4 +1,4 @@
-﻿namespace AzureStoragePersistenceSagaExporter.AcceptanceTests
+﻿namespace NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests
 {
     using System;
     using System.Collections.Generic;
@@ -15,7 +15,6 @@
     using NServiceBus.Persistence.CosmosDB;
     using NUnit.Framework;
     using Particular.Approvals;
-    using Particular.AzureStoragePersistenceSagaExporter;
 
     class MigrationEndToEnd : NServiceBusAcceptanceTest
     {

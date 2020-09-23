@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,11 +10,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>Particular.AzureStoragePersistenceSagaExporter</PackageId>
+    <PackageId>NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter</PackageId>
     <Description>Tool to extract saga data from NServiceBus.Persistence.AzureStorage for import into NServiceBus.Persistence.CosmosDB</Description>
     <ToolCommandName>export-aspsagas</ToolCommandName>
     <PackAsTool>True</PackAsTool>
-    <RootNamespace>Particular.AzureStoragePersistenceSagaExporter</RootNamespace>
+    <RootNamespace>NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

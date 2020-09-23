@@ -1,4 +1,4 @@
-﻿namespace Particular.AzureStoragePersistenceSagaExporter
+﻿namespace NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter
 {
     using System;
     using Microsoft.Extensions.Logging;

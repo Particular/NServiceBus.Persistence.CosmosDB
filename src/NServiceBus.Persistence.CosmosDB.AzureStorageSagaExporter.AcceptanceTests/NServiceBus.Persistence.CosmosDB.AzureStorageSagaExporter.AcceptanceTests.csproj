@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AzureStoragePersistenceSagaExporter\AzureStoragePersistenceSagaExporter.csproj" />
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter\NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.csproj" />
     <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
   </ItemGroup>
 
