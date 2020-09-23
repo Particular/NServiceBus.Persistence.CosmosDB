@@ -68,16 +68,14 @@
                         using (var streamReader = new StreamReader(iteratorResponse.Content))
                         using (var jsonReader = new JsonTextReader(streamReader))
                         {
-                            var iteratorResult = JObject.Load(jsonReader);
+                            var iteratorResult = await JObject.LoadAsync(jsonReader).ConfigureAwait(false);
 
-                            var documents = iteratorResult["Documents"] as JArray;
-
-                            if (documents == null)
+                            if (!(iteratorResult["Documents"] is JArray documents) || !documents.HasValues)
                             {
                                 return default;
                             }
 
-                            var sagaData = documents[0].ToObject<TSagaData>();
+                            var sagaData = documents[0].ToObject<TSagaData>(serializer);
                             context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
                             return sagaData;
                         }
