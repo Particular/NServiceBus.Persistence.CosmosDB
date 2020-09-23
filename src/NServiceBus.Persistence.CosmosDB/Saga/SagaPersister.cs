@@ -77,6 +77,7 @@
 
                             var sagaData = documents[0].ToObject<TSagaData>(serializer);
                             context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
+                            context.Set($"cosmos_migratedsagaid:{sagaData.Id}", sagaId);
                             return sagaData;
                         }
                     }
