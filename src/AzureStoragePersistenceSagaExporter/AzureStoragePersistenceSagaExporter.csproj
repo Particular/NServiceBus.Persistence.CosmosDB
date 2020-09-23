@@ -5,6 +5,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <LangVersion>8.0</LangVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -19,6 +21,7 @@
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\MetadataExtensions.cs" Link="MetadataExtensions.Common.cs" />
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\MetadataExtensions.cs" Link="MetadataExtensions.Sagas.cs" />
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\SagaSchemaVersion.cs" Link="SagaSchemaVersion.cs" />
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\CosmosDBSagaIdGenerator.cs" Link="CosmosDBSagaIdGenerator.cs" />
   </ItemGroup>
 
   <ItemGroup>

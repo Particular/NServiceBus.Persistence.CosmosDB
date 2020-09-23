@@ -11,6 +11,7 @@
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using NServiceBus.Persistence.CosmosDB;
 
     public static class Exporter
     {
@@ -110,7 +111,7 @@
             var propertyName = match.Groups["PropertyName"].Value;
             var propertyValue = match.Groups["PropertyValue"].Value;
 
-            var newSagaId = SagaIdGenerator.Generate(sagaDataTypeFullName, propertyName, propertyValue);
+            var newSagaId = CosmosDBSagaIdGenerator.Generate(sagaDataTypeFullName, propertyName, propertyValue);
             var oldSagaId = entity["Id"].GuidValue;
 
             entity.Remove("NServiceBus_2ndIndexKey");
