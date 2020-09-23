@@ -26,7 +26,11 @@ namespace FastHashes
 {
     using System;
     using System.Collections.ObjectModel;
+    using System.Diagnostics;
+    using System.IO;
     using System.Runtime.CompilerServices;
+    using System.Text.RegularExpressions;
+    using System.Linq;
 
     /// <summary>Represents the base class from which all the FarmHash implementations with more than 32 bits of output must derive. This class is abstract.</summary>
     abstract class FarmHashG32 : Hash
@@ -390,103 +394,106 @@ namespace FastHashes
     /// <summary>Represents the base class from which all the hash algorithms must derive. This class is abstract.</summary>
     abstract class Hash
     {
-        private static readonly bool AllowsUnalignedRead = true;
-        private static readonly bool IsLittleEndian = BitConverter.IsLittleEndian;
+        #region Members (Static)
+        private static readonly Boolean s_AllowsUnalignedRead = AllowsUnalignedRead();
+        private static readonly Boolean s_IsLittleEndian = BitConverter.IsLittleEndian;
+        #endregion
 
+        #region Properties (Abstract)
         /// <summary>Gets the size, in bits, of the computed hash code.</summary>
         /// <value>An <see cref="T:System.Int32"/> value, greater than or equal to <c>32</c>.</value>
-        public abstract int Length { get; }
+        public abstract Int32 Length { get; }
+        #endregion
 
-        //private static Boolean AllowsUnalignedRead()
-        //{
-        //    if ((new[] { "x86", "amd64" }).Contains(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE"), StringComparer.OrdinalIgnoreCase))
-        //        return true;
+        #region Methods
+        private static Boolean AllowsUnalignedRead()
+        {
+            if ((new[] {"x86", "amd64"}).Contains(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE"), StringComparer.OrdinalIgnoreCase))
+                return true;
 
-        //    ProcessStartInfo si = new ProcessStartInfo
-        //    {
-        //        CreateNoWindow = true,
-        //        ErrorDialog = false,
-        //        FileName = "uname",
-        //        LoadUserProfile = false,
-        //        RedirectStandardOutput = true,
-        //        UseShellExecute = false
-        //    };
+            ProcessStartInfo si = new ProcessStartInfo
+            {
+                CreateNoWindow = true,
+                ErrorDialog = false,
+                FileName = "uname",
+                LoadUserProfile = false,
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+            };
 
-        //    try
-        //    {
-        //        using (Process process = new Process())
-        //        {
-        //            process.StartInfo = si;
-        //            process.StartInfo.Arguments = "-p";
+            try
+            {
+                using (Process process = new Process())
+                {
+                    process.StartInfo = si;
+                    process.StartInfo.Arguments = "-p";
 
-        //            process.Start();
+                    process.Start();
 
-        //            using (StreamReader stream = process.StandardOutput)
-        //            {
-        //                String output = stream.ReadLine();
+                    using (StreamReader stream = process.StandardOutput)
+                    {
+                        String output = stream.ReadLine();
 
-        //                if (!String.IsNullOrWhiteSpace(output))
-        //                {
-        //                    output = output.Trim();
+                        if (!String.IsNullOrWhiteSpace(output))
+                        {
+                            output = output.Trim();
 
-        //                    if ((new[] { "amd64", "i386", "x64", "x86_64" }).Contains(output, StringComparer.OrdinalIgnoreCase))
-        //                        return true;
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch { }
+                            if ((new[] {"amd64", "i386", "x64", "x86_64"}).Contains(output, StringComparer.OrdinalIgnoreCase))
+                                return true;
+                        }
+                    }
+                }
+            }
+            catch { }
 
-        //    try
-        //    {
-        //        using (Process process = new Process())
-        //        {
-        //            process.StartInfo = si;
-        //            process.StartInfo.Arguments = "-m";
+            try
+            {
+                using (Process process = new Process())
+                {
+                    process.StartInfo = si;
+                    process.StartInfo.Arguments = "-m";
 
-        //            process.Start();
+                    process.Start();
 
-        //            using (StreamReader stream = process.StandardOutput)
-        //            {
-        //                String output = stream.ReadLine();
+                    using (StreamReader stream = process.StandardOutput)
+                    {
+                        String output = stream.ReadLine();
 
-        //                if (!String.IsNullOrWhiteSpace(output))
-        //                {
-        //                    output = output.Trim();
+                        if (!String.IsNullOrWhiteSpace(output))
+                        {
+                            output = output.Trim();
 
-        //                    if ((new[] { "amd64", "x64", "x86_64" }).Contains(output, StringComparer.OrdinalIgnoreCase))
-        //                        return true;
+                            if ((new[] {"amd64", "x64", "x86_64"}).Contains(output, StringComparer.OrdinalIgnoreCase))
+                                return true;
 
-        //                    if ((new Regex(@"i\d86")).IsMatch(output))
-        //                        return true;
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch { }
+                            if ((new Regex(@"i\d86")).IsMatch(output))
+                                return true;
+                        }
+                    }
+                }
+            }
+            catch { }
 
-        //    return false;
-        //}
+            return false;
+        }
 
         /// <summary>Reads a 2-bytes unsigned integer from the specified byte pointer, without increment.</summary>
         /// <param name="pointer">The <see cref="T:System.Byte"/>* to read.</param>
         /// <returns>An <see cref="T:System.UInt16"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static unsafe ushort Fetch16(byte* pointer)
+        protected static unsafe UInt16 Fetch16(Byte* pointer)
         {
-            ushort v;
+            UInt16 v;
 
-            if (IsLittleEndian)
+            if (s_IsLittleEndian)
             {
-                if (AllowsUnalignedRead || (((long)pointer & 7) == 0))
-                    v = *((ushort*)pointer);
+                if (s_AllowsUnalignedRead || (((Int64)pointer & 7) == 0))
+                    v = *((UInt16*)pointer);
                 else
-                    v = (ushort)(pointer[0] | (pointer[1] << 8));
+                    v = (UInt16)(pointer[0] | (pointer[1] << 8));
             }
             else
-            {
-                v = (ushort)((pointer[0] << 8) | pointer[1]);
-            }
+                v = (UInt16)((pointer[0] << 8) | pointer[1]);
 
             return v;
         }
@@ -495,21 +502,19 @@ namespace FastHashes
         /// <param name="pointer">The <see cref="T:System.Byte"/>* to read.</param>
         /// <returns>An <see cref="T:System.UInt32"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static unsafe uint Fetch32(byte* pointer)
+        protected static unsafe UInt32 Fetch32(Byte* pointer)
         {
-            uint v;
+            UInt32 v;
 
-            if (IsLittleEndian)
+            if (s_IsLittleEndian)
             {
-                if (AllowsUnalignedRead || (((long)pointer & 7) == 0))
-                    v = *((uint*)pointer);
+                if (s_AllowsUnalignedRead || (((Int64)pointer & 7) == 0))
+                    v = *((UInt32*)pointer);
                 else
-                    v = (uint)(pointer[0] | (pointer[1] << 8) | (pointer[2] << 16) | (pointer[3] << 24));
+                    v = (UInt32)(pointer[0] | (pointer[1] << 8) | (pointer[2] << 16) | (pointer[3] << 24));
             }
             else
-            {
-                v = (uint)((pointer[0] << 24) | (pointer[1] << 16) | (pointer[2] << 8) | pointer[3]);
-            }
+                v = (UInt32)((pointer[0] << 24) | (pointer[1] << 16) | (pointer[2] << 8) | pointer[3]);
 
             return v;
         }
@@ -518,21 +523,19 @@ namespace FastHashes
         /// <param name="pointer">The <see cref="T:System.Byte"/>* to read.</param>
         /// <returns>An <see cref="T:System.UInt64"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static unsafe ulong Fetch64(byte* pointer)
+        protected static unsafe UInt64 Fetch64(Byte* pointer)
         {
-            ulong v;
+            UInt64 v;
 
-            if (IsLittleEndian)
+            if (s_IsLittleEndian)
             {
-                if (AllowsUnalignedRead || (((long)pointer & 7) == 0))
-                    v = *((ulong*)pointer);
+                if (s_AllowsUnalignedRead || (((Int64)pointer & 7) == 0))
+                    v = *((UInt64*)pointer);
                 else
-                    v = (ulong)(pointer[0] | (pointer[1] << 8) | (pointer[2] << 16) | (pointer[3] << 24) | (pointer[4] << 32) | (pointer[5] << 40) | (pointer[6] << 48) | (pointer[7] << 56));
+                    v = (UInt64)(pointer[0] | (pointer[1] << 8) | (pointer[2] << 16) | (pointer[3] << 24) | (pointer[4] << 32) | (pointer[5] << 40) | (pointer[6] << 48) | (pointer[7] << 56));
             }
             else
-            {
-                v = (ulong)((pointer[0] << 56) | (pointer[1] << 48) | (pointer[2] << 40) | (pointer[3] << 32) | (pointer[4] << 24) | (pointer[5] << 16) | (pointer[6] << 8) | pointer[7]);
-            }
+                v = (UInt64)((pointer[0] << 56) | (pointer[1] << 48) | (pointer[2] << 40) | (pointer[3] << 32) | (pointer[4] << 24) | (pointer[5] << 16) | (pointer[6] << 8) | pointer[7]);
 
             return v;
         }
@@ -541,21 +544,19 @@ namespace FastHashes
         /// <param name="pointer">The <see cref="T:System.Byte"/>* to read.</param>
         /// <returns>An <see cref="T:System.UInt16"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static unsafe ushort Read16(ref byte* pointer)
+        protected static unsafe UInt16 Read16(ref Byte* pointer)
         {
-            ushort v;
+            UInt16 v;
 
-            if (IsLittleEndian)
+            if (s_IsLittleEndian)
             {
-                if (AllowsUnalignedRead || (((long)pointer & 7) == 0))
-                    v = *((ushort*)pointer);
+                if (s_AllowsUnalignedRead || (((Int64)pointer & 7) == 0))
+                    v = *((UInt16*)pointer);
                 else
-                    v = (ushort)(pointer[0] | (pointer[1] << 8));
+                    v = (UInt16)(pointer[0] | (pointer[1] << 8));
             }
             else
-            {
-                v = (ushort)((pointer[0] << 8) | pointer[1]);
-            }
+                v = (UInt16)((pointer[0] << 8) | pointer[1]);
 
             pointer += 2;
 
@@ -566,21 +567,19 @@ namespace FastHashes
         /// <param name="pointer">The <see cref="T:System.Byte"/>* to read.</param>
         /// <returns>An <see cref="T:System.UInt32"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static unsafe uint Read32(ref byte* pointer)
+        protected static unsafe UInt32 Read32(ref Byte* pointer)
         {
-            uint v;
+            UInt32 v;
 
-            if (IsLittleEndian)
+            if (s_IsLittleEndian)
             {
-                if (AllowsUnalignedRead || (((long)pointer & 7) == 0))
-                    v = *((uint*)pointer);
+                if (s_AllowsUnalignedRead || (((Int64)pointer & 7) == 0))
+                    v = *((UInt32*)pointer);
                 else
-                    v = (uint)(pointer[0] | (pointer[1] << 8) | (pointer[2] << 16) | (pointer[3] << 24));
+                    v = (UInt32)(pointer[0] | (pointer[1] << 8) | (pointer[2] << 16) | (pointer[3] << 24));
             }
             else
-            {
-                v = (uint)((pointer[0] << 24) | (pointer[1] << 16) | (pointer[2] << 8) | pointer[3]);
-            }
+                v = (UInt32)((pointer[0] << 24) | (pointer[1] << 16) | (pointer[2] << 8) | pointer[3]);
 
             pointer += 4;
 
@@ -591,21 +590,19 @@ namespace FastHashes
         /// <param name="pointer">The <see cref="T:System.Byte"/>* to read.</param>
         /// <returns>An <see cref="T:System.UInt64"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static unsafe ulong Read64(ref byte* pointer)
+        protected static unsafe UInt64 Read64(ref Byte* pointer)
         {
-            ulong v;
+            UInt64 v;
 
-            if (IsLittleEndian)
+            if (s_IsLittleEndian)
             {
-                if (AllowsUnalignedRead || (((long)pointer & 7) == 0))
-                    v = *((ulong*)pointer);
+                if (s_AllowsUnalignedRead || (((Int64)pointer & 7) == 0))
+                    v = *((UInt64*)pointer);
                 else
-                    v = (ulong)(pointer[0] | (pointer[1] << 8) | (pointer[2] << 16) | (pointer[3] << 24) | (pointer[4] << 32) | (pointer[5] << 40) | (pointer[6] << 48) | (pointer[7] << 56));
+                    v = (UInt64)(pointer[0] | (pointer[1] << 8) | (pointer[2] << 16) | (pointer[3] << 24) | (pointer[4] << 32) | (pointer[5] << 40) | (pointer[6] << 48) | (pointer[7] << 56));
             }
             else
-            {
-                v = (ulong)((pointer[0] << 56) | (pointer[1] << 48) | (pointer[2] << 40) | (pointer[3] << 32) | (pointer[4] << 24) | (pointer[5] << 16) | (pointer[6] << 8) | pointer[7]);
-            }
+                v = (UInt64)((pointer[0] << 56) | (pointer[1] << 48) | (pointer[2] << 40) | (pointer[3] << 32) | (pointer[4] << 24) | (pointer[5] << 16) | (pointer[6] << 8) | pointer[7]);
 
             pointer += 8;
 
@@ -617,7 +614,7 @@ namespace FastHashes
         /// <param name="rotation">The number of bits to rotate.</param>
         /// <returns>An <see cref="T:System.UInt32"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static uint RotateLeft(uint value, int rotation)
+        protected static UInt32 RotateLeft(UInt32 value, Int32 rotation)
         {
             rotation &= 0x1F;
             return (value << rotation) | (value >> (32 - rotation));
@@ -628,7 +625,7 @@ namespace FastHashes
         /// <param name="rotation">The number of bits to rotate.</param>
         /// <returns>An <see cref="T:System.UInt64"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static ulong RotateLeft(ulong value, int rotation)
+        protected static UInt64 RotateLeft(UInt64 value, Int32 rotation)
         {
             rotation &= 0x3F;
             return (value << rotation) | (value >> (64 - rotation));
@@ -639,7 +636,7 @@ namespace FastHashes
         /// <param name="rotation">The number of bits to rotate.</param>
         /// <returns>An <see cref="T:System.UInt32"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static uint RotateRight(uint value, int rotation)
+        protected static UInt32 RotateRight(UInt32 value, Int32 rotation)
         {
             rotation &= 0x1F;
             return (value >> rotation) | (value << (32 - rotation));
@@ -650,7 +647,7 @@ namespace FastHashes
         /// <param name="rotation">The number of bits to rotate.</param>
         /// <returns>An <see cref="T:System.UInt64"/> value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static ulong RotateRight(ulong value, int rotation)
+        protected static UInt64 RotateRight(UInt64 value, Int32 rotation)
         {
             rotation &= 0x3F;
             return (value >> rotation) | (value << (64 - rotation));
@@ -660,9 +657,9 @@ namespace FastHashes
         /// <param name="value1">The first <see cref="T:System.UInt16"/>, whose value is assigned to the second one.</param>
         /// <param name="value2">The second <see cref="T:System.UInt16"/>, whose value is assigned to the first one.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static void Swap(ref ushort value1, ref ushort value2)
+        protected static void Swap(ref UInt16 value1, ref UInt16 value2)
         {
-            ushort tmp = value1;
+            UInt16 tmp = value1;
             value1 = value2;
             value2 = tmp;
         }
@@ -671,9 +668,9 @@ namespace FastHashes
         /// <param name="value1">The first <see cref="T:System.UInt32"/>, whose value is assigned to the second one.</param>
         /// <param name="value2">The second <see cref="T:System.UInt32"/>, whose value is assigned to the first one.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static void Swap(ref uint value1, ref uint value2)
+        protected static void Swap(ref UInt32 value1, ref UInt32 value2)
         {
-            uint tmp = value1;
+            UInt32 tmp = value1;
             value1 = value2;
             value2 = tmp;
         }
@@ -682,9 +679,9 @@ namespace FastHashes
         /// <param name="value1">The first <see cref="T:System.UInt64"/>, whose value is assigned to the second one.</param>
         /// <param name="value2">The second <see cref="T:System.UInt64"/>, whose value is assigned to the first one.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static void Swap(ref ulong value1, ref ulong value2)
+        protected static void Swap(ref UInt64 value1, ref UInt64 value2)
         {
-            ulong tmp = value1;
+            UInt64 tmp = value1;
             value1 = value2;
             value2 = tmp;
         }
@@ -693,7 +690,7 @@ namespace FastHashes
         /// <param name="buffer">The <see cref="T:System.Byte"/>[] whose hash must be computed.</param>
         /// <returns>A <see cref="T:System.Byte"/>[] representing the computed hash.</returns>
         /// <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="buffer">buffer</paramref> is <c>null</c>.</exception>
-        public byte[] ComputeHash(byte[] buffer)
+        public Byte[] ComputeHash(Byte[] buffer)
         {
             if (buffer == null)
                 throw new ArgumentNullException(nameof(buffer));
@@ -708,7 +705,7 @@ namespace FastHashes
         /// <exception cref="T:System.ArgumentException">Thrown when the number of bytes in <paramref name="buffer">buffer</paramref> is less than <paramref name="count">count</paramref>.</exception>
         /// <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="buffer">buffer</paramref> is <c>null</c>.</exception>
         /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when <paramref name="count">count</paramref> is less than <c>0</c>.</exception>
-        public byte[] ComputeHash(byte[] buffer, int count)
+        public Byte[] ComputeHash(Byte[] buffer, Int32 count)
         {
             return ComputeHash(buffer, 0, count);
         }
@@ -721,12 +718,12 @@ namespace FastHashes
         /// <exception cref="T:System.ArgumentException">Thrown when the number of bytes in <paramref name="buffer">buffer</paramref> is less than <paramref name="offset">sourceOffset</paramref> plus <paramref name="count">count</paramref>.</exception>
         /// <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="buffer">buffer</paramref> is <c>null</c>.</exception>
         /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when <paramref name="offset">offset</paramref> is not within the bounds of <paramref name="buffer">buffer</paramref> or when <paramref name="count">count</paramref> is less than <c>0</c>.</exception>
-        public byte[] ComputeHash(byte[] buffer, int offset, int count)
+        public Byte[] ComputeHash(Byte[] buffer, Int32 offset, Int32 count)
         {
             if (buffer == null)
                 throw new ArgumentNullException(nameof(buffer));
 
-            int bufferLength = buffer.Length;
+            Int32 bufferLength = buffer.Length;
 
             if ((offset < 0) || (offset >= bufferLength))
                 throw new ArgumentOutOfRangeException(nameof(offset), "The offset parameter must be within the bounds of the data array.");
@@ -742,19 +739,19 @@ namespace FastHashes
 
         /// <summary>Returns the text representation of the current instance.</summary>
         /// <returns>A <see cref="T:System.String"/> representing the current instance.</returns>
-        public override string ToString()
+        public override String ToString()
         {
             return GetType().Name;
         }
+        #endregion
 
+        #region Methods (Abstract)
         /// <summary>Represents the core hashing function of the algorithm.</summary>
         /// <param name="buffer">The <see cref="T:System.Byte"/>[] whose hash must be computed.</param>
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>A <see cref="T:System.Byte"/>[] representing the computed hash.</returns>
-        protected abstract byte[] ComputeHashInternal(byte[] buffer, int offset, int count);
+        protected abstract Byte[] ComputeHashInternal(Byte[] buffer, Int32 offset, Int32 count);
+        #endregion
     }
 }
-#pragma warning restore SA1121 // Use built-in type alias
-#pragma warning restore SA1119 // Statement should not use unnecessary parenthesis
-#pragma warning restore SA1304 // Non-private readonly fields should begin with upper-case letter
