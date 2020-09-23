@@ -50,12 +50,12 @@
 
                 var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                if (sagaNotFound && !migrationModeEnabled)
+                if (sagaNotFound && isGeneratedSagaId)
                 {
                     return default;
                 }
 
-                if (sagaNotFound && migrationModeEnabled && !isGeneratedSagaId)
+                if (sagaNotFound && migrationModeEnabled)
                 {
                     var query = $@"SELECT TOP 1 * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
                     var queryDefinition = new QueryDefinition(query);
@@ -81,6 +81,11 @@
                             return sagaData;
                         }
                     }
+                }
+
+                if (sagaStream == null)
+                {
+                    return default;
                 }
 
                 using(sagaStream)
