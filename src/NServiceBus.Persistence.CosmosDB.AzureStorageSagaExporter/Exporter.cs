@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Runtime.CompilerServices;
     using System.Text.RegularExpressions;
@@ -39,10 +40,14 @@
 
             var query = new TableQuery<DictionaryTableEntity>();
 
+            var stopwatch = Stopwatch.StartNew();
+
             await foreach (var fileWritten in StreamToFiles(logger, table, query, tableName, workingPath, cancellationToken))
             {
                 logger.Log(LogLevel.Information, $"Writing of '{fileWritten}' done.");
             }
+
+            logger.LogInformation($"Export execution time: {stopwatch.Elapsed.TotalSeconds} seconds");
         }
 
         static async IAsyncEnumerable<string> StreamToFiles(ILogger logger,
