@@ -21,18 +21,23 @@
 
             app.HelpOption(inherited: true);
 
-            app.OnExecuteAsync(cancellationToken =>
+            app.OnExecuteAsync(async cancellationToken =>
             {
                 var logger = new ConsoleLogger(verboseOption.HasValue());
 
-                logger.LogInformation($"export-aspsagas {GitVersionInformation.NuGetVersionV2} (Sha:{GitVersionInformation.ShortSha})");
+                logger.LogInformation(ToolVersion.GetVersionInfo());
 
                 if (versionOption.HasValue())
                 {
-                    return Task.CompletedTask;
+                    return;
                 }
 
-                return Exporter.Run(logger, connectionStringOption.Value(), sagaDataNameOption.Value(), Directory.GetCurrentDirectory(), cancellationToken);
+                if (!await ToolVersion.CheckIsLatestVersion(logger).ConfigureAwait(false))
+                {
+                    return;
+                }
+
+                await Exporter.Run(logger, connectionStringOption.Value(), sagaDataNameOption.Value(), Directory.GetCurrentDirectory(), cancellationToken).ConfigureAwait(false);
             });
 
             return await app.ExecuteAsync(args).ConfigureAwait(false);
