@@ -36,7 +36,7 @@
             return Task.CompletedTask;
         }
 
-        async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context, bool isGeneratedSagaId) where TSagaData : class, IContainSagaData
+        public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
             var storageSession = (StorageSession)session;
 
@@ -50,11 +50,8 @@
 
                 var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                if (sagaNotFound && isGeneratedSagaId)
-                {
-                    return default;
-                }
-
+                // if the previous lookup by id wasn't successful and the migration mode is enabled try to query for the saga data because the saga id probably represents
+                // the saga id of the migrated saga.
                 if (sagaNotFound && migrationModeEnabled)
                 {
                     var query = $@"SELECT TOP 1 * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
@@ -83,33 +80,43 @@
                     }
                 }
 
-                if (sagaStream == null)
-                {
-                    return default;
-                }
-
-                using(sagaStream)
-                using (var streamReader = new StreamReader(sagaStream))
-                using (var jsonReader = new JsonTextReader(streamReader))
-                {
-                    var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
-
-                    context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
-
-                    return sagaData;
-                }
+                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
             }
         }
 
-        public Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData =>
-            Get<TSagaData>(sagaId, session, context, false);
-
-        public Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
+        public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
         {
+            var storageSession = (StorageSession)session;
+
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
             var sagaId = CosmosDBSagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
 
-            return Get<TSagaData>(sagaId, session, context, true);
+            // reads need to go directly
+            var container = storageSession.ContainerHolder.Container;
+            var partitionKey = GetPartitionKey(context, sagaId);
+
+            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false))
+            {
+                var sagaStream = responseMessage.Content;
+
+                var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+
+                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
+            }
+        }
+
+        TSagaData ReadSagaFromStream<TSagaData>(ContextBag context, Stream sagaStream, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
+        {
+            using (sagaStream)
+            using (var streamReader = new StreamReader(sagaStream))
+            using (var jsonReader = new JsonTextReader(streamReader))
+            {
+                var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
+
+                context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
+
+                return sagaData;
+            }
         }
 
         public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
