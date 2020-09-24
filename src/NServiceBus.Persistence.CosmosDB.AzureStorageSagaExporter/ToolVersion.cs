@@ -31,7 +31,7 @@
                 var repository = new SourceRepository(packageSource, Repository.Provider.GetCoreV3());
 
                 var resource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken).ConfigureAwait(false);
-                var versions = await resource.GetAllVersionsAsync("NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter", cache, nugetLogger, cancellationToken).ConfigureAwait(false);
+                var versions = await resource.GetAllVersionsAsync("NServiceBus.Export.AspSagas", cache, nugetLogger, cancellationToken).ConfigureAwait(false);
 
                 var latest = versions.OrderByDescending(pkg => pkg.Version).FirstOrDefault();
                 var current = new NuGetVersion(GitVersionInformation.NuGetVersionV2);
@@ -40,7 +40,7 @@
                 {
                     logger.LogCritical($"*** New version detected: {latest.ToNormalizedString()}");
                     logger.LogCritical("*** Update to the latest version using the following command:");
-                    logger.LogCritical("***   dotnet tool update --tool-path <installation-path> NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter --add-source=https://www.myget.org/F/particular/api/v3/index.json --version 0.1.0-alpha.*");
+                    logger.LogCritical("***   dotnet tool update --tool-path <installation-path> NServiceBus.Export.AspSagas --add-source https://www.myget.org/F/particular/api/v3/index.json --version 0.1.0-alpha.*");
                     return false;
                 }
             }
