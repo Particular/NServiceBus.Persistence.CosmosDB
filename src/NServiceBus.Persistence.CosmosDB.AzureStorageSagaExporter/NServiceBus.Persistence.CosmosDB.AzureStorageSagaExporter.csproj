@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>NServiceBus.Export.AspSagas</PackageId>
+    <PackageId>Particular.Asp.Export</PackageId>
     <Description>Tool to extract saga data from NServiceBus.Persistence.AzureStorage for import into NServiceBus.Persistence.CosmosDB</Description>
     <ToolCommandName>export-aspsagas</ToolCommandName>
     <PackAsTool>True</PackAsTool>
