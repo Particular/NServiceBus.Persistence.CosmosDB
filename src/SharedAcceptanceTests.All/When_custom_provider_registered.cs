@@ -7,7 +7,7 @@
     using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
 
-    public class When_custom_provider_registered
+    public class When_custom_provider_registered : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_be_used()
