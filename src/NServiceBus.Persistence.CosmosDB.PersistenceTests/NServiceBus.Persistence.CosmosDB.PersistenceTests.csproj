@@ -8,7 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.13.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+    <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="7.4.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
@@ -16,11 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.12.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="7.4.2" />
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
   </ItemGroup>
 
-</Project>
+ </Project>
