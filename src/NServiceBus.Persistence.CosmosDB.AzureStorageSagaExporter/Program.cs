@@ -14,12 +14,10 @@
                 Name = "migrate"
             };
 
+            app.HelpOption(inherited: true);
             var verboseOption = app.Option("-v|--verbose", "Show verbose output", CommandOptionType.NoValue, true);
             var versionOption = app.Option("--version", "Show the current version of the tool", CommandOptionType.NoValue, true);
-            var sagaDataNameOption = app.Option<string>($"-s|--{ApplicationOptions.SagaDataName}", "The saga data class name (w/o namespace) of the saga data to export. This will be the table name.", CommandOptionType.SingleValue);
-            var connectionStringOption = app.Option<string>($"-c|--{ApplicationOptions.ConnectionString}", "The connection string to the Azure Storage account with the saga data.", CommandOptionType.SingleValue);
-
-            app.HelpOption(inherited: true);
+            var ignoreUpdates = app.Option("-i|--ignore-updates", "Ignore tool updates.", CommandOptionType.NoValue, true);
 
             app.OnExecuteAsync(async cancellationToken =>
             {
@@ -32,7 +30,7 @@
                     return;
                 }
 
-                if (!await ToolVersion.CheckIsLatestVersion(logger).ConfigureAwait(false))
+                if (!await ToolVersion.CheckIsLatestVersion(logger, ignoreUpdates.HasValue()).ConfigureAwait(false))
                 {
                     return;
                 }

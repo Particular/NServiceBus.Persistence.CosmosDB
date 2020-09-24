@@ -19,7 +19,7 @@
             return $"export-aspsagas {GitVersionInformation.NuGetVersionV2} (Sha:{GitVersionInformation.ShortSha})";
         }
 
-        public static async Task<bool> CheckIsLatestVersion(ILogger logger)
+        public static async Task<bool> CheckIsLatestVersion(ILogger logger, bool ignoreUpdates)
         {
             try
             {
@@ -36,7 +36,7 @@
                 var latest = versions.OrderByDescending(pkg => pkg.Version).FirstOrDefault();
                 var current = new NuGetVersion(GitVersionInformation.NuGetVersionV2);
 
-                if (latest > current)
+                if (latest > current || ignoreUpdates)
                 {
                     logger.LogCritical($"*** New version detected: {latest.ToNormalizedString()}");
                     logger.LogCritical("*** Update to the latest version using the following command:");
