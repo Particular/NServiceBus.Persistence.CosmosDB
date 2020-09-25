@@ -35,8 +35,8 @@
                 var resource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken).ConfigureAwait(false);
                 var versions = await resource.GetAllVersionsAsync(PackageID, cache, nugetLogger, cancellationToken).ConfigureAwait(false);
 
-                var latest = versions.OrderByDescending(pkg => pkg.Version).FirstOrDefault();
                 var current = new NuGetVersion(GitVersionInformation.NuGetVersionV2);
+                var latest = versions.OrderByDescending(pkg => pkg.Version).FirstOrDefault() ?? current;
 
                 if (latest > current)
                 {
