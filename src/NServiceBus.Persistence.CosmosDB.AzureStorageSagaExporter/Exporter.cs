@@ -12,7 +12,7 @@
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
-    using NServiceBus.Persistence.CosmosDB;
+    using CosmosDB;
 
     public static class Exporter
     {
@@ -128,11 +128,11 @@
 
             var metadata = new JObject
             {
-                {NServiceBus.Persistence.CosmosDB.MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, NServiceBus.Persistence.CosmosDB.SagaSchemaVersion.Current},
-                {NServiceBus.Persistence.CosmosDB.MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataTypeFullName},
-                {NServiceBus.Persistence.CosmosDB.MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, oldSagaId.ToString()}
+                {MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current},
+                {MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataTypeFullName},
+                {MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, oldSagaId.ToString()}
             };
-            jObject.Add(NServiceBus.Persistence.CosmosDB.MetadataExtensions.MetadataKey, metadata);
+            jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
             jObject.Add("id", newSagaId);
 

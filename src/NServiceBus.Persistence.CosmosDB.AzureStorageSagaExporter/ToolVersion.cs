@@ -15,6 +15,7 @@
     public class ToolVersion
     {
         const string PackageID = "Particular.Asp.Export";
+        const string FeedUri = "https://www.myget.org/F/particular/api/v3/index.json";
 
         public static string GetVersionInfo()
         {
@@ -29,21 +30,36 @@
                 var nugetLogger = new LoggerAdapter(logger);
 
                 var cache = new SourceCacheContext();
-                var packageSource = new PackageSource("https://www.myget.org/F/particular/api/v3/index.json");
+                var packageSource = new PackageSource(FeedUri);
                 var repository = new SourceRepository(packageSource, Repository.Provider.GetCoreV3());
 
                 var resource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken).ConfigureAwait(false);
                 var versions = await resource.GetAllVersionsAsync(PackageID, cache, nugetLogger, cancellationToken).ConfigureAwait(false);
 
-                var latest = versions.OrderByDescending(pkg => pkg.Version).FirstOrDefault();
                 var current = new NuGetVersion(GitVersionInformation.NuGetVersionV2);
+                var latest = versions.OrderByDescending(pkg => pkg.Version).FirstOrDefault() ?? current;
 
-                if (latest > current || ignoreUpdates)
+                if (latest > current)
                 {
-                    logger.LogCritical($"*** New version detected: {latest.ToNormalizedString()}");
-                    logger.LogCritical("*** Update to the latest version using the following command:");
-                    logger.LogCritical($"***   dotnet tool update --tool-path <installation-path> {PackageID} --add-source https://www.myget.org/F/particular/api/v3/index.json --version 0.1.0-alpha.*");
-                    return false;
+                    var packageVersion = latest.ToNormalizedString();
+
+                    log($"*** New version detected: {packageVersion}");
+                    log("*** Update to the latest version using the following command:");
+                    log($"***   dotnet tool update --tool-path <installation-path> {PackageID} --add-source {FeedUri} --version {packageVersion}");
+
+                    return ignoreUpdates;
+
+                    void log(string message)
+                    {
+                        if (ignoreUpdates)
+                        {
+                            logger.LogInformation(message);
+                        }
+                        else
+                        {
+                            logger.LogCritical(message);
+                        }
+                    }
                 }
             }
             catch (Exception e)

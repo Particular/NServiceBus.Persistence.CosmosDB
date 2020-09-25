@@ -10,9 +10,9 @@
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Table;
     using NServiceBus;
-    using NServiceBus.AcceptanceTesting;
-    using NServiceBus.AcceptanceTesting.Customization;
-    using NServiceBus.Persistence.CosmosDB;
+    using AcceptanceTesting;
+    using AcceptanceTesting.Customization;
+    using CosmosDB;
     using NUnit.Framework;
     using Particular.Approvals;
 

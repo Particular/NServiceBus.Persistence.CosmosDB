@@ -15,7 +15,7 @@
         [SetUp]
         public virtual Task SetUp()
         {
-            NServiceBus.AcceptanceTesting.Customization.Conventions.EndpointNamingConvention = t =>
+            AcceptanceTesting.Customization.Conventions.EndpointNamingConvention = t =>
             {
                 var classAndEndpoint = t.FullName.Split('.').Last();
 

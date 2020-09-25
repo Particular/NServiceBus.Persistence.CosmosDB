@@ -2,8 +2,8 @@
 {
     using NServiceBus;
     using NServiceBus.AcceptanceTesting.Support;
-    using NServiceBus.Configuration.AdvancedExtensibility;
-    using NServiceBus.ObjectBuilder;
+    using Configuration.AdvancedExtensibility;
+    using ObjectBuilder;
 
     public static class EndpointConfigurationExtensions
     {
