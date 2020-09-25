@@ -38,12 +38,24 @@
                 var latest = versions.OrderByDescending(pkg => pkg.Version).FirstOrDefault();
                 var current = new NuGetVersion(GitVersionInformation.NuGetVersionV2);
 
-                if (latest > current || ignoreUpdates)
+                if (latest > current)
                 {
-                    logger.LogCritical($"*** New version detected: {latest.ToNormalizedString()}");
-                    logger.LogCritical("*** Update to the latest version using the following command:");
-                    logger.LogCritical($"***   dotnet tool update --tool-path <installation-path> {PackageID} --add-source https://www.myget.org/F/particular/api/v3/index.json --version 0.1.0-alpha.*");
-                    return false;
+                    void Log(string message)
+                    {
+                        if (ignoreUpdates)
+                        {
+                            logger.LogInformation(message);
+                        }
+                        else
+                        {
+                            logger.LogCritical(message);
+                        }
+                    }
+                    var packageVersion = latest.ToNormalizedString();
+                    Log($"*** New version detected: {packageVersion}");
+                    Log("*** Update to the latest version using the following command:");
+                    Log($"***   dotnet tool update --tool-path <installation-path> {PackageID} --add-source https://www.myget.org/F/particular/api/v3/index.json --version {packageVersion}");
+                    return ignoreUpdates;
                 }
             }
             catch (Exception e)
