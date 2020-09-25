@@ -15,6 +15,7 @@
     public class ToolVersion
     {
         const string PackageID = "Particular.Asp.Export";
+        const string FeedUri = "https://www.myget.org/F/particular/api/v3/index.json";
 
         public static string GetVersionInfo()
         {
@@ -29,7 +30,7 @@
                 var nugetLogger = new LoggerAdapter(logger);
 
                 var cache = new SourceCacheContext();
-                var packageSource = new PackageSource("https://www.myget.org/F/particular/api/v3/index.json");
+                var packageSource = new PackageSource(FeedUri);
                 var repository = new SourceRepository(packageSource, Repository.Provider.GetCoreV3());
 
                 var resource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken).ConfigureAwait(false);
@@ -54,7 +55,7 @@
                     var packageVersion = latest.ToNormalizedString();
                     Log($"*** New version detected: {packageVersion}");
                     Log("*** Update to the latest version using the following command:");
-                    Log($"***   dotnet tool update --tool-path <installation-path> {PackageID} --add-source https://www.myget.org/F/particular/api/v3/index.json --version {packageVersion}");
+                    Log($"***   dotnet tool update --tool-path <installation-path> {PackageID} --add-source {FeedUri} --version {packageVersion}");
                     return ignoreUpdates;
                 }
             }
