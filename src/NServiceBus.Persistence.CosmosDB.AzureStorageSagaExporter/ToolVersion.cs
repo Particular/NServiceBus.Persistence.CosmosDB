@@ -41,7 +41,15 @@
 
                 if (latest > current)
                 {
-                    void Log(string message)
+                    var packageVersion = latest.ToNormalizedString();
+
+                    log($"*** New version detected: {packageVersion}");
+                    log("*** Update to the latest version using the following command:");
+                    log($"***   dotnet tool update --tool-path <installation-path> {PackageID} --add-source {FeedUri} --version {packageVersion}");
+
+                    return ignoreUpdates;
+
+                    void log(string message)
                     {
                         if (ignoreUpdates)
                         {
@@ -52,11 +60,6 @@
                             logger.LogCritical(message);
                         }
                     }
-                    var packageVersion = latest.ToNormalizedString();
-                    Log($"*** New version detected: {packageVersion}");
-                    Log("*** Update to the latest version using the following command:");
-                    Log($"***   dotnet tool update --tool-path <installation-path> {PackageID} --add-source {FeedUri} --version {packageVersion}");
-                    return ignoreUpdates;
                 }
             }
             catch (Exception e)
