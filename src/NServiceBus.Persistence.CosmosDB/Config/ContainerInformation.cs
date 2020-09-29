@@ -8,8 +8,6 @@
     {
         /// <summary>
         /// </summary>
-        /// <param name="containerName"></param>
-        /// <param name="partitionKeyPath"></param>
         public ContainerInformation(string containerName, PartitionKeyPath partitionKeyPath)
         {
             Guard.AgainstNullAndEmpty(nameof(containerName), containerName);

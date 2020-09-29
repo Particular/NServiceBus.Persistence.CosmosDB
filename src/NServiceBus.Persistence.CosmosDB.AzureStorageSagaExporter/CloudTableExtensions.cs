@@ -35,7 +35,8 @@
                         break;
                     }
                 }
-            } while (token != null && !ct.IsCancellationRequested && alreadyTaken < take);
+            }
+            while (token != null && !ct.IsCancellationRequested && alreadyTaken < take);
         }
     }
 }

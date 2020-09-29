@@ -110,7 +110,6 @@
             // The rows we're processing would have the following column name and example value structure:
             // Column name:   NServiceBus_2ndIndexKey
             // Value example: Index_Samples.OrderSagaData_OrderId_"a3413eda-fb98-46c1-a44e-89da9efada16"#
-
             var match = secondaryIndexRegex.Match(entity["NServiceBus_2ndIndexKey"].StringValue);
             var sagaDataTypeFullName = match.Groups["SagaDataType"].Value;
             var propertyName = match.Groups["PropertyName"].Value;

@@ -11,7 +11,6 @@
         /// <summary>
         ///
         /// </summary>
-        /// <param name="result"></param>
         public TransactionalBatchOperationException(TransactionalBatchOperationResult result)
         {
             Result = result;
@@ -20,8 +19,6 @@
         /// <summary>
         ///
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="result"></param>
         public TransactionalBatchOperationException(string message, TransactionalBatchOperationResult result) : base(message)
         {
             Result = result;
