@@ -7,7 +7,7 @@
     using NUnit.Framework;
 
     [TestFixture]
-    public class When_using_synchronized_session_via_container_and_storage_session_fails: NServiceBusAcceptanceTest
+    public class When_using_synchronized_session_via_container_and_storage_session_fails : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_roll_back_all_operations()

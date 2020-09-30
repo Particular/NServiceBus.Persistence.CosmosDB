@@ -56,7 +56,6 @@
             // {
             //     break;
             // }
-
             var containerProperties = new ContainerProperties(installerSettings.ContainerName, installerSettings.PartitionKeyPath);
 
             await database.CreateContainerIfNotExistsAsync(containerProperties)

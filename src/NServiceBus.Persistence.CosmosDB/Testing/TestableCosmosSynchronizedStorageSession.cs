@@ -13,7 +13,6 @@
         /// <summary>
         ///
         /// </summary>
-        /// <param name="partitionKey"></param>
         public TestableCosmosSynchronizedStorageSession(PartitionKey partitionKey)
         {
             var contextBag = new ContextBag();

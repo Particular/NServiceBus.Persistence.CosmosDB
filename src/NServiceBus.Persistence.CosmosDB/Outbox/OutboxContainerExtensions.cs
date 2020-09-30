@@ -14,7 +14,7 @@
             var responseMessage = await container.ReadItemStreamAsync(messageId, partitionKey)
                 .ConfigureAwait(false);
 
-            if(responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+            if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
             {
                 return default;
             }
