@@ -1,6 +1,8 @@
 # NServiceBus.Persistence.CosmosDB
 
-NServiceBUs persistence for [Azure Cosmos DB](https://azure.microsoft.com/en-us/services/cosmos-db/) utilizing the Core (SQL) API.
+NServiceBus persistence for [Azure Cosmos DB](https://azure.microsoft.com/en-us/services/cosmos-db/) utilizing the Core (SQL) API. This is a [Preview](https://docs.particular.net/previews/) component.
+
+Documentation, including usage and samples, is available on the [Particular docs site](https://docs.particular.net/previews/cosmosdb/).
 
 ## Running tests locally
 
