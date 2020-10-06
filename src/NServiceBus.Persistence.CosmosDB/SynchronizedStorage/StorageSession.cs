@@ -74,7 +74,8 @@
 
         readonly bool commitOnComplete;
         public ContextBag CurrentContextBag { get; set; }
-
+        public Container Container => ContainerHolder.Container;
+        public PartitionKeyPath PartitionKeyPath => ContainerHolder.PartitionKeyPath;
         public ContainerHolder ContainerHolder { get; set; }
 
         readonly Dictionary<PartitionKey, Dictionary<int, Operation>> operations = new Dictionary<PartitionKey, Dictionary<int, Operation>>();

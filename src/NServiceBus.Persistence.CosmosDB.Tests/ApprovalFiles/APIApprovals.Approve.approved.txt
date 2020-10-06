@@ -28,6 +28,9 @@ namespace NServiceBus
     public interface ICosmosDBStorageSession
     {
         Microsoft.Azure.Cosmos.TransactionalBatch Batch { get; }
+        Microsoft.Azure.Cosmos.Container Container { get; }
+        Microsoft.Azure.Cosmos.PartitionKey PartitionKey { get; }
+        NServiceBus.PartitionKeyPath PartitionKeyPath { get; }
     }
     public interface IProvideCosmosClient
     {
@@ -36,6 +39,7 @@ namespace NServiceBus
     public struct PartitionKeyPath
     {
         public PartitionKeyPath(string partitionKeyPath) { }
+        public override string ToString() { }
         public static string op_Implicit(NServiceBus.PartitionKeyPath path) { }
     }
     public class static SynchronizedStorageSessionExtensions
@@ -62,5 +66,8 @@ namespace NServiceBus.Testing
     public class TestableCosmosSynchronizedStorageSession : NServiceBus.Persistence.SynchronizedStorageSession
     {
         public TestableCosmosSynchronizedStorageSession(Microsoft.Azure.Cosmos.PartitionKey partitionKey) { }
+        public Microsoft.Azure.Cosmos.Container Container { get; set; }
+        public NServiceBus.PartitionKeyPath PartitionKeyPath { get; set; }
+        public Microsoft.Azure.Cosmos.TransactionalBatch TransactionalBatch { get; set; }
     }
 }
