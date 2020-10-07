@@ -27,8 +27,8 @@
         /// The transactional batch that can be used to store items.
         /// </summary>
         /// <remarks>The transactional batch exposed does delay the actual batch operations up to the point when the storage
-        /// session is actually committed to avoid running into transaction timeouts unnecessarily. Furthermore all stream
-        /// resources will be properly disposed by the infrastructure after the batch has been completed.</remarks>
+        /// session is actually committed to avoiding running into transaction timeouts unnecessarily. Furthermore, all stream
+        /// resources will be properly disposed of by the infrastructure after the batch has been completed.</remarks>
         TransactionalBatch Batch { get; }
     }
 }

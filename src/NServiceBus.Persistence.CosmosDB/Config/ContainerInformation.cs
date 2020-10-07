@@ -3,7 +3,7 @@
     using Persistence.CosmosDB;
 
     /// <summary>
-    /// Represents the container name as well as the partition key path when the container is provided at runtime through the pipeline.
+    /// Represents the container name and the partition key path when the container information is provided at runtime through the pipeline.
     /// </summary>
     public readonly struct ContainerInformation
     {
