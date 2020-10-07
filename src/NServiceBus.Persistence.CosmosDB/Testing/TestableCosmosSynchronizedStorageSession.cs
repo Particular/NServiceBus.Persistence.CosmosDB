@@ -11,7 +11,7 @@
     public class TestableCosmosSynchronizedStorageSession : SynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {
         /// <summary>
-        ///
+        /// Initializes a new TestableCosmosSynchronizedStorageSession with a partition key.
         /// </summary>
         public TestableCosmosSynchronizedStorageSession(PartitionKey partitionKey)
         {

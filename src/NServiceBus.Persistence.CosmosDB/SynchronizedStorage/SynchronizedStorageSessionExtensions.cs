@@ -6,7 +6,7 @@
     using Persistence.CosmosDB;
 
     /// <summary>
-    /// CosmosDB persistence specific extension methods for the <see cref="SynchronizedStorageSession"/>.
+    /// Cosmos DB persistence specific extension methods for the <see cref="SynchronizedStorageSession"/>.
     /// </summary>
     public static class SynchronizedStorageSessionExtensions
     {

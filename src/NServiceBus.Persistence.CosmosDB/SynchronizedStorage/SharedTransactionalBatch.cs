@@ -6,6 +6,7 @@
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
 
+    // Makes sure delegate all operations to the storage session. Nothing is executed yet to avoid running into transaction timeouts.
     sealed class SharedTransactionalBatch : TransactionalBatch, ICosmosStorageSession
     {
         public SharedTransactionalBatch(IWorkWithSharedTransactionalBatch operationsHolder, PartitionKey partitionKey)
