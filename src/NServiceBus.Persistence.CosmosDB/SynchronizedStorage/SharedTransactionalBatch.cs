@@ -11,8 +11,13 @@
         public SharedTransactionalBatch(IWorkWithSharedTransactionalBatch operationsHolder, PartitionKey partitionKey)
         {
             this.operationsHolder = operationsHolder;
-            this.partitionKey = partitionKey;
+            PartitionKey = partitionKey;
         }
+
+        public PartitionKey PartitionKey { get; }
+
+        public Container Container => operationsHolder.Container;
+        public PartitionKeyPath PartitionKeyPath => operationsHolder.PartitionKeyPath;
 
         public TransactionalBatch Batch => this;
 
@@ -20,7 +25,7 @@
         {
             Guard.AgainstNull(nameof(item), item);
 
-            operationsHolder.AddOperation(new CreateItemOperation<T>(item, requestOptions, partitionKey));
+            operationsHolder.AddOperation(new CreateItemOperation<T>(item, requestOptions, PartitionKey));
             return this;
         }
 
@@ -28,7 +33,7 @@
         {
             Guard.AgainstNull(nameof(streamPayload), streamPayload);
 
-            operationsHolder.AddOperation(new CreateItemStreamOperation(streamPayload, requestOptions, partitionKey));
+            operationsHolder.AddOperation(new CreateItemStreamOperation(streamPayload, requestOptions, PartitionKey));
             return this;
         }
 
@@ -36,7 +41,7 @@
         {
             Guard.AgainstNullAndEmpty(nameof(id), id);
 
-            operationsHolder.AddOperation(new ReadItemOperation(id, requestOptions, partitionKey));
+            operationsHolder.AddOperation(new ReadItemOperation(id, requestOptions, PartitionKey));
             return this;
         }
 
@@ -44,7 +49,7 @@
         {
             Guard.AgainstNull(nameof(item), item);
 
-            operationsHolder.AddOperation(new UpsertItemOperation<T>(item, requestOptions, partitionKey));
+            operationsHolder.AddOperation(new UpsertItemOperation<T>(item, requestOptions, PartitionKey));
             return this;
         }
 
@@ -52,7 +57,7 @@
         {
             Guard.AgainstNull(nameof(streamPayload), streamPayload);
 
-            operationsHolder.AddOperation(new UpsertItemStreamOperation(streamPayload, requestOptions, partitionKey));
+            operationsHolder.AddOperation(new UpsertItemStreamOperation(streamPayload, requestOptions, PartitionKey));
             return this;
         }
 
@@ -61,7 +66,7 @@
             Guard.AgainstNullAndEmpty(nameof(id), id);
             Guard.AgainstNull(nameof(item), item);
 
-            operationsHolder.AddOperation(new ReplaceItemOperation<T>(id, item, requestOptions, partitionKey));
+            operationsHolder.AddOperation(new ReplaceItemOperation<T>(id, item, requestOptions, PartitionKey));
             return this;
         }
 
@@ -70,7 +75,7 @@
             Guard.AgainstNullAndEmpty(nameof(id), id);
             Guard.AgainstNull(nameof(streamPayload), streamPayload);
 
-            operationsHolder.AddOperation(new ReplaceItemStreamOperation(id, streamPayload, requestOptions, partitionKey));
+            operationsHolder.AddOperation(new ReplaceItemStreamOperation(id, streamPayload, requestOptions, PartitionKey));
             return this;
         }
 
@@ -78,7 +83,7 @@
         {
             Guard.AgainstNullAndEmpty(nameof(id), id);
 
-            operationsHolder.AddOperation(new DeleteItemOperation(id, requestOptions, partitionKey));
+            operationsHolder.AddOperation(new DeleteItemOperation(id, requestOptions, PartitionKey));
             return this;
         }
 
@@ -93,6 +98,5 @@
         }
 
         readonly IWorkWithSharedTransactionalBatch operationsHolder;
-        readonly PartitionKey partitionKey;
     }
 }

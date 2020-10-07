@@ -22,5 +22,11 @@
         {
             return path.partitionKeyPath;
         }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return partitionKeyPath;
+        }
     }
 }

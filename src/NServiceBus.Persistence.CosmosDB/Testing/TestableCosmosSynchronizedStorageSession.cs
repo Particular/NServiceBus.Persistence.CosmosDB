@@ -22,9 +22,28 @@
 
         ContextBag IWorkWithSharedTransactionalBatch.CurrentContextBag { get; set; }
 
+        /// <summary>
+        ///
+        /// </summary>
+        public Container Container { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public PartitionKeyPath PartitionKeyPath { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public TransactionalBatch TransactionalBatch { get; set; }
+
         void IWorkWithSharedTransactionalBatch.AddOperation(Operation operation)
         {
-            //Do nothing (for now?)
+            if (TransactionalBatch == null)
+            {
+                return;
+            }
+            operation.Apply(TransactionalBatch, PartitionKeyPath);
         }
     }
 }
