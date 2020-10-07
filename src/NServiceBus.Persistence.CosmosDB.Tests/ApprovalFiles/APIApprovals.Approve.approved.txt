@@ -53,7 +53,6 @@ namespace NServiceBus.Persistence.CosmosDB
     {
         public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
     }
-    public delegate Microsoft.Azure.Cosmos.PartitionKey Map<in T>(System.Collections.Generic.IReadOnlyDictionary<string, string> headers, string messageId, T message);
     public class TransactionalBatchOperationException : System.Exception
     {
         public TransactionalBatchOperationException(Microsoft.Azure.Cosmos.TransactionalBatchOperationResult result) { }
