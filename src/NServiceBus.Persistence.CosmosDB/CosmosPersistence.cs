@@ -5,7 +5,7 @@
     using Persistence.CosmosDB;
 
     /// <summary>
-    /// CosmosDB Core API persistence
+    /// Used to configure NServiceBus to use Cosmos DB persistence.
     /// </summary>
     public class CosmosPersistence : PersistenceDefinition
     {
