@@ -15,7 +15,6 @@
             Context = context;
         }
 
-        //TODO: what's the purpose of the context bag here?
         public ContextBag Context { get; }
         public PartitionKey PartitionKey { get; }
         public JsonSerializer Serializer { get; }
