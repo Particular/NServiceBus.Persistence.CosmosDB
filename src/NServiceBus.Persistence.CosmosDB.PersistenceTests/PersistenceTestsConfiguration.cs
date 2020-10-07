@@ -39,7 +39,7 @@
 
             var serializer = new JsonSerializer
             {
-                ContractResolver = new CosmosDBContractResolver()
+                ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver()
             };
 
             var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);

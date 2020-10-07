@@ -40,7 +40,7 @@
 
             public class MyHandlerUsingStorageSession : IHandleMessages<MyMessage>
             {
-                public MyHandlerUsingStorageSession(ICosmosDBStorageSession session, Context context)
+                public MyHandlerUsingStorageSession(ICosmosStorageSession session, Context context)
                 {
                     this.session = session;
                     this.context = context;
@@ -63,7 +63,7 @@
                 }
 
                 Context context;
-                ICosmosDBStorageSession session;
+                ICosmosStorageSession session;
             }
 
             public class MyHandlerUsingExtensionMethod : IHandleMessages<MyMessage>

@@ -13,7 +13,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             return Task.FromResult(0);
         }
 
-        var persistence = configuration.UsePersistence<CosmosDbPersistence>();
+        var persistence = configuration.UsePersistence<CosmosPersistence>();
         persistence.DisableContainerCreation();
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);

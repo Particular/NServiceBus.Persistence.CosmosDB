@@ -5,7 +5,7 @@
     using System.Text;
     using Newtonsoft.Json;
 
-    static class CosmosDBSagaIdGenerator
+    static class CosmosSagaIdGenerator
     {
         public static Guid Generate(Type sagaEntityType, string correlationPropertyName, object correlationPropertyValue) => Generate(sagaEntityType.FullName, correlationPropertyName, correlationPropertyValue);
 

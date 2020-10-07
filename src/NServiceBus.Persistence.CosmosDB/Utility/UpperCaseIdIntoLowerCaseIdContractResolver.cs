@@ -4,7 +4,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Serialization;
 
-    class CosmosDBContractResolver : DefaultContractResolver
+    class UpperCaseIdIntoLowerCaseIdContractResolver : DefaultContractResolver
     {
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {

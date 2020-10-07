@@ -115,7 +115,7 @@
             var propertyName = match.Groups["PropertyName"].Value;
             var propertyValue = match.Groups["PropertyValue"].Value;
 
-            var newSagaId = CosmosDBSagaIdGenerator.Generate(sagaDataTypeFullName, propertyName, propertyValue);
+            var newSagaId = CosmosSagaIdGenerator.Generate(sagaDataTypeFullName, propertyName, propertyValue);
             var oldSagaId = entity["Id"].GuidValue;
 
             entity.Remove("NServiceBus_2ndIndexKey");

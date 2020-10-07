@@ -89,7 +89,7 @@
             var storageSession = (StorageSession)session;
 
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
-            var sagaId = CosmosDBSagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
+            var sagaId = CosmosSagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
 
             // reads need to go directly
             var container = storageSession.ContainerHolder.Container;

@@ -8,7 +8,7 @@ namespace NServiceBus
     /// <summary>
     /// Cosmos DB outbox settings
     /// </summary>
-    public static class CosmosDBOutboxSettingsExtensions
+    public static class CosmosOutboxSettingsExtensions
     {
         /// <summary>
         /// Sets the time to live for outbox deduplication records

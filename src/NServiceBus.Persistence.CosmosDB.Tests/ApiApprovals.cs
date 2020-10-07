@@ -11,7 +11,7 @@
         [Test]
         public void Approve()
         {
-            var publicApi = ApiGenerator.GeneratePublicApi(typeof(CosmosDbPersistence).Assembly, excludeAttributes: new[] { "System.Runtime.Versioning.TargetFrameworkAttribute" });
+            var publicApi = ApiGenerator.GeneratePublicApi(typeof(CosmosPersistence).Assembly, excludeAttributes: new[] { "System.Runtime.Versioning.TargetFrameworkAttribute" });
             Approver.Verify(publicApi);
         }
     }

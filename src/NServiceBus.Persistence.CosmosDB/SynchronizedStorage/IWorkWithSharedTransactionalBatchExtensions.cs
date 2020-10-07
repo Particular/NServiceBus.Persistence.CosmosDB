@@ -6,7 +6,7 @@
 
     static class IWorkWithSharedTransactionalBatchExtensions
     {
-        public static ICosmosDBStorageSession Create(this IWorkWithSharedTransactionalBatch workWith)
+        public static ICosmosStorageSession Create(this IWorkWithSharedTransactionalBatch workWith)
         {
             if (!workWith.CurrentContextBag.TryGet<PartitionKey>(out var partitionKey))
             {

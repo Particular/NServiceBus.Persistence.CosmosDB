@@ -71,7 +71,7 @@
                     var routing = ec.ConfigureTransport().Routing();
                     routing.RouteToEndpoint(typeof(CompleteSagaRequest), typeof(SomeOtherEndpoint));
 
-                    var persistence = ec.UsePersistence<CosmosDbPersistence>();
+                    var persistence = ec.UsePersistence<CosmosPersistence>();
                     persistence.CosmosClient(CosmosClient);
                     persistence.DatabaseName(DatabaseName);
                     persistence.DefaultContainer(ContainerName, PartitionPathKey);
@@ -89,7 +89,7 @@
 
         string DetermineAndVerifyExport(Context testContext)
         {
-            var newId = CosmosDBSagaIdGenerator.Generate(typeof(MigratingEndpoint.MigratingSagaData).FullName, nameof(MigratingEndpoint.MigratingSagaData.MyId), testContext.MyId.ToString());
+            var newId = CosmosSagaIdGenerator.Generate(typeof(MigratingEndpoint.MigratingSagaData).FullName, nameof(MigratingEndpoint.MigratingSagaData.MyId), testContext.MyId.ToString());
 
             var filePath = Path.Combine(workingDir, nameof(MigratingEndpoint.MigratingSagaData), $"{newId}.json");
 
