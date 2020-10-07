@@ -19,7 +19,7 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var serializer = new JsonSerializer {ContractResolver = new CosmosDBContractResolver()};
+            var serializer = new JsonSerializer {ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver()};
 
             var migrationModeEnabled = context.Settings.GetOrDefault<bool>(SettingsKeys.EnableMigrationMode);
 

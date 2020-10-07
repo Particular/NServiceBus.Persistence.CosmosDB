@@ -6,7 +6,7 @@
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
 
-    sealed class SharedTransactionalBatch : TransactionalBatch, ICosmosDBStorageSession
+    sealed class SharedTransactionalBatch : TransactionalBatch, ICosmosStorageSession
     {
         public SharedTransactionalBatch(IWorkWithSharedTransactionalBatch operationsHolder, PartitionKey partitionKey)
         {

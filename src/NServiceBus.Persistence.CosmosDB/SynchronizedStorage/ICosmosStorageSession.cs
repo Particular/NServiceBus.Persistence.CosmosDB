@@ -5,7 +5,7 @@
     /// <summary>
     ///
     /// </summary>
-    public interface ICosmosDBStorageSession
+    public interface ICosmosStorageSession
     {
         /// <summary>
         /// The partition key

@@ -6,9 +6,9 @@
     using Logging;
     using Microsoft.Azure.Cosmos;
 
-    class CosmosDBPersistenceInstaller : INeedToInstallSomething
+    class Installer : INeedToInstallSomething
     {
-        public CosmosDBPersistenceInstaller(IProvideCosmosClient clientProvider, InstallerSettings settings)
+        public Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
         {
             installerSettings = settings;
             this.clientProvider = clientProvider;
@@ -46,7 +46,7 @@
         }
 
         InstallerSettings installerSettings;
-        static ILog log = LogManager.GetLogger<CosmosDBPersistenceInstaller>();
+        static ILog log = LogManager.GetLogger<Installer>();
         readonly IProvideCosmosClient clientProvider;
     }
 }

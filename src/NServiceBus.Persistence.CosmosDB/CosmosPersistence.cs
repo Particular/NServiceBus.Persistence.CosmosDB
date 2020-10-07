@@ -7,9 +7,9 @@
     /// <summary>
     /// CosmosDB Core API persistence
     /// </summary>
-    public class CosmosDbPersistence : PersistenceDefinition
+    public class CosmosPersistence : PersistenceDefinition
     {
-        internal CosmosDbPersistence()
+        internal CosmosPersistence()
         {
             Defaults(s =>
             {

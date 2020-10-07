@@ -35,7 +35,7 @@
 
             public class MyHandler : IHandleMessages<MyMessage>
             {
-                public MyHandler(ICosmosDBStorageSession session, Context context)
+                public MyHandler(ICosmosStorageSession session, Context context)
                 {
                     this.session = session;
                     this.context = context;
@@ -50,7 +50,7 @@
                 }
 
                 Context context;
-                ICosmosDBStorageSession session;
+                ICosmosStorageSession session;
             }
         }
 

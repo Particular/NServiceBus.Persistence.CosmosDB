@@ -12,20 +12,20 @@ namespace NServiceBus
         public string ContainerName { get; }
         public NServiceBus.PartitionKeyPath PartitionKeyPath { get; }
     }
-    public class static CosmosDBOutboxSettingsExtensions
+    public class static CosmosOutboxSettingsExtensions
     {
         public static void TimeToKeepOutboxDeduplicationData(this NServiceBus.Outbox.OutboxSettings outboxSettings, System.TimeSpan timeToKeepOutboxDeduplicationData) { }
     }
-    public class CosmosDbPersistence : NServiceBus.Persistence.PersistenceDefinition { }
-    public class static CosmosDbPersistenceConfig
+    public class CosmosPersistence : NServiceBus.Persistence.PersistenceDefinition { }
+    public class static CosmosPersistenceConfig
     {
-        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> CosmosClient(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, Microsoft.Azure.Cosmos.CosmosClient cosmosClient) { }
-        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> DatabaseName(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, string databaseName) { }
-        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> DefaultContainer(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions, string containerName, string partitionKeyPath) { }
-        public static void DisableContainerCreation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions) { }
-        public static void EnableMigrationMode(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosDbPersistence> persistenceExtensions) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> CosmosClient(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, Microsoft.Azure.Cosmos.CosmosClient cosmosClient) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> DatabaseName(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, string databaseName) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> DefaultContainer(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, string containerName, string partitionKeyPath) { }
+        public static void DisableContainerCreation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
+        public static void EnableMigrationMode(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
     }
-    public interface ICosmosDBStorageSession
+    public interface ICosmosStorageSession
     {
         Microsoft.Azure.Cosmos.TransactionalBatch Batch { get; }
         Microsoft.Azure.Cosmos.Container Container { get; }

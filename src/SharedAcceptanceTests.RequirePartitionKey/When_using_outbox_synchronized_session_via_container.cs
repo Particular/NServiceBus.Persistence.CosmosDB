@@ -71,7 +71,7 @@
 
         public class MyRepository
         {
-            public MyRepository(ICosmosDBStorageSession storageSession, Context context)
+            public MyRepository(ICosmosStorageSession storageSession, Context context)
             {
                 this.storageSession = storageSession;
                 this.context = context;
@@ -85,7 +85,7 @@
                 context.PartitionKeyPath = storageSession.PartitionKeyPath;
             }
 
-            ICosmosDBStorageSession storageSession;
+            ICosmosStorageSession storageSession;
             Context context;
         }
 

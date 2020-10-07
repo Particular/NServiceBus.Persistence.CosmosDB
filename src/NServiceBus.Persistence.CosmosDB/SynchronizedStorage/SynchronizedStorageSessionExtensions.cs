@@ -22,7 +22,7 @@
                 return workWith.Create().Batch;
             }
 
-            throw new Exception($"Cannot access the synchronized storage session. Ensure that 'EndpointConfiguration.UsePersistence<{nameof(CosmosDbPersistence)}>()' has been called.");
+            throw new Exception($"Cannot access the synchronized storage session. Ensure that 'EndpointConfiguration.UsePersistence<{nameof(CosmosPersistence)}>()' has been called.");
         }
     }
 }

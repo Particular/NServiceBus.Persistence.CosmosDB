@@ -26,7 +26,7 @@
 
             CosmosDbClient = builder.Build();
 
-            var installer = new CosmosDBPersistenceInstaller(new CosmosClientProvidedByConfiguration
+            var installer = new Installer(new CosmosClientProvidedByConfiguration
             {
                 Client = CosmosDbClient
             }, new InstallerSettings
