@@ -53,7 +53,7 @@ namespace NServiceBus.Persistence.CosmosDB
     {
         public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
     }
-    public class TransactionalBatchOperationException : System.Exception
+    public sealed class TransactionalBatchOperationException : System.Exception
     {
         public TransactionalBatchOperationException(Microsoft.Azure.Cosmos.TransactionalBatchOperationResult result) { }
         public TransactionalBatchOperationException(string message, Microsoft.Azure.Cosmos.TransactionalBatchOperationResult result) { }
