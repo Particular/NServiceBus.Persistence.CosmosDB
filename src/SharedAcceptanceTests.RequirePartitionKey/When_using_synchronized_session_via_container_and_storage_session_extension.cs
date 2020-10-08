@@ -75,9 +75,9 @@
 
                 public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
                 {
-                    var transactionalBatch = handlerContext.SynchronizedStorageSession.GetSharedTransactionalBatch();
+                    var session = handlerContext.SynchronizedStorageSession.CosmosPersistenceSession();
 
-                    transactionalBatch.CreateItem(new
+                    session.Batch.CreateItem(new
                     {
                         id = Context.Item2_Id,
                         deep = new

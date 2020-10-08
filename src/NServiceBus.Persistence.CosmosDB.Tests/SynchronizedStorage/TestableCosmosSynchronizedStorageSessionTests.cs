@@ -92,9 +92,9 @@
         {
             public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
-                var batch = context.SynchronizedStorageSession.GetSharedTransactionalBatch();
+                var session = context.SynchronizedStorageSession.CosmosPersistenceSession();
                 var myItem = new MyItem();
-                batch.CreateItem(myItem);
+                session.Batch.CreateItem(myItem);
                 return Task.CompletedTask;
             }
         }

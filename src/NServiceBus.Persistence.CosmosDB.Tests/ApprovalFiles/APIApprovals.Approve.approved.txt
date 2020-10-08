@@ -44,7 +44,7 @@ namespace NServiceBus
     }
     public class static SynchronizedStorageSessionExtensions
     {
-        public static Microsoft.Azure.Cosmos.TransactionalBatch GetSharedTransactionalBatch(this NServiceBus.Persistence.SynchronizedStorageSession session) { }
+        public static NServiceBus.ICosmosStorageSession CosmosPersistenceSession(this NServiceBus.Persistence.SynchronizedStorageSession session) { }
     }
 }
 namespace NServiceBus.Persistence.CosmosDB
