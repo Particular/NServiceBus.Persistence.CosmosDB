@@ -11,15 +11,15 @@
     public static class SynchronizedStorageSessionExtensions
     {
         /// <summary>
-        /// Retrieves the shared <see cref="TransactionalBatch"/> from the <see cref="SynchronizedStorageSession"/>.
+        /// Retrieves the shared <see cref="ICosmosStorageSession"/> from the <see cref="SynchronizedStorageSession"/>.
         /// </summary>
-        public static TransactionalBatch GetSharedTransactionalBatch(this SynchronizedStorageSession session)
+        public static ICosmosStorageSession CosmosPersistenceSession(this SynchronizedStorageSession session)
         {
             Guard.AgainstNull(nameof(session), session);
 
             if (session is IWorkWithSharedTransactionalBatch workWith)
             {
-                return workWith.Create().Batch;
+                return workWith.Create();
             }
 
             throw new Exception($"Cannot access the synchronized storage session. Ensure that 'EndpointConfiguration.UsePersistence<{nameof(CosmosPersistence)}>()' has been called.");
