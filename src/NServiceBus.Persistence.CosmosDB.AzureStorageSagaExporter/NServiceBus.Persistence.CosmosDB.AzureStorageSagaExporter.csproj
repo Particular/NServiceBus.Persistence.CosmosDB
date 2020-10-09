@@ -20,7 +20,6 @@
   <ItemGroup>
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\MetadataExtensions.cs" Link="MetadataExtensions.Common.cs" />
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\MetadataExtensions.cs" Link="MetadataExtensions.Sagas.cs" />
-    <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\SagaSchemaVersion.cs" Link="SagaSchemaVersion.cs" />
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\CosmosSagaIdGenerator.cs" Link="CosmosSagaIdGenerator.cs" />
     <Compile Include="..\TestSuppressions.cs" Link="TestSuppressions.cs" />
   </ItemGroup>

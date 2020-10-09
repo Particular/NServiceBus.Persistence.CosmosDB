@@ -36,7 +36,8 @@
 
             var metadata = new JObject
             {
-                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
+                { MetadataExtensions.MajorVersion, GitVersionInformation.Major },
+                { MetadataExtensions.MinorVersion, GitVersionInformation.Minor },
                 { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
             };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
@@ -69,7 +70,8 @@
 
             var metadata = new JObject
             {
-                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
+                { MetadataExtensions.MajorVersion, GitVersionInformation.Major },
+                { MetadataExtensions.MinorVersion, GitVersionInformation.Minor },
                 { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
             };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);

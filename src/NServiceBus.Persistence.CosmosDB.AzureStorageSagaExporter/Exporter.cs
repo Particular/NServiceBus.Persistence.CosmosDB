@@ -127,7 +127,8 @@
 
             var metadata = new JObject
             {
-                {MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current},
+                {MetadataExtensions.MajorVersion, GitVersionInformation.Major },
+                {MetadataExtensions.MinorVersion, GitVersionInformation.Minor },
                 {MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataTypeFullName},
                 {MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, oldSagaId.ToString()}
             };
