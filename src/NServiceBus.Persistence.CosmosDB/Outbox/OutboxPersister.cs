@@ -90,7 +90,7 @@
         readonly JsonSerializer serializer;
         readonly int ttlInSeconds;
 
-        internal static readonly string SchemaVersion = "1.0.0";
+        internal static readonly string SchemaVersion = "0.1.0";
         ContainerHolderResolver containerHolderResolver;
     }
 }

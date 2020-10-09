@@ -2,6 +2,6 @@
 {
     static class SagaSchemaVersion
     {
-        internal static readonly string Current = "1.0.0";
+        internal static readonly string Current = "0.1.0";
     }
 }
