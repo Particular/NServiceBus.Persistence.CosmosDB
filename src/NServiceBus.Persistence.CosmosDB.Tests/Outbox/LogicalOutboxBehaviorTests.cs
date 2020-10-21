@@ -72,18 +72,6 @@
         }
     }
 
-    class FakeOutboxTransaction : OutboxTransaction
-    {
-        public void Dispose()
-        {
-        }
-
-        public Task Commit()
-        {
-            return Task.CompletedTask;
-        }
-    }
-
     class Provider : IProvideCosmosClient
     {
         public CosmosClient Client { get; set; }
