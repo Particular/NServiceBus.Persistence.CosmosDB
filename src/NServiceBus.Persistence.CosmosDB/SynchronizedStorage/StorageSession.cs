@@ -46,6 +46,12 @@
 
         public async Task Commit()
         {
+            // in case there is nothing to do don't even bother checking the rest
+            if (operations.Count == 0)
+            {
+                return;
+            }
+
             if (ContainerHolder == null)
             {
                 throw new Exception("Unable to retrieve the container name and the partition key during processing. Make sure that either `persistence.Container()` is used or the relevant container information is available on the message handling pipeline.");
