@@ -6,6 +6,7 @@
     using EndpointTemplates;
     using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
+    using Persistence.CosmosDB;
 
     public class When_custom_provider_registered : NServiceBusAcceptanceTest
     {

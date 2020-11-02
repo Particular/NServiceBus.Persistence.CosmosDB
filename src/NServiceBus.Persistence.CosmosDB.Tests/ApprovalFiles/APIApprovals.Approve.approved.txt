@@ -32,10 +32,6 @@ namespace NServiceBus
         Microsoft.Azure.Cosmos.PartitionKey PartitionKey { get; }
         NServiceBus.PartitionKeyPath PartitionKeyPath { get; }
     }
-    public interface IProvideCosmosClient
-    {
-        Microsoft.Azure.Cosmos.CosmosClient Client { get; }
-    }
     public readonly struct PartitionKeyPath
     {
         public PartitionKeyPath(string partitionKeyPath) { }
@@ -49,6 +45,10 @@ namespace NServiceBus
 }
 namespace NServiceBus.Persistence.CosmosDB
 {
+    public interface IProvideCosmosClient
+    {
+        Microsoft.Azure.Cosmos.CosmosClient Client { get; }
+    }
     public sealed class LogicalOutboxBehavior : NServiceBus.Pipeline.IBehavior, NServiceBus.Pipeline.IBehavior<NServiceBus.Pipeline.IIncomingLogicalMessageContext, NServiceBus.Pipeline.IIncomingLogicalMessageContext>
     {
         public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
