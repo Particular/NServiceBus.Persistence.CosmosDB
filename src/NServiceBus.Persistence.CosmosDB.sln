@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Migration", "Migration", "{89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests\NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests.csproj", "{E155D512-159E-42CF-9B21-47C009481ECA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.Asp2.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.Asp2.AcceptanceTests\NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.Asp2.AcceptanceTests.csproj", "{E155D512-159E-42CF-9B21-47C009481ECA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.Asp3.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.Asp3.AcceptanceTests\NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.Asp3.AcceptanceTests.csproj", "{EB8252F8-2435-4674-96C0-48F69A25D7DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +61,10 @@ Global
 		{E155D512-159E-42CF-9B21-47C009481ECA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E155D512-159E-42CF-9B21-47C009481ECA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E155D512-159E-42CF-9B21-47C009481ECA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB8252F8-2435-4674-96C0-48F69A25D7DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB8252F8-2435-4674-96C0-48F69A25D7DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB8252F8-2435-4674-96C0-48F69A25D7DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB8252F8-2435-4674-96C0-48F69A25D7DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -66,6 +72,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{B220E9A3-8885-49DB-BBA0-47B0912219A7} = {89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}
 		{E155D512-159E-42CF-9B21-47C009481ECA} = {89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}
+		{EB8252F8-2435-4674-96C0-48F69A25D7DB} = {89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F86E5012-38F8-4C17-B392-E558696EEA8A}
