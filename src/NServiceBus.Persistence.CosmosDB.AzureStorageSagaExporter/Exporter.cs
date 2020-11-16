@@ -107,7 +107,7 @@
 
         static (JObject converted, Guid newSagaId) Convert(DictionaryTableEntity entity)
         {
-            var oldSagaId = entity["Id"].GuidValue.Value;
+            var oldSagaId = Guid.Parse(entity.RowKey);
 
             Guid newSagaId;
             var needsMigration = false;
