@@ -24,7 +24,7 @@
             var account = CloudStorageAccount.Parse(AzureStoragePersistenceConnectionString);
             var client = account.CreateCloudTableClient();
 
-            table = client.GetTableReference(nameof(MigratingEndpoint.MigratingSagaData));
+            table = client.GetTableReference(nameof(MigratingEndpoint.MigratingFromAsp2SagaData));
 
             await table.CreateIfNotExistsAsync();
 
@@ -59,7 +59,7 @@
                 .Run();
 
             // Act
-            await Exporter.Run(new ConsoleLogger(true), AzureStoragePersistenceConnectionString, nameof(MigratingEndpoint.MigratingSagaData), workingDir, CancellationToken.None);
+            await Exporter.Run(new ConsoleLogger(true), AzureStoragePersistenceConnectionString, nameof(MigratingEndpoint.MigratingFromAsp2SagaData), workingDir, CancellationToken.None);
 
             var filePath = DetermineAndVerifyExport(testContext);
             await ImportIntoCosmosDB(filePath);
@@ -81,7 +81,7 @@
                 .Done(ctx => ctx.CompleteSagaResponseReceived)
                 .Run();
 
-            Approver.Verify(testContext.SagaData, s =>
+            Approver.Verify(testContext.FromAsp2SagaData, s =>
             {
                 return string.Join(Environment.NewLine, s.Split(Environment.NewLine).Where(l => !l.Contains("Id\":")));
             });
@@ -89,9 +89,9 @@
 
         string DetermineAndVerifyExport(Context testContext)
         {
-            var newId = CosmosSagaIdGenerator.Generate(typeof(MigratingEndpoint.MigratingSagaData).FullName, nameof(MigratingEndpoint.MigratingSagaData.MyId), testContext.MyId.ToString());
+            var newId = CosmosSagaIdGenerator.Generate(typeof(MigratingEndpoint.MigratingFromAsp2SagaData).FullName, nameof(MigratingEndpoint.MigratingFromAsp2SagaData.MyId), testContext.MyId.ToString());
 
-            var filePath = Path.Combine(workingDir, nameof(MigratingEndpoint.MigratingSagaData), $"{newId}.json");
+            var filePath = Path.Combine(workingDir, nameof(MigratingEndpoint.MigratingFromAsp2SagaData), $"{newId}.json");
 
             Assert.IsTrue(File.Exists(filePath), "File exported");
             return filePath;
@@ -119,7 +119,7 @@
             public bool CompleteSagaRequestSent { get; set; }
             public bool CompleteSagaResponseReceived { get; set; }
 
-            public MigratingEndpoint.MigratingSagaData SagaData { get; set; }
+            public MigratingEndpoint.MigratingFromAsp2SagaData FromAsp2SagaData { get; set; }
             public Guid MyId { get; internal set; }
         }
 
@@ -130,7 +130,7 @@
                 EndpointSetup<BaseEndpoint>();
             }
 
-            public class MigratingSaga : Saga<MigratingSagaData>,
+            public class MigratingSaga : Saga<MigratingFromAsp2SagaData>,
                 IAmStartedByMessages<StartSaga>,
                 IHandleMessages<CompleteSagaResponse>
             {
@@ -164,14 +164,14 @@
 
                 public Task Handle(CompleteSagaResponse message, IMessageHandlerContext context)
                 {
-                    testContext.SagaData = Data;
+                    testContext.FromAsp2SagaData = Data;
                     testContext.CompleteSagaResponseReceived = true;
 
                     MarkAsComplete();
                     return Task.CompletedTask;
                 }
 
-                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<MigratingSagaData> mapper)
+                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<MigratingFromAsp2SagaData> mapper)
                 {
                     mapper.ConfigureMapping<StartSaga>(msg => msg.MyId).ToSaga(saga => saga.MyId);
                 }
@@ -179,7 +179,7 @@
                 readonly Context testContext;
             }
 
-            public class MigratingSagaData : ContainSagaData
+            public class MigratingFromAsp2SagaData : ContainSagaData
             {
                 public Guid MyId { get; set; }
                 public List<string> ListOfStrings { get; set; }
