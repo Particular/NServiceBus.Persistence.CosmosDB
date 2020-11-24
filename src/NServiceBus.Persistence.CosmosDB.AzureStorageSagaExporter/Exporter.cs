@@ -107,16 +107,27 @@
 
         static (JObject converted, Guid newSagaId) Convert(DictionaryTableEntity entity)
         {
-            // The rows we're processing would have the following column name and example value structure:
-            // Column name:   NServiceBus_2ndIndexKey
-            // Value example: Index_Samples.OrderSagaData_OrderId_"a3413eda-fb98-46c1-a44e-89da9efada16"#
-            var match = secondaryIndexRegex.Match(entity["NServiceBus_2ndIndexKey"].StringValue);
-            var sagaDataTypeFullName = match.Groups["SagaDataType"].Value;
-            var propertyName = match.Groups["PropertyName"].Value;
-            var propertyValue = match.Groups["PropertyValue"].Value;
+            var oldSagaId = Guid.Parse(entity.RowKey);
 
-            var newSagaId = CosmosSagaIdGenerator.Generate(sagaDataTypeFullName, propertyName, propertyValue);
-            var oldSagaId = entity["Id"].GuidValue;
+            Guid newSagaId;
+            var needsMigration = false;
+            string sagaDataTypeFullName = null;
+            if (entity.ContainsKey("NServiceBus_2ndIndexKey"))
+            {
+                // The rows we're processing would have the following column name and example value structure:
+                // Column name:   NServiceBus_2ndIndexKey
+                // Value example: Index_Samples.OrderSagaData_OrderId_"a3413eda-fb98-46c1-a44e-89da9efada16"#
+                var match = secondaryIndexRegex.Match(entity["NServiceBus_2ndIndexKey"].StringValue);
+                sagaDataTypeFullName = match.Groups["SagaDataType"].Value;
+                var propertyName = match.Groups["PropertyName"].Value;
+                var propertyValue = match.Groups["PropertyValue"].Value;
+                newSagaId = CosmosSagaIdGenerator.Generate(sagaDataTypeFullName, propertyName, propertyValue);
+                needsMigration = true;
+            }
+            else
+            {
+                newSagaId = oldSagaId;
+            }
 
             entity.Remove("NServiceBus_2ndIndexKey");
             entity.Remove("PartitionKey");
@@ -128,9 +139,12 @@
             var metadata = new JObject
             {
                 {MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current},
-                {MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataTypeFullName},
-                {MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, oldSagaId.ToString()}
             };
+            if (needsMigration)
+            {
+                metadata.Add(MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataTypeFullName);
+                metadata.Add(MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, oldSagaId.ToString());
+            }
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
             jObject.Add("id", newSagaId);
