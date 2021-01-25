@@ -59,10 +59,10 @@
             }
 
             cosmosTransaction.StorageSession.AddOperation(new OutboxStore(new OutboxRecord
-                {
-                    Id = message.MessageId,
-                    TransportOperations = message.TransportOperations
-                },
+            {
+                Id = message.MessageId,
+                TransportOperations = message.TransportOperations
+            },
                 cosmosTransaction.PartitionKey.Value,
                 serializer,
                 context));
