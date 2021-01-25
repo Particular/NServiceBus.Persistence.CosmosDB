@@ -142,8 +142,8 @@
                 {
                     Data.MyId = message.MyId;
 
-                    Data.ListOfStrings = new List<string> {"Hello World"};
-                    Data.ListOfINts = new List<int> {43, 42};
+                    Data.ListOfStrings = new List<string> { "Hello World" };
+                    Data.ListOfINts = new List<int> { 43, 42 };
                     Data.Nested = new Nested();
                     Data.IntValue = 1;
                     Data.LongValue = 1;

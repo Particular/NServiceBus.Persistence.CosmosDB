@@ -104,6 +104,6 @@
             public string Id { get; set; }
         }
 
-        class MyMessage {}
+        class MyMessage { }
     }
 }

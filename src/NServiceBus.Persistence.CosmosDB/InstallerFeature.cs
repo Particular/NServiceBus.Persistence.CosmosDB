@@ -26,7 +26,7 @@
                 settings.Disabled = true;
                 return;
             }
-            
+
             settings.ContainerName = containerInformation.ContainerName;
             settings.DatabaseName = databaseName;
             settings.PartitionKeyPath = containerInformation.PartitionKeyPath;

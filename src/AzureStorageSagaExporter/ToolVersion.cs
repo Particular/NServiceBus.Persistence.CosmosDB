@@ -98,7 +98,7 @@
 
             public Task LogAsync(LogLevel level, string data) => Task.CompletedTask;
 
-            public void Log(ILogMessage message) {}
+            public void Log(ILogMessage message) { }
 
             public Task LogAsync(ILogMessage message) => Task.CompletedTask;
         }

@@ -50,7 +50,7 @@
                 { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current },
                 { MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaData.GetType().FullName }
             };
-            jObject.Add(MetadataExtensions.MetadataKey,metadata);
+            jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
@@ -90,7 +90,7 @@
                 metadata.Add(MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, migratedSagaId);
             }
 
-            jObject.Add(MetadataExtensions.MetadataKey,metadata);
+            jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
