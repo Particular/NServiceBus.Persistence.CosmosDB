@@ -19,7 +19,7 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            var serializer = new JsonSerializer {ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver()};
+            var serializer = new JsonSerializer { ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver() };
 
             var ttlInSeconds = context.Settings.Get<int>(SettingsKeys.OutboxTimeToLiveInSeconds);
 

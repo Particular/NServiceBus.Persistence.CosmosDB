@@ -45,9 +45,9 @@
             };
 
             var containerHolderHolderResolver = new ContainerHolderResolver(new Provider()
-                {
-                    Client = fakeCosmosClient
-                },
+            {
+                Client = fakeCosmosClient
+            },
                 new ContainerInformation("fakeContainer",
                     new PartitionKeyPath("")),
                 "fakeDatabase");
