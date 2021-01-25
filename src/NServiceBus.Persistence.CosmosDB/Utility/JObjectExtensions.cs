@@ -10,7 +10,7 @@
             var partitionKeyAsJArray = JArray.Parse(partitionKey)[0];
             // we should probably optimize this a bit and the result might be cacheable but let's worry later
             var pathToMatch = partitionKeyPath.Replace("/", ".");
-            var segments = pathToMatch.Split(new[] {"."}, StringSplitOptions.RemoveEmptyEntries);
+            var segments = pathToMatch.Split(new[] { "." }, StringSplitOptions.RemoveEmptyEntries);
 
             var start = new JObject();
             var current = start;

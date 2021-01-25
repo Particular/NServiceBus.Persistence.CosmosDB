@@ -89,6 +89,6 @@
         protected const string DatabaseName = "CosmosDBPersistence";
         protected const string PartitionPathKey = "/id";
         protected static string ContainerName;
-        private Container Container;
+        Container Container;
     }
 }

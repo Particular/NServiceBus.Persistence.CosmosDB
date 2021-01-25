@@ -52,7 +52,7 @@
             {
                 var contextBag = new ContextBag();
                 // This populates the partition key required to participate in a shared transaction
-                var setAsDispatchedHolder = new SetAsDispatchedHolder { PartitionKey = new PartitionKey(partitionKey)};
+                var setAsDispatchedHolder = new SetAsDispatchedHolder { PartitionKey = new PartitionKey(partitionKey) };
                 setAsDispatchedHolder.ContainerHolder = resolver.ResolveAndSetIfAvailable(contextBag);
                 contextBag.Set(setAsDispatchedHolder);
                 contextBag.Set(new PartitionKey(partitionKey));
@@ -63,7 +63,7 @@
             {
                 var contextBag = new ContextBag();
                 // This populates the partition key required to participate in a shared transaction
-                var setAsDispatchedHolder = new SetAsDispatchedHolder { PartitionKey = new PartitionKey(partitionKey)};
+                var setAsDispatchedHolder = new SetAsDispatchedHolder { PartitionKey = new PartitionKey(partitionKey) };
                 setAsDispatchedHolder.ContainerHolder = resolver.ResolveAndSetIfAvailable(contextBag);
                 contextBag.Set(setAsDispatchedHolder);
                 contextBag.Set(new PartitionKey(partitionKey));

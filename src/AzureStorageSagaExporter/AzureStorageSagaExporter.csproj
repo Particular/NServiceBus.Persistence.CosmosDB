@@ -22,7 +22,6 @@
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\MetadataExtensions.cs" Link="MetadataExtensions.Sagas.cs" />
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\SagaSchemaVersion.cs" Link="SagaSchemaVersion.cs" />
     <Compile Include="..\NServiceBus.Persistence.CosmosDB\Saga\CosmosSagaIdGenerator.cs" Link="CosmosSagaIdGenerator.cs" />
-    <Compile Include="..\TestSuppressions.cs" Link="TestSuppressions.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,7 +30,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="NuGet.Protocol" Version="5.7.0" />
-    <PackageReference Include="Particular.CodeRules" Version="0.7.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="0.9.0" PrivateAssets="All" />
   </ItemGroup>
 
