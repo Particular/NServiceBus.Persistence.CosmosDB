@@ -5,7 +5,7 @@
     /// <summary>
     /// Represents the container name and the partition key path when the container information is provided at runtime through the pipeline.
     /// </summary>
-    public struct ContainerInformation
+    public readonly struct ContainerInformation
     {
         /// <summary>
         /// Initializes the container information with a specified container name and a corresponding partition key path.

@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents a partition key path within a container.
     /// </summary>
-    public struct PartitionKeyPath
+    public readonly struct PartitionKeyPath
     {
         readonly string partitionKeyPath;
 
