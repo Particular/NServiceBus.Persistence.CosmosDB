@@ -32,6 +32,8 @@
 
         public CosmosClient Client { get; } = SetupFixture.CosmosDbClient;
 
+        public int OutboxTimeToLiveInSeconds { get; set; } = 100;
+
         public Task Configure()
         {
             // with this we have a partition key per run which makes things naturally isolated
@@ -46,14 +48,17 @@
             var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);
             SynchronizedStorage = new StorageSessionFactory(resolver, null);
             SagaStorage = new SagaPersister(serializer, false);
-            OutboxStorage = new OutboxPersister(resolver, serializer, 100);
+            OutboxStorage = new OutboxPersister(resolver, serializer, OutboxTimeToLiveInSeconds);
 
             GetContextBagForSagaStorage = () =>
             {
                 var contextBag = new ContextBag();
                 // This populates the partition key required to participate in a shared transaction
-                var setAsDispatchedHolder = new SetAsDispatchedHolder { PartitionKey = new PartitionKey(partitionKey) };
-                setAsDispatchedHolder.ContainerHolder = resolver.ResolveAndSetIfAvailable(contextBag);
+                var setAsDispatchedHolder = new SetAsDispatchedHolder
+                {
+                    PartitionKey = new PartitionKey(partitionKey),
+                    ContainerHolder = resolver.ResolveAndSetIfAvailable(contextBag)
+                };
                 contextBag.Set(setAsDispatchedHolder);
                 contextBag.Set(new PartitionKey(partitionKey));
                 return contextBag;
@@ -63,8 +68,11 @@
             {
                 var contextBag = new ContextBag();
                 // This populates the partition key required to participate in a shared transaction
-                var setAsDispatchedHolder = new SetAsDispatchedHolder { PartitionKey = new PartitionKey(partitionKey) };
-                setAsDispatchedHolder.ContainerHolder = resolver.ResolveAndSetIfAvailable(contextBag);
+                var setAsDispatchedHolder = new SetAsDispatchedHolder
+                {
+                    PartitionKey = new PartitionKey(partitionKey),
+                    ContainerHolder = resolver.ResolveAndSetIfAvailable(contextBag)
+                };
                 contextBag.Set(setAsDispatchedHolder);
                 contextBag.Set(new PartitionKey(partitionKey));
                 return contextBag;

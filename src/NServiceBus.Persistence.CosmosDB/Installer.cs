@@ -39,7 +39,12 @@
 
             var database = clientProvider.Client.GetDatabase(installerSettings.DatabaseName);
 
-            var containerProperties = new ContainerProperties(installerSettings.ContainerName, installerSettings.PartitionKeyPath);
+            var containerProperties =
+                new ContainerProperties(installerSettings.ContainerName, installerSettings.PartitionKeyPath)
+                {
+                    // in order for individual items TTL to work (example outbox records)
+                    DefaultTimeToLive = -1
+                };
 
             await database.CreateContainerIfNotExistsAsync(containerProperties)
                 .ConfigureAwait(false);
