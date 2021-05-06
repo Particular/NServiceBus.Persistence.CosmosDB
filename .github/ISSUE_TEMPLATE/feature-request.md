@@ -1,5 +1,6 @@
 ---
 name: Feature request
+about: Use this template to report a new feature request
 ---
 
 Describe the feature request here. When possible include:

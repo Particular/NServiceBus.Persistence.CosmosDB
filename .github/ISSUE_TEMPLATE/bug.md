@@ -1,5 +1,6 @@
 ---
 name: Bug report
+about: Use this template to report a new bug report
 ---
 
 Describe the bug here by adding any information that you may know under the respective headers below.
