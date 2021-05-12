@@ -1,12 +1,12 @@
 ﻿namespace NServiceBus.AcceptanceTests
 {
-    using System.Threading.Tasks;
     using System;
-    using Persistence.CosmosDB;
-    using Pipeline;
+    using System.Threading.Tasks;
     using AcceptanceTesting;
     using EndpointTemplates;
+    using NServiceBus.Pipeline;
     using NUnit.Framework;
+    using Persistence.CosmosDB;
 
     public class When_regular_handler_with_no_container_information : NServiceBusAcceptanceTest
     {
