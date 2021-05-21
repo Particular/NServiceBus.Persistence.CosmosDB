@@ -38,7 +38,7 @@
 
         public override void Conflict(TransactionalBatchOperationResult result)
         {
-            throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be created possibly due to a concurrency conflict.");
+            throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
         }
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
@@ -72,7 +72,7 @@
 
         public override void Conflict(TransactionalBatchOperationResult result)
         {
-            throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' was updated by another process or no longer exists.");
+            throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
         }
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
@@ -116,7 +116,7 @@
 
         public override void Conflict(TransactionalBatchOperationResult result)
         {
-            throw new Exception($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed because it was updated by another process.");
+            throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
         }
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)

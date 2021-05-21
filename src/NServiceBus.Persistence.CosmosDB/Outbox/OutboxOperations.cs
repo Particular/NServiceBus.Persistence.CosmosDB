@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
-    using System;
     using System.IO;
     using System.Text;
     using Extensibility;
@@ -89,7 +88,7 @@
 
         public override void Conflict(TransactionalBatchOperationResult result)
         {
-            throw new Exception($"The outbox record with id '{record.Id}' could not be marked as dispatched, it was updated by another process.");
+            throw new TransactionalBatchOperationException($"The outbox record with id '{record.Id}' could not be marked as dispatched. Response status code: {result.StatusCode}.", result);
         }
     }
 }
