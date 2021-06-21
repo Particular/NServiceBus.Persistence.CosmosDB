@@ -12,7 +12,7 @@
         /// <summary>
         /// Initializes a new TransactionalBatchOperationException with a <see cref="TransactionalBatchOperationResult"/>.
         /// </summary>
-        public TransactionalBatchOperationException(TransactionalBatchOperationResult result)
+        public TransactionalBatchOperationException(TransactionalBatchOperationResult result) : base(result.StatusCode.ToString("G"))
         {
             Result = result;
         }
