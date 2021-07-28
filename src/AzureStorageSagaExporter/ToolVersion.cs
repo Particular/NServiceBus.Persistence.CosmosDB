@@ -22,11 +22,10 @@
             return $"export-aspsagas {GitVersionInformation.NuGetVersionV2} (Sha:{GitVersionInformation.ShortSha})";
         }
 
-        public static async Task<bool> CheckIsLatestVersion(ILogger logger, bool ignoreUpdates)
+        public static async Task<bool> CheckIsLatestVersion(ILogger logger, bool ignoreUpdates, CancellationToken cancellationToken = default)
         {
             try
             {
-                var cancellationToken = CancellationToken.None;
                 var nugetLogger = new LoggerAdapter(logger);
 
                 var cache = new SourceCacheContext();
@@ -62,7 +61,7 @@
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception e) when (!(e is OperationCanceledException) && cancellationToken.IsCancellationRequested)
             {
                 logger.LogWarning("*** Unable to connect to MyGet to check for latest version.");
                 logger.LogWarning($"*** Message: {e.Message}");

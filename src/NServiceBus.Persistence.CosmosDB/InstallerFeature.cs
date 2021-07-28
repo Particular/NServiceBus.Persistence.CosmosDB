@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using Features;
+    using Microsoft.Extensions.DependencyInjection;
 
     class InstallerFeature : Feature
     {
@@ -13,7 +14,7 @@
         protected override void Setup(FeatureConfigurationContext context)
         {
             var settings = context.Settings.Get<InstallerSettings>();
-            context.Container.ConfigureComponent(() => settings, DependencyLifecycle.SingleInstance);
+            context.Services.AddSingleton(settings);
             if (settings.Disabled)
             {
                 return;

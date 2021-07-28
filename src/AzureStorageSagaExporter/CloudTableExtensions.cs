@@ -7,7 +7,7 @@
 
     static class CloudTableExtensions
     {
-        public static async IAsyncEnumerable<T> ExecuteQueryAsync<T>(this CloudTable table, TableQuery<T> query, int take = int.MaxValue, [EnumeratorCancellation] CancellationToken ct = default) where T : ITableEntity, new()
+        public static async IAsyncEnumerable<T> ExecuteQueryAsync<T>(this CloudTable table, TableQuery<T> query, int take = int.MaxValue, [EnumeratorCancellation] CancellationToken cancellationToken = default) where T : ITableEntity, new()
         {
             TableContinuationToken token = null;
             var alreadyTaken = 0;
@@ -19,13 +19,13 @@
                         token: token,
                         requestOptions: null,
                         operationContext: null,
-                        cancellationToken: ct)
+                        cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
                 token = seg.ContinuationToken;
 
                 foreach (var entity in seg.Results)
                 {
-                    if (alreadyTaken < take && !ct.IsCancellationRequested)
+                    if (alreadyTaken < take && !cancellationToken.IsCancellationRequested)
                     {
                         alreadyTaken++;
                         yield return entity;
@@ -36,7 +36,7 @@
                     }
                 }
             }
-            while (token != null && !ct.IsCancellationRequested && alreadyTaken < take);
+            while (token != null && !cancellationToken.IsCancellationRequested && alreadyTaken < take);
         }
     }
 }

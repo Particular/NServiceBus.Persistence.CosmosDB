@@ -7,12 +7,12 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Cosmos;
-    using Microsoft.Azure.Cosmos.Table;
-    using NServiceBus;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
     using CosmosDB;
+    using Microsoft.Azure.Cosmos;
+    using Microsoft.Azure.Cosmos.Table;
+    using NServiceBus;
     using NUnit.Framework;
     using Particular.Approvals;
 
@@ -46,8 +46,7 @@
             var testContext = await Scenario.Define<Context>(c => c.MyId = Guid.NewGuid())
                 .WithEndpoint<MigratingEndpoint>(b => b.CustomConfig(ec =>
                 {
-                    var routing = ec.ConfigureTransport().Routing();
-                    routing.RouteToEndpoint(typeof(CompleteSagaRequest), typeof(SomeOtherEndpoint));
+                    ec.ConfigureRouting().RouteToEndpoint(typeof(CompleteSagaRequest), typeof(SomeOtherEndpoint));
 
                     var persistence = ec.UsePersistence<AzureTablePersistence>();
                     persistence.ConnectionString(AzureStoragePersistenceConnectionString);
@@ -68,8 +67,7 @@
             testContext = await Scenario.Define<Context>(c => c.MyId = testContext.MyId)
                 .WithEndpoint<MigratingEndpoint>(b => b.CustomConfig(ec =>
                 {
-                    var routing = ec.ConfigureTransport().Routing();
-                    routing.RouteToEndpoint(typeof(CompleteSagaRequest), typeof(SomeOtherEndpoint));
+                    ec.ConfigureRouting().RouteToEndpoint(typeof(CompleteSagaRequest), typeof(SomeOtherEndpoint));
 
                     var persistence = ec.UsePersistence<CosmosPersistence>();
                     persistence.CosmosClient(CosmosClient);
@@ -215,7 +213,7 @@
         {
             public SomeOtherEndpoint()
             {
-                EndpointSetup<BaseEndpoint>(c => c.UsePersistence<InMemoryPersistence>());
+                EndpointSetup<BaseEndpoint>(c => c.UsePersistence<NonDurablePersistence>());
             }
 
             public class CompleteSagaRequestHandler : IHandleMessages<CompleteSagaRequest>

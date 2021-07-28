@@ -9,10 +9,12 @@
         public bool SupportsNativePubSub { get; } = true;
         public bool SupportsNativeDeferral { get; } = true;
         public bool SupportsOutbox { get; } = false;
+        public bool SupportsDelayedDelivery { get; } = true;
+        public bool SupportsPurgeOnStartup { get; } = true;
 
         public IConfigureEndpointTestExecution CreateTransportConfiguration()
         {
-            return new ConfigureEndpointLearningTransport();
+            return new ConfigureEndpointAcceptanceTestingTransport(true, true);
         }
 
         public IConfigureEndpointTestExecution CreatePersistenceConfiguration()

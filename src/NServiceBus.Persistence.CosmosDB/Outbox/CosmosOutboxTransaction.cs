@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -18,14 +19,14 @@
             StorageSession = new StorageSession(resolver, context, false);
         }
 
-        public Task Commit()
+        public Task Commit(CancellationToken cancellationToken = default)
         {
             if (SuppressStoreAndCommit)
             {
                 return Task.CompletedTask;
             }
 
-            return StorageSession.Commit();
+            return StorageSession.Commit(cancellationToken);
         }
 
         public void Dispose()

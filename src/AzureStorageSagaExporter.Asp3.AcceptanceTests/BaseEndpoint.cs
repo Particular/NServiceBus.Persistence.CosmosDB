@@ -1,9 +1,9 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests
 {
-    using NServiceBus;
-    using NServiceBus.AcceptanceTesting.Support;
     using System;
     using System.Threading.Tasks;
+    using NServiceBus;
+    using NServiceBus.AcceptanceTesting.Support;
 
     public class BaseEndpoint : IEndpointSetupTemplate
     {
@@ -15,7 +15,7 @@
                 .Delayed(delayed => delayed.NumberOfRetries(0))
                 .Immediate(immediate => immediate.NumberOfRetries(0));
 
-            endpointConfiguration.UseTransport<AcceptanceTestingTransport>();
+            endpointConfiguration.UseTransport(new AcceptanceTestingTransport());
 
             endpointConfiguration.RegisterComponentsAndInheritanceHierarchy(runDescriptor);
 

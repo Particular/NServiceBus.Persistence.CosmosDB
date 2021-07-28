@@ -35,7 +35,7 @@
                         Id = messageId,
                         TransportOperations = new[]
                         {
-                            new TransportOperation("42", new Dictionary<string, string>
+                            new TransportOperation("42", new DispatchProperties
                             {
                                 {"Destination", "somewhere"}
                             }, Array.Empty<byte>(), new Dictionary<string, string>()),

@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -15,7 +16,7 @@
             this.ttlInSeconds = ttlInSeconds;
         }
 
-        public Task<OutboxTransaction> BeginTransaction(ContextBag context)
+        public Task<OutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
         {
             var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
@@ -27,7 +28,7 @@
             return Task.FromResult((OutboxTransaction)cosmosOutboxTransaction);
         }
 
-        public async Task<OutboxMessage> Get(string messageId, ContextBag context)
+        public async Task<OutboxMessage> Get(string messageId, ContextBag context, CancellationToken cancellationToken = default)
         {
             var setAsDispatchedHolder = new SetAsDispatchedHolder
             {
@@ -43,13 +44,13 @@
 
             setAsDispatchedHolder.PartitionKey = partitionKey;
 
-            var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
+            var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations) : null;
         }
 
-        public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context)
+        public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             var cosmosTransaction = (CosmosOutboxTransaction)transaction;
 
@@ -69,7 +70,7 @@
             return Task.CompletedTask;
         }
 
-        public async Task SetAsDispatched(string messageId, ContextBag context)
+        public async Task SetAsDispatched(string messageId, ContextBag context, CancellationToken cancellationToken = default)
         {
             var setAsDispatchedHolder = context.Get<SetAsDispatchedHolder>();
 
@@ -84,7 +85,7 @@
 
             var transactionalBatch = containerHolder.Container.CreateTransactionalBatch(partitionKey);
 
-            await transactionalBatch.ExecuteOperationAsync(operation, containerHolder.PartitionKeyPath).ConfigureAwait(false);
+            await transactionalBatch.ExecuteOperationAsync(operation, containerHolder.PartitionKeyPath, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         readonly JsonSerializer serializer;

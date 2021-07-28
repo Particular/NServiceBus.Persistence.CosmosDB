@@ -34,7 +34,7 @@
                     return;
                 }
 
-                if (!await ToolVersion.CheckIsLatestVersion(logger, ignoreUpdates.HasValue()).ConfigureAwait(false))
+                if (!await ToolVersion.CheckIsLatestVersion(logger, ignoreUpdates.HasValue(), cancellationToken).ConfigureAwait(false))
                 {
                     return;
                 }

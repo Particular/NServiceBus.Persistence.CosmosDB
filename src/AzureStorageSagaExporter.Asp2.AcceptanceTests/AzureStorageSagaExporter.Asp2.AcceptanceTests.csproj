@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\Test.snk</AssemblyOriginatorKeyFile>
@@ -12,10 +12,11 @@
     <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.20.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0" />
-    <PackageReference Include="NServiceBus.Persistence.AzureStorage" Version="2.4.2" />
+    <PackageReference Include="NServiceBus.Persistence.AzureStorage" Version="3.0.0-alpha.145" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
     <PackageReference Include="Nunit" Version="3.13.2" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.5.0" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-alpha.1895" />
+    <PackageReference Include="NServiceBus.Persistence.NonDurable" Version="0.2.0-alpha.60" />
     <PackageReference Include="Particular.Approvals" Version="0.3.0" />
   </ItemGroup>
 

@@ -5,6 +5,7 @@
     using AcceptanceTesting;
     using EndpointTemplates;
     using Microsoft.Azure.Cosmos;
+    using Microsoft.Extensions.DependencyInjection;
     using NUnit.Framework;
     using Persistence.CosmosDB;
 
@@ -37,7 +38,7 @@
                 EndpointSetup<DefaultServer>(config =>
                 {
                     config.RegisterComponents(c =>
-                        c.ConfigureComponent<IProvideCosmosClient>(b => new CustomProvider(b.Build<Context>()), DependencyLifecycle.SingleInstance));
+                        c.AddSingleton<IProvideCosmosClient>(b => new CustomProvider(b.GetService<Context>())));
                 });
             }
 

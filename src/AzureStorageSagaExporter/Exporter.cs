@@ -8,11 +8,11 @@
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
+    using CosmosDB;
     using Microsoft.Azure.Cosmos.Table;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
-    using CosmosDB;
 
     public static class Exporter
     {
@@ -20,7 +20,7 @@
         static readonly Regex probablyJArrayRegex = new Regex("\\[.*\\]", RegexOptions.Multiline | RegexOptions.Compiled);
         static readonly Regex probablyJObjectRegex = new Regex("\\{.*\\}", RegexOptions.Multiline | RegexOptions.Compiled);
 
-        public static async Task Run(ILogger logger, string connectionString, string tableName, string workingPath, CancellationToken cancellationToken)
+        public static async Task Run(ILogger logger, string connectionString, string tableName, string workingPath, CancellationToken cancellationToken = default)
         {
             var account = CloudStorageAccount.Parse(connectionString);
             var client = account.CreateCloudTableClient();
@@ -59,7 +59,7 @@
         {
             using var throttler = new SemaphoreSlim(50);
             var tasks = new List<Task<string>>();
-            await foreach (var entity in table.ExecuteQueryAsync(query, ct: cancellationToken))
+            await foreach (var entity in table.ExecuteQueryAsync(query, cancellationToken: cancellationToken))
             {
                 if (entity.PartitionKey.StartsWith("Index_"))
                 {

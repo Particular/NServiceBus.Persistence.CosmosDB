@@ -1,14 +1,16 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System.Linq;
     using Features;
+    using Microsoft.Extensions.DependencyInjection;
 
     class SynchronizedStorage : Feature
     {
         protected override void Setup(FeatureConfigurationContext context)
         {
-            if (!context.Container.HasComponent<IProvideCosmosClient>())
+            if (!context.Services.Any(descriptor => descriptor.ServiceType == typeof(IProvideCosmosClient)))
             {
-                context.Container.ConfigureComponent(context.Settings.Get<IProvideCosmosClient>, DependencyLifecycle.SingleInstance);
+                context.Services.AddSingleton(context.Settings.Get<IProvideCosmosClient>());
             }
 
             var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
@@ -21,11 +23,11 @@
 
             var currentSharedTransactionalBatchHolder = new CurrentSharedTransactionalBatchHolder();
 
-            context.Container.ConfigureComponent(_ => currentSharedTransactionalBatchHolder.Current.Create(), DependencyLifecycle.InstancePerCall);
+            context.Services.AddTransient(_ => currentSharedTransactionalBatchHolder.Current.Create());
 
-            context.Container.ConfigureComponent(b => new ContainerHolderResolver(b.Build<IProvideCosmosClient>(), defaultContainerInformation, databaseName), DependencyLifecycle.SingleInstance);
-            context.Container.ConfigureComponent(b => new StorageSessionFactory(b.Build<ContainerHolderResolver>(), currentSharedTransactionalBatchHolder), DependencyLifecycle.SingleInstance);
-            context.Container.ConfigureComponent(b => new StorageSessionAdapter(currentSharedTransactionalBatchHolder), DependencyLifecycle.SingleInstance);
+            context.Services.AddTransient(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
+            context.Services.AddTransient(b => new StorageSessionFactory(b.GetService<ContainerHolderResolver>(), currentSharedTransactionalBatchHolder));
+            context.Services.AddTransient(b => new StorageSessionAdapter(currentSharedTransactionalBatchHolder));
 
             context.Pipeline.Register(new CurrentSharedTransactionalBatchBehavior(currentSharedTransactionalBatchHolder), "Manages the lifecycle of the current storage session.");
         }
