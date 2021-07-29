@@ -19,6 +19,8 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
+            NonNativePubSubCheck.ThrowIfMessageDrivenPubSubInUse(context);
+
             var serializer = new JsonSerializer { ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver() };
 
             var migrationModeEnabled = context.Settings.GetOrDefault<bool>(SettingsKeys.EnableMigrationMode);
