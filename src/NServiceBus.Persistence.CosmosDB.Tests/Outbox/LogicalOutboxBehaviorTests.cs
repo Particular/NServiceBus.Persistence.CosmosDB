@@ -25,6 +25,14 @@
         {
             var messageId = Guid.NewGuid().ToString();
 
+            var transportOperations = new[]
+            {
+                new TransportOperation("42", new DispatchProperties
+                            {
+                                {"Destination", "somewhere"}
+                            }, Array.Empty<byte>(), new Dictionary<string, string>()),
+            };
+
             var fakeCosmosClient = new FakeCosmosClient
             {
                 Container =
@@ -33,13 +41,7 @@
                     {
                         Dispatched = false,
                         Id = messageId,
-                        TransportOperations = new[]
-                        {
-                            new TransportOperation("42", new DispatchProperties
-                            {
-                                {"Destination", "somewhere"}
-                            }, Array.Empty<byte>(), new Dictionary<string, string>()),
-                        }
+                        TransportOperations = transportOperations.Select(op => new StorageTransportOperation(op)).ToArray()
                     }
                 }
             };

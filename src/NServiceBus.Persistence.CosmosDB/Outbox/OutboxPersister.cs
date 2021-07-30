@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -47,7 +48,7 @@
             var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations) : null;
+            return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
         }
 
         public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context, CancellationToken cancellationToken = default)
@@ -62,7 +63,7 @@
             cosmosTransaction.StorageSession.AddOperation(new OutboxStore(new OutboxRecord
             {
                 Id = message.MessageId,
-                TransportOperations = message.TransportOperations
+                TransportOperations = message.TransportOperations.Select(op => new StorageTransportOperation(op)).ToArray()
             },
                 cosmosTransaction.PartitionKey.Value,
                 serializer,

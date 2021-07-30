@@ -95,7 +95,7 @@
                     new TransportOperation(
                         message,
                         DeserializeRoutingStrategy(operation.Options),
-                        operation.Options,
+                        new DispatchProperties(operation.Options),
                         DispatchConsistency.Isolated));
             }
         }
