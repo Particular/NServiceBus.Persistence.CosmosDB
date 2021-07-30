@@ -19,9 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStorageSagaExporter", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Migration", "Migration", "{89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStorageSagaExporter.Asp2.AcceptanceTests", "AzureStorageSagaExporter.Asp2.AcceptanceTests\AzureStorageSagaExporter.Asp2.AcceptanceTests.csproj", "{E155D512-159E-42CF-9B21-47C009481ECA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStorageSagaExporter.AzureStorage.AcceptanceTests", "AzureStorageSagaExporter.AzureStorage.AcceptanceTests\AzureStorageSagaExporter.AzureStorage.AcceptanceTests.csproj", "{E155D512-159E-42CF-9B21-47C009481ECA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStorageSagaExporter.Asp3.AcceptanceTests", "AzureStorageSagaExporter.Asp3.AcceptanceTests\AzureStorageSagaExporter.Asp3.AcceptanceTests.csproj", "{EB8252F8-2435-4674-96C0-48F69A25D7DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStorageSagaExporter.AzureTable.AcceptanceTests", "AzureStorageSagaExporter.AzureTable.AcceptanceTests\AzureStorageSagaExporter.AzureTable.AcceptanceTests.csproj", "{EB8252F8-2435-4674-96C0-48F69A25D7DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
