@@ -24,7 +24,7 @@
 
             var migrationModeEnabled = context.Settings.GetOrDefault<bool>(SettingsKeys.EnableMigrationMode);
 
-            context.Services.AddTransient(builder => new SagaPersister(serializer, migrationModeEnabled));
+            context.Services.AddSingleton<ISagaPersister>(builder => new SagaPersister(serializer, migrationModeEnabled));
         }
     }
 }

@@ -25,9 +25,9 @@
 
             context.Services.AddTransient(_ => currentSharedTransactionalBatchHolder.Current.Create());
 
-            context.Services.AddTransient(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
-            context.Services.AddTransient(b => new StorageSessionFactory(b.GetService<ContainerHolderResolver>(), currentSharedTransactionalBatchHolder));
-            context.Services.AddTransient(b => new StorageSessionAdapter(currentSharedTransactionalBatchHolder));
+            context.Services.AddSingleton(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
+            context.Services.AddSingleton<ISynchronizedStorage>(b => new StorageSessionFactory(b.GetService<ContainerHolderResolver>(), currentSharedTransactionalBatchHolder));
+            context.Services.AddSingleton<ISynchronizedStorageAdapter>(b => new StorageSessionAdapter(currentSharedTransactionalBatchHolder));
 
             context.Pipeline.Register(new CurrentSharedTransactionalBatchBehavior(currentSharedTransactionalBatchHolder), "Manages the lifecycle of the current storage session.");
         }

@@ -4,6 +4,7 @@
     using Features;
     using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
+    using NServiceBus.Outbox;
 
     class OutboxStorage : Feature
     {
@@ -24,7 +25,7 @@
 
             var ttlInSeconds = context.Settings.Get<int>(SettingsKeys.OutboxTimeToLiveInSeconds);
 
-            context.Services.AddTransient(builder => new OutboxPersister(builder.GetService<ContainerHolderResolver>(), serializer, ttlInSeconds));
+            context.Services.AddSingleton<IOutboxStorage>(builder => new OutboxPersister(builder.GetService<ContainerHolderResolver>(), serializer, ttlInSeconds));
             context.Pipeline.Register(builder => new LogicalOutboxBehavior(builder.GetService<ContainerHolderResolver>(), serializer), "Behavior that mimics the outbox as part of the logical stage.");
         }
     }
