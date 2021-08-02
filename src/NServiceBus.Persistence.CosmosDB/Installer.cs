@@ -26,7 +26,7 @@
             {
                 await CreateContainerIfNotExists(cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception e) when (!(e is OperationCanceledException) && cancellationToken.IsCancellationRequested)
+            catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
             {
                 log.Error("Could not complete the installation. ", e);
                 throw;

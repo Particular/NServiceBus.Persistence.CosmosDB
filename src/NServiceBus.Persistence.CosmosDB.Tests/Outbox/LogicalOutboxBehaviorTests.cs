@@ -27,10 +27,11 @@
 
             var transportOperations = new[]
             {
-                new TransportOperation("42", new DispatchProperties
-                            {
-                                {"Destination", "somewhere"}
-                            }, Array.Empty<byte>(), new Dictionary<string, string>()),
+                new TransportOperation(
+                    messageId: "42",
+                    properties: new DispatchProperties { { "Destination" , "somewhere"} },
+                    body: Array.Empty<byte>(),
+                    headers: new Dictionary<string, string>()),
             };
 
             var fakeCosmosClient = new FakeCosmosClient
