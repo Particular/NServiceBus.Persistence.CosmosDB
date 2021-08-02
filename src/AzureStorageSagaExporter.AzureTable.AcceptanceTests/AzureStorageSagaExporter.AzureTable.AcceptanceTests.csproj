@@ -16,7 +16,6 @@
     <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
     <PackageReference Include="Nunit" Version="3.13.2" />
     <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-alpha.1895" />
-    <PackageReference Include="NServiceBus.Persistence.NonDurable" Version="0.2.0-alpha.60" />
     <PackageReference Include="Particular.Approvals" Version="0.3.0" />
   </ItemGroup>
 

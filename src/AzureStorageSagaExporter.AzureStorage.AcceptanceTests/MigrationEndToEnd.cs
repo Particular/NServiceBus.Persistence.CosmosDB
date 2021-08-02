@@ -214,7 +214,7 @@
         {
             public SomeOtherEndpoint()
             {
-                EndpointSetup<BaseEndpoint>(c => c.UsePersistence<NonDurablePersistence>());
+                EndpointSetup<BaseEndpoint>(c => c.UsePersistence<LearningPersistence>());
             }
 
             public class CompleteSagaRequestHandler : IHandleMessages<CompleteSagaRequest>
