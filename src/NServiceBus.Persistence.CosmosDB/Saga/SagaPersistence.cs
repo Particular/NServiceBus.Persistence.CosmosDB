@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using Features;
+    using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
     using Sagas;
 
@@ -25,7 +26,7 @@
 
             var migrationModeEnabled = context.Settings.GetOrDefault<bool>(SettingsKeys.EnableMigrationMode);
 
-            context.Container.ConfigureComponent(builder => new SagaPersister(serializer, migrationModeEnabled), DependencyLifecycle.SingleInstance);
+            context.Services.AddSingleton<ISagaPersister>(builder => new SagaPersister(serializer, migrationModeEnabled));
         }
     }
 }

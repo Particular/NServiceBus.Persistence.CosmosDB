@@ -2,6 +2,7 @@
 {
     using System.IO;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -9,9 +10,9 @@
 
     static class OutboxContainerExtensions
     {
-        public static async Task<OutboxRecord> ReadOutboxRecord(this Container container, string messageId, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+        public static async Task<OutboxRecord> ReadOutboxRecord(this Container container, string messageId, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context, CancellationToken cancellationToken = default)
         {
-            var responseMessage = await container.ReadItemStreamAsync(messageId, partitionKey)
+            var responseMessage = await container.ReadItemStreamAsync(messageId, partitionKey, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)

@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.PersistenceTesting
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -34,7 +35,7 @@
 
         public int OutboxTimeToLiveInSeconds { get; set; } = 100;
 
-        public Task Configure()
+        public Task Configure(CancellationToken cancellationToken = default)
         {
             // with this we have a partition key per run which makes things naturally isolated
             partitionKey = Guid.NewGuid().ToString();
@@ -81,7 +82,7 @@
             return Task.CompletedTask;
         }
 
-        public Task Cleanup()
+        public Task Cleanup(CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

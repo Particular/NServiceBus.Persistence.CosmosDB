@@ -4,6 +4,7 @@
     using AcceptanceTesting;
     using EndpointTemplates;
     using Microsoft.Azure.Cosmos;
+    using Microsoft.Extensions.DependencyInjection;
     using NUnit.Framework;
 
     [TestFixture]
@@ -43,7 +44,7 @@
                     config.EnableOutbox();
                     config.RegisterComponents(c =>
                     {
-                        c.ConfigureComponent<MyRepository>(DependencyLifecycle.InstancePerUnitOfWork);
+                        c.AddScoped<MyRepository>();
                     });
                 });
             }

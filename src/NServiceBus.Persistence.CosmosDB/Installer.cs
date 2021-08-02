@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using Installation;
     using Logging;
@@ -14,7 +15,7 @@
             this.clientProvider = clientProvider;
         }
 
-        public async Task Install(string identity)
+        public async Task Install(string identity, CancellationToken cancellationToken = default)
         {
             if (installerSettings == null || installerSettings.Disabled)
             {
@@ -23,18 +24,18 @@
 
             try
             {
-                await CreateContainerIfNotExists().ConfigureAwait(false);
+                await CreateContainerIfNotExists(cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception e)
+            catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
             {
                 log.Error("Could not complete the installation. ", e);
                 throw;
             }
         }
 
-        async Task CreateContainerIfNotExists()
+        async Task CreateContainerIfNotExists(CancellationToken cancellationToken)
         {
-            await clientProvider.Client.CreateDatabaseIfNotExistsAsync(installerSettings.DatabaseName)
+            await clientProvider.Client.CreateDatabaseIfNotExistsAsync(installerSettings.DatabaseName, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             var database = clientProvider.Client.GetDatabase(installerSettings.DatabaseName);
@@ -46,7 +47,7 @@
                     DefaultTimeToLive = -1
                 };
 
-            await database.CreateContainerIfNotExistsAsync(containerProperties)
+            await database.CreateContainerIfNotExistsAsync(containerProperties, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
 

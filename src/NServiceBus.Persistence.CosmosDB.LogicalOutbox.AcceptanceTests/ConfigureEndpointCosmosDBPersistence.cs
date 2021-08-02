@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
@@ -54,7 +55,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             public PartitionKeyProviderBehaviorRegisterStep() : base(nameof(PartitionKeyProviderBehavior),
                 typeof(PartitionKeyProviderBehavior),
                 "Populates the partition key",
-                b => new PartitionKeyProviderBehavior(b.Build<ScenarioContext>()))
+                b => new PartitionKeyProviderBehavior(b.GetService<ScenarioContext>()))
             {
                 InsertBeforeIfExists(nameof(LogicalOutboxBehavior));
             }

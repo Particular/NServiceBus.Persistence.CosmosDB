@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using Outbox;
@@ -12,7 +13,7 @@
             this.currentSharedTransactionalBatchHolder = currentSharedTransactionalBatchHolder;
         }
 
-        public Task<CompletableSynchronizedStorageSession> TryAdapt(OutboxTransaction transaction, ContextBag context)
+        public Task<CompletableSynchronizedStorageSession> TryAdapt(OutboxTransaction transaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             if (transaction is CosmosOutboxTransaction cosmosOutboxTransaction)
             {
@@ -24,7 +25,7 @@
             return emptyResult;
         }
 
-        public Task<CompletableSynchronizedStorageSession> TryAdapt(TransportTransaction transportTransaction, ContextBag context)
+        public Task<CompletableSynchronizedStorageSession> TryAdapt(TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             return emptyResult;
         }

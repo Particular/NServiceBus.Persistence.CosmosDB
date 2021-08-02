@@ -6,7 +6,7 @@ class TransactionalBatchCounterHandler : RequestHandler
 {
     public static int TotalTransactionalBatches;
 
-    public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken)
+    public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken = default)
     {
         var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 

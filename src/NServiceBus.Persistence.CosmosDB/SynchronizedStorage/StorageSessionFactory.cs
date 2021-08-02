@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
 
@@ -11,7 +12,7 @@
             this.currentSharedTransactionalBatchHolder = currentSharedTransactionalBatchHolder;
         }
 
-        public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag)
+        public Task<CompletableSynchronizedStorageSession> OpenSession(ContextBag contextBag, CancellationToken cancellationToken = default)
         {
             var storageSession = new StorageSession(containerHolderResolver, contextBag, true);
 

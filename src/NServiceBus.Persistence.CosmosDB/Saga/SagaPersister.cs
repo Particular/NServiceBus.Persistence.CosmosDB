@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -18,7 +19,7 @@
             this.migrationModeEnabled = migrationModeEnabled;
         }
 
-        public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context)
+        public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, SynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
@@ -27,7 +28,7 @@
             return Task.CompletedTask;
         }
 
-        public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
+        public Task Update(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
@@ -36,7 +37,7 @@
             return Task.CompletedTask;
         }
 
-        public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
+        public async Task<TSagaData> Get<TSagaData>(Guid sagaId, SynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default) where TSagaData : class, IContainSagaData
         {
             var storageSession = (StorageSession)session;
 
@@ -44,7 +45,7 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false))
+            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
             {
                 var sagaStream = responseMessage.Content;
 
@@ -58,14 +59,14 @@
                     var queryDefinition = new QueryDefinition(query);
                     var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
 
-                    using (var iteratorResponse = await queryStreamIterator.ReadNextAsync().ConfigureAwait(false))
+                    using (var iteratorResponse = await queryStreamIterator.ReadNextAsync(cancellationToken).ConfigureAwait(false))
                     {
                         iteratorResponse.EnsureSuccessStatusCode();
 
                         using (var streamReader = new StreamReader(iteratorResponse.Content))
                         using (var jsonReader = new JsonTextReader(streamReader))
                         {
-                            var iteratorResult = await JObject.LoadAsync(jsonReader).ConfigureAwait(false);
+                            var iteratorResult = await JObject.LoadAsync(jsonReader, cancellationToken).ConfigureAwait(false);
 
                             if (!(iteratorResult["Documents"] is JArray documents) || !documents.HasValues)
                             {
@@ -84,7 +85,7 @@
             }
         }
 
-        public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context) where TSagaData : class, IContainSagaData
+        public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, SynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default) where TSagaData : class, IContainSagaData
         {
             var storageSession = (StorageSession)session;
 
@@ -95,7 +96,7 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey).ConfigureAwait(false))
+            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
             {
                 var sagaStream = responseMessage.Content;
 
@@ -119,7 +120,7 @@
             }
         }
 
-        public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context)
+        public Task Complete(IContainSagaData sagaData, SynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
             var storageSession = (StorageSession)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
