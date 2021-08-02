@@ -19,8 +19,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStorageSagaExporter", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Migration", "Migration", "{89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStorageSagaExporter.AzureStorage.AcceptanceTests", "AzureStorageSagaExporter.AzureStorage.AcceptanceTests\AzureStorageSagaExporter.AzureStorage.AcceptanceTests.csproj", "{E155D512-159E-42CF-9B21-47C009481ECA}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureStorageSagaExporter.AzureTable.AcceptanceTests", "AzureStorageSagaExporter.AzureTable.AcceptanceTests\AzureStorageSagaExporter.AzureTable.AcceptanceTests.csproj", "{EB8252F8-2435-4674-96C0-48F69A25D7DB}"
 EndProject
 Global
@@ -57,10 +55,6 @@ Global
 		{B220E9A3-8885-49DB-BBA0-47B0912219A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B220E9A3-8885-49DB-BBA0-47B0912219A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B220E9A3-8885-49DB-BBA0-47B0912219A7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E155D512-159E-42CF-9B21-47C009481ECA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E155D512-159E-42CF-9B21-47C009481ECA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E155D512-159E-42CF-9B21-47C009481ECA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E155D512-159E-42CF-9B21-47C009481ECA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EB8252F8-2435-4674-96C0-48F69A25D7DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EB8252F8-2435-4674-96C0-48F69A25D7DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB8252F8-2435-4674-96C0-48F69A25D7DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -71,7 +65,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{B220E9A3-8885-49DB-BBA0-47B0912219A7} = {89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}
-		{E155D512-159E-42CF-9B21-47C009481ECA} = {89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}
 		{EB8252F8-2435-4674-96C0-48F69A25D7DB} = {89372AF5-0A5F-45C8-BD3B-A65FC69BF8C0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
