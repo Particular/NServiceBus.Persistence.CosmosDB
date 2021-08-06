@@ -1,8 +1,8 @@
 # NServiceBus.Persistence.CosmosDB
 
-NServiceBus persistence for [Azure Cosmos DB](https://azure.microsoft.com/en-us/services/cosmos-db/) utilizing the Core (SQL) API. This is a [Preview](https://docs.particular.net/previews/) component.
+NServiceBus persistence for [Azure Cosmos DB](https://azure.microsoft.com/en-us/services/cosmos-db/) utilizing the Core (SQL) API.
 
-Documentation, including usage and samples, is available on the [Particular docs site](https://docs.particular.net/previews/cosmosdb/).
+Documentation, including usage and samples, is available on the [Particular docs site](https://docs.particular.net/persistence/cosmosdb/).
 
 ## Running tests locally
 
@@ -25,11 +25,3 @@ To create a Cosmos DB Core (SQL) Account refer to the [Microsoft instructions](h
 Once a Cosmos DB account is setup, you can use the [Azure Cosmos explorer](https://docs.microsoft.com/en-us/azure/cosmos-db/data-explorer) to create a Database named `CosmosDBPersistence` which is required by the test projects.
 
 To use the created Cosmos DB Account, set an environment variable named `CosmosDBPersistence_ConnectionString` with [a Cosmos DB connection string](https://docs.microsoft.com/en-us/azure/cosmos-db/secure-access-to-data) for your Account.
-
-#### Testing AzureStorageSagaExporter
-
-The `NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests` project requires access to Azure Table Storage for tests to pass.
-
-We recommend [creating an Azure Storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). While deprecated, the tests will use the [Azure Storage Emulator](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-emulator) with no further configuration.
-
-To use a created Azure Storage Account, set an environment variable named `AzureStoragePersistence_ConnectionString` with [a connection string](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-keys-manage?tabs=azure-portal) for your Storage Account.
