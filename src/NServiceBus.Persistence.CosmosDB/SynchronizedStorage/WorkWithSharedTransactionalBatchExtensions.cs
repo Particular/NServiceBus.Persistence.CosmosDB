@@ -4,7 +4,7 @@
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;
 
-    static class IWorkWithSharedTransactionalBatchExtensions
+    static class WorkWithSharedTransactionalBatchExtensions
     {
         public static ICosmosStorageSession Create(this IWorkWithSharedTransactionalBatch workWith)
         {

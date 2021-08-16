@@ -8,7 +8,7 @@
     /// <summary>
     /// A fake implementation for <see cref="SynchronizedStorageSession"/> for testing purposes.
     /// </summary>
-    public class TestableCosmosSynchronizedStorageSession : SynchronizedStorageSession, IWorkWithSharedTransactionalBatch
+    public class TestableCosmosSynchronizedStorageSession : ISynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {
         /// <summary>
         /// Initializes a new TestableCosmosSynchronizedStorageSession with a partition key.

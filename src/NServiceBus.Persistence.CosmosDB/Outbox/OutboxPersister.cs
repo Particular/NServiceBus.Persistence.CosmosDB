@@ -17,7 +17,7 @@
             this.ttlInSeconds = ttlInSeconds;
         }
 
-        public Task<OutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
+        public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
         {
             var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
@@ -26,7 +26,7 @@
                 cosmosOutboxTransaction.PartitionKey = partitionKey;
             }
 
-            return Task.FromResult((OutboxTransaction)cosmosOutboxTransaction);
+            return Task.FromResult((IOutboxTransaction)cosmosOutboxTransaction);
         }
 
         public async Task<OutboxMessage> Get(string messageId, ContextBag context, CancellationToken cancellationToken = default)
@@ -51,7 +51,7 @@
             return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
         }
 
-        public Task Store(OutboxMessage message, OutboxTransaction transaction, ContextBag context, CancellationToken cancellationToken = default)
+        public Task Store(OutboxMessage message, IOutboxTransaction transaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             var cosmosTransaction = (CosmosOutboxTransaction)transaction;
 
