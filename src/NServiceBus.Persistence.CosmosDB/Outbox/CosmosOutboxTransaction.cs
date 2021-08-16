@@ -6,7 +6,7 @@
     using Microsoft.Azure.Cosmos;
     using Outbox;
 
-    class CosmosOutboxTransaction : OutboxTransaction
+    class CosmosOutboxTransaction : IOutboxTransaction
     {
         public StorageSession StorageSession { get; }
         public PartitionKey? PartitionKey { get; set; }

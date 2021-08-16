@@ -62,7 +62,7 @@
             testableContext.Extensions.Set(new PartitionKey(""));
             testableContext.Extensions.Set(new SetAsDispatchedHolder());
 
-            testableContext.Extensions.Set<OutboxTransaction>(new CosmosOutboxTransaction(containerHolderHolderResolver, testableContext.Extensions));
+            testableContext.Extensions.Set<IOutboxTransaction>(new CosmosOutboxTransaction(containerHolderHolderResolver, testableContext.Extensions));
 
             var pendingTransportOperations = new PendingTransportOperations();
             pendingTransportOperations.Add(new Transport.TransportOperation(new OutgoingMessage(null, null, null), null));

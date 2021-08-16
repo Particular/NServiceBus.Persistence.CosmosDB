@@ -38,7 +38,7 @@
         /// <inheritdoc />
         public async Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
         {
-            if (!context.Extensions.TryGet<OutboxTransaction>(out var transaction))
+            if (!context.Extensions.TryGet<IOutboxTransaction>(out var transaction))
             {
                 await next(context).ConfigureAwait(false);
                 return;

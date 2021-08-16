@@ -39,7 +39,7 @@ namespace NServiceBus
     }
     public static class SynchronizedStorageSessionExtensions
     {
-        public static NServiceBus.ICosmosStorageSession CosmosPersistenceSession(this NServiceBus.Persistence.SynchronizedStorageSession session) { }
+        public static NServiceBus.ICosmosStorageSession CosmosPersistenceSession(this NServiceBus.Persistence.ISynchronizedStorageSession session) { }
     }
 }
 namespace NServiceBus.Persistence.CosmosDB
@@ -61,7 +61,7 @@ namespace NServiceBus.Persistence.CosmosDB
 }
 namespace NServiceBus.Testing
 {
-    public class TestableCosmosSynchronizedStorageSession : NServiceBus.Persistence.SynchronizedStorageSession
+    public class TestableCosmosSynchronizedStorageSession : NServiceBus.Persistence.ISynchronizedStorageSession
     {
         public TestableCosmosSynchronizedStorageSession(Microsoft.Azure.Cosmos.PartitionKey partitionKey) { }
         public Microsoft.Azure.Cosmos.Container Container { get; set; }
