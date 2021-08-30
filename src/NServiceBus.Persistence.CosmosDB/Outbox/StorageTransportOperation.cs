@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System;
     using System.Collections.Generic;
 
     class StorageTransportOperation
@@ -18,7 +19,7 @@
 
         public string MessageId { get; set; }
         public Dictionary<string, string> Options { get; set; }
-        public byte[] Body { get; set; }
+        public ReadOnlyMemory<byte> Body { get; set; }
         public Dictionary<string, string> Headers { get; set; }
 
 

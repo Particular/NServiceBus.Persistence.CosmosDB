@@ -4,7 +4,7 @@
     using Features;
     using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
-    using NServiceBus.Outbox;
+    using Outbox;
 
     class OutboxStorage : Feature
     {
@@ -23,7 +23,11 @@
         {
             NonNativePubSubCheck.ThrowIfMessageDrivenPubSubInUse(context);
 
-            var serializer = new JsonSerializer { ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver() };
+            var serializer = new JsonSerializer
+            {
+                ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver(),
+                Converters = { new BinaryConverter() }
+            };
 
             var ttlInSeconds = context.Settings.Get<int>(SettingsKeys.OutboxTimeToLiveInSeconds);
 
