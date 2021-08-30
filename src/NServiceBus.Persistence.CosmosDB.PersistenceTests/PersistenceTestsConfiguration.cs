@@ -42,7 +42,8 @@
 
             var serializer = new JsonSerializer
             {
-                ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver()
+                ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver(),
+                Converters = { new BinaryConverter() }
             };
 
             var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
