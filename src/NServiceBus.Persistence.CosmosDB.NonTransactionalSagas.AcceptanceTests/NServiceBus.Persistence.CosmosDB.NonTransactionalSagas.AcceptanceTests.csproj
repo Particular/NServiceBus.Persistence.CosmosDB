@@ -14,7 +14,7 @@
     <PackageReference Include="NServiceBus.Testing" Version="8.0.0-alpha.187" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
     <PackageReference Include="Nunit" Version="3.13.2" />
-    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="8.0.0-alpha.1897" />
+    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="8.0.0-alpha.940" />
   </ItemGroup>
 
   <ItemGroup>
