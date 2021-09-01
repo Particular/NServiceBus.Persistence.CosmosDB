@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
 #if NETFRAMEWORK
@@ -32,7 +32,7 @@
                 ? Convert.ToBase64String(bodySegment.Array, bodySegment.Offset, bodySegment.Count)
                 : Convert.ToBase64String(mem.ToArray());
 #else
-        base64 = Convert.ToBase64String(mem.Span);
+            base64 = Convert.ToBase64String(mem.Span);
 #endif
 
             writer.WriteValue(base64);
