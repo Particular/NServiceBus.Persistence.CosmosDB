@@ -26,7 +26,7 @@
             var serializer = new JsonSerializer
             {
                 ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver(),
-                Converters = { new BinaryConverter() }
+                Converters = { new ReadOnlyMemoryConverter() }
             };
 
             var ttlInSeconds = context.Settings.Get<int>(SettingsKeys.OutboxTimeToLiveInSeconds);

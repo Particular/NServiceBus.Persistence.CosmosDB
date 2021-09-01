@@ -1,9 +1,15 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB.Outbox
 {
     using System;
+#if NETFRAMEWORK
+    using System.Runtime.InteropServices;
+#endif
     using Newtonsoft.Json;
 
-    class BinaryConverter : JsonConverter
+    /// <summary>
+    /// Converts a binary value to and from a base 64 string value.
+    /// </summary>
+    class ReadOnlyMemoryConverter : JsonConverter
     {
         /// <summary>
         /// Writes the JSON representation of the object.
@@ -19,10 +25,14 @@
                 return;
             }
             var mem = (ReadOnlyMemory<byte>)value;
+            string base64;
+
 #if NETFRAMEWORK
-            var base64 = Convert.ToBase64String(mem.ToArray());
+            base64 = MemoryMarshal.TryGetArray(mem, out var bodySegment)
+                ? Convert.ToBase64String(bodySegment.Array, bodySegment.Offset, bodySegment.Count)
+                : Convert.ToBase64String(mem.ToArray());
 #else
-            var base64 = Convert.ToBase64String(mem.Span);
+        base64 = Convert.ToBase64String(mem.Span);
 #endif
 
             writer.WriteValue(base64);
