@@ -46,7 +46,7 @@
                     var result = batchOutcomeResponse[i];
 
                     operationMappings.TryGetValue(i, out var operation);
-                    operation = operation ?? ThrowOnConflictOperation.Instance;
+                    operation ??= ThrowOnConflictOperation.Instance;
 
                     if (result.IsSuccessStatusCode)
                     {
