@@ -89,7 +89,15 @@ jobs:
           $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
 
           echo "Creating CosmosDB database account $cosmosname (This can take awhile.)"
-          $acctDetails = az cosmosdb create --name $cosmosname --resource-group GitHubActions-RG --capabilities EnableServerless --tags Package=CosmosPersistence RunnerOS=${{ runner.os }} $dateTag | ConvertFrom-Json
+          $acctDetails = az cosmosdb create --name $cosmosname --locations regionName=$region --resource-group GitHubActions-RG --capabilities EnableServerless --tags Package=CosmosPersistence RunnerOS=${{ runner.os }} $dateTag | ConvertFrom-Json
+          
+          if(!$acctDetails || !$acctDetails.documentEndpoint)
+          {
+            echo "Account creation failed. $acctDetails"
+            echo "If Azure is reporting demand too high for this region, refer to documentation for COSMOS_ALLOWED_REGIONS secret and consider updating."
+            exit 1;
+          }
+          
           $documentEndpoint = $acctDetails.documentEndpoint
           echo "::add-mask::$documentEndpoint"
 
@@ -134,7 +142,10 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
+          echo "Deleting storage account ${{ steps.infra.outputs.storagename }}"
           $ignore = az storage account delete --resource-group GitHubActions-RG --name ${{ steps.infra.outputs.storagename }} --yes
+          
+          echo "Deleting Cosmos DB account ${{ steps.infra.outputs.cosmosname }}"
 
           # Use this once cosmosdb delete offers --no-wait argument, until then, it takes too long (~7m) and we use curl instead
           #$ignore = az cosmosdb delete --resource-group GitHubActions-RG --name ${{ steps.infra.outputs.cosmosname }} --yes
@@ -143,5 +154,5 @@ jobs:
           $credentials = '${{ secrets.AZURE_ACI_CREDENTIALS }}' | ConvertFrom-Json
           $token = curl -X POST -d "grant_type=client_credentials&client_id=$($credentials.clientId)&client_secret=$($credentials.clientSecret)&resource=https%3A%2F%2Fmanagement.azure.com%2F" https://login.microsoftonline.com/$($credentials.tenantId)/oauth2/token | ConvertFrom-Json
           $authHeader = "Authorization: Bearer $($token.access_token)"
-          $resourceUrl = "https://management.azure.com/subscriptions/${{ secrets.AZURE_AUTOMATEDTESTING_SUBSCRIPTION_ID }}/resourceGroups/GitHubActions-RG/providers/Microsoft.DocumentDB/databaseAccounts/${{ steps.setup-infrastructure.outputs.cosmosname }}?api-version=2021-04-15"
+          $resourceUrl = "https://management.azure.com/subscriptions/${{ secrets.AZURE_AUTOMATEDTESTING_SUBSCRIPTION_ID }}/resourceGroups/GitHubActions-RG/providers/Microsoft.DocumentDB/databaseAccounts/${{ steps.infra.outputs.cosmosname }}?api-version=2021-04-15"
           curl -X DELETE $resourceUrl -H $authHeader -H "Content-Type: application/json" --silent
