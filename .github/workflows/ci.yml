@@ -89,7 +89,15 @@ jobs:
           $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
 
           echo "Creating CosmosDB database account $cosmosname (This can take awhile.)"
-          $acctDetails = az cosmosdb create --name $cosmosname --resource-group GitHubActions-RG --capabilities EnableServerless --tags Package=CosmosPersistence RunnerOS=${{ runner.os }} $dateTag | ConvertFrom-Json
+          $acctDetails = az cosmosdb create --name $cosmosname --location regionName=$region --resource-group GitHubActions-RG --capabilities EnableServerless --tags Package=CosmosPersistence RunnerOS=${{ runner.os }} $dateTag | ConvertFrom-Json
+          
+          if(!$acctDetails || !$acctDetails.documentEndpoint)
+          {
+            echo "Account creation failed. $acctDetails"
+            echo "If Azure is reporting demand too high for this region, refer to documentation for COSMOS_ALLOWED_REGIONS secret and consider updating."
+            exit 1;
+          }
+          
           $documentEndpoint = $acctDetails.documentEndpoint
           echo "::add-mask::$documentEndpoint"
 
