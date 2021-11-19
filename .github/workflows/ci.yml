@@ -45,7 +45,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v1.8.2
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: 6.0.x
       - name: Setup .NET Core 3.1 runtime
         uses: actions/setup-dotnet@v1.8.2
         with:
@@ -63,96 +63,11 @@ jobs:
         uses: azure/login@v1.4.0
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
-      - name: Setup Infrastructure
-        id: infra
-        shell: pwsh
-        run: |
-          # Retrieve the Azure region in which this workflow is running. This region should be used to create addtional resources.
-          $hostInfo = curl -H Metadata:true "169.254.169.254/metadata/instance?api-version=2017-08-01" | ConvertFrom-Json
-          $region = $hostInfo.compute.location
-          echo "Actions agent running in Azure region $region"
-          
-          $allowedRegions = "${{ secrets.COSMOS_ALLOWED_REGIONS }}".split(',')
-          if (!$allowedRegions.contains($region))
-          {
-            echo "Region '$region' not currently allowed for Cosmos DB."
-            $randomIndex = Get-Random -Minimum 0 -Maximum $allowedRegions.length
-            $region = $allowedRegions[$randomIndex]
-            echo "Region randomly reset to $region"
-          }
-          
-          $rand = Get-Random
-          $cosmosname = "psw-cosmosdb-$($rand)"
-          $storagename = "pswtables$($rand)"
-          echo "::set-output name=cosmosname::$cosmosname"
-          echo "::set-output name=storagename::$storagename"
-          $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
-
-          echo "Creating CosmosDB database account $cosmosname (This can take awhile.)"
-          $acctDetails = az cosmosdb create --name $cosmosname --locations regionName=$region --resource-group GitHubActions-RG --capabilities EnableServerless --tags Package=CosmosPersistence RunnerOS=${{ runner.os }} $dateTag | ConvertFrom-Json
-          
-          if(!$acctDetails || !$acctDetails.documentEndpoint)
-          {
-            echo "Account creation failed. $acctDetails"
-            echo "If Azure is reporting demand too high for this region, refer to documentation for COSMOS_ALLOWED_REGIONS secret and consider updating."
-            exit 1;
-          }
-          
-          $documentEndpoint = $acctDetails.documentEndpoint
-          echo "::add-mask::$documentEndpoint"
-
-          echo "Getting CosmosDB access keys"
-          $keyDetails = az cosmosdb keys list --name $cosmosname --resource-group GitHubActions-RG | ConvertFrom-Json
-          $cosmosKey = $keyDetails.primaryMasterKey
-          echo "::add-mask::$cosmosKey"
-
-          echo "Creating CosmosDB SQL Database "
-          $dbDetails = az cosmosdb sql database create --name CosmosDBPersistence --account-name $cosmosname --resource-group GitHubActions-RG | ConvertFrom-Json
-
-          echo "Creating storage account for NServiceBus.Persistence.CosmosDB.AzureStorageSagaExporter.AcceptanceTests (This can take awhile.)"
-          $storageDetails = az storage account create --name $storagename --resource-group GitHubActions-RG --sku Standard_LRS | ConvertFrom-Json
-
-          echo "Getting storage account keys"
-          $storageKeyDetails = az storage account keys list --account-name $storagename --resource-group GitHubActions-RG | ConvertFrom-Json
-          $storageKey = $storageKeyDetails[0].value
-          echo "::add-mask::$storageKey"
-          $storageConnectString = "DefaultEndpointsProtocol=https;AccountName=$storagename;AccountKey=$storageKey"
-
-          echo "Tagging storage account"
-          $ignore = az tag create --resource-id $storageDetails.id --tags Package=CosmosPersistence RunnerOS=${{ runner.os }} $dateTag
-
-          echo "CosmosDBPersistence_ConnectionString=AccountEndpoint=$($documentEndpoint);AccountKey=$($cosmosKey);" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
-          echo "AzureStoragePersistence_ConnectionString=$storageConnectString" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
-
-          # Extra details for teardown
-          echo "::add-mask::$($acctDetails.id)"
-          echo "::set-output name=comsosAccountId::$($acctDetails.id)"
-      - name: Run Windows tests
-        if: runner.os == 'Windows'
-        # -m:1 parameter prevents test projects from being run in parallel - there are some tests shared amongst multiple projects
-        run: dotnet test src --configuration Release --no-build --logger "GitHubActions;report-warnings=false" -m:1
-      - name: Run Linux tests
-        if: runner.os == 'Linux'
-        # -m:1 parameter prevents test projects from being run in parallel - there are some tests shared amongst multiple projects
-        run: |
-          dotnet test src --configuration Release --no-build --framework netcoreapp3.1 --logger "GitHubActions;report-warnings=false" -m:1
-          dotnet test src --configuration Release --no-build --framework net5.0 --logger "GitHubActions;report-warnings=false" -m:1
-      - name: Teardown infrastructure
-        if: ${{ always() }}
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          echo "Deleting storage account ${{ steps.infra.outputs.storagename }}"
-          $ignore = az storage account delete --resource-group GitHubActions-RG --name ${{ steps.infra.outputs.storagename }} --yes
-          
-          echo "Deleting Cosmos DB account ${{ steps.infra.outputs.cosmosname }}"
-
-          # Use this once cosmosdb delete offers --no-wait argument, until then, it takes too long (~7m) and we use curl instead
-          #$ignore = az cosmosdb delete --resource-group GitHubActions-RG --name ${{ steps.infra.outputs.cosmosname }} --yes
-
-          # curl-based method
-          $credentials = '${{ secrets.AZURE_ACI_CREDENTIALS }}' | ConvertFrom-Json
-          $token = curl -X POST -d "grant_type=client_credentials&client_id=$($credentials.clientId)&client_secret=$($credentials.clientSecret)&resource=https%3A%2F%2Fmanagement.azure.com%2F" https://login.microsoftonline.com/$($credentials.tenantId)/oauth2/token | ConvertFrom-Json
-          $authHeader = "Authorization: Bearer $($token.access_token)"
-          $resourceUrl = "https://management.azure.com/subscriptions/${{ secrets.AZURE_AUTOMATEDTESTING_SUBSCRIPTION_ID }}/resourceGroups/GitHubActions-RG/providers/Microsoft.DocumentDB/databaseAccounts/${{ steps.infra.outputs.cosmosname }}?api-version=2021-04-15"
-          curl -X DELETE $resourceUrl -H $authHeader -H "Content-Type: application/json" --silent
+      - name: Setup Cosmos DB
+        uses: Particular/setup-cosmosdb-action@v1.0.0
+        with:
+          connection-string-name: CosmosDBPersistence_ConnectionString
+          azure-credentials: ${{ secrets.AZURE_ACI_CREDENTIALS }}
+          tag: CosmosPersistence
+      - name: Run tests
+        uses: Particular/run-tests-action@v1.0.0
