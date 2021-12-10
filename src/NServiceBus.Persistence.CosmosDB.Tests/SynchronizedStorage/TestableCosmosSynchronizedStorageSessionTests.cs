@@ -77,6 +77,11 @@
                 throw new System.NotImplementedException();
             }
 
+            public override TransactionalBatch PatchItem(string id, IReadOnlyList<PatchOperation> patchOperations, TransactionalBatchPatchItemRequestOptions requestOptions = null)
+            {
+                throw new System.NotImplementedException();
+            }
+
             public override Task<TransactionalBatchResponse> ExecuteAsync(CancellationToken cancellationToken = new CancellationToken())
             {
                 throw new System.NotImplementedException();
