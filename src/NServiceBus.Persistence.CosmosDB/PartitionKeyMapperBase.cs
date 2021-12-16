@@ -17,7 +17,8 @@
         /// <returns></returns>
         public bool TryMap(object message, out PartitionKey? partitionKey)
         {
-            return TryMapCore(message, out partitionKey);
+            partitionKey = null;
+            return false;
         }
 
         /// <summary>
@@ -47,6 +48,24 @@
         /// <param name="extractor"></param>
         /// <typeparam name="TMessage"></typeparam>
         protected void ExtractFromMessage<TMessage>(Expression<Func<TMessage, string>> extractor)
+        {
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="extractor"></param>
+        /// <typeparam name="TMessage"></typeparam>
+        protected void ExtractFromMessage<TMessage>(Expression<Func<TMessage, double>> extractor)
+        {
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="extractor"></param>
+        /// <typeparam name="TMessage"></typeparam>
+        protected void ExtractFromMessage<TMessage>(Expression<Func<TMessage, bool>> extractor)
         {
         }
 

@@ -12,10 +12,20 @@
         {
             const string PartitionKeyMapperBaseFullName = "NServiceBus.Persistence.CosmosDB.PartitionKeyMapperBase";
             readonly Compilation compilation;
+            readonly PartitionKeyMapperSourceGenerationContext sourceGenerationContext;
 
-            public Parser(Compilation compilation)
+            static DiagnosticDescriptor ContextClassesMustBePartial { get; } = new DiagnosticDescriptor(
+                id: "ID",
+                title: "",
+                messageFormat: "",
+                category: "Category",
+                defaultSeverity: DiagnosticSeverity.Warning,
+                isEnabledByDefault: true);
+
+            public Parser(Compilation compilation, in PartitionKeyMapperSourceGenerationContext sourceGenerationContext)
             {
                 this.compilation = compilation;
+                this.sourceGenerationContext = sourceGenerationContext;
             }
 
             public SourceGenerationSpec? GetGenerationSpec(IEnumerable<ClassDeclarationSyntax> classDeclarationSyntaxList)
@@ -37,16 +47,27 @@
                         continue;
                     }
 
-                    var visitor = new Walker();
+                    var visitor = new PropertyAndHeaderMappingSyntaxWalker();
                     visitor.Visit(classDeclarationSyntax);
 
-                    return null;
+                    var contextTypeSymbol = compilationSemanticModel.GetDeclaredSymbol(classDeclarationSyntax);
+
+                    Location contextLocation = contextTypeSymbol!.Locations.Length > 0 ? contextTypeSymbol.Locations[0] : Location.None;
+
+                    if (!TryGetClassDeclarationList(contextTypeSymbol, out string? classDeclaration))
+                    {
+                        // Class or one of its containing types is not partial so we can't add to it.
+                        sourceGenerationContext.ReportDiagnostic(Diagnostic.Create(ContextClassesMustBePartial, contextLocation, new string[] { contextTypeSymbol.Name }));
+                        continue;
+                    }
+
+                    return new SourceGenerationSpec(classDeclaration, contextTypeSymbol, contextLocation);
                 }
 
                 return null;
             }
 
-            class Walker : CSharpSyntaxWalker
+            class PropertyAndHeaderMappingSyntaxWalker : CSharpSyntaxWalker
             {
                 public List<(string typeName, string propertyName)> TypeAndProperty { get; } =
                     new List<(string typeName, string propertyName)>();
@@ -82,6 +103,52 @@
                         }
                     }
                 }
+            }
+
+            static bool TryGetClassDeclarationList(INamedTypeSymbol typeSymbol, out string? classDeclaration)
+            {
+                INamedTypeSymbol currentSymbol = typeSymbol;
+                classDeclaration = null;
+
+                while (currentSymbol != null)
+                {
+                    if (currentSymbol.DeclaringSyntaxReferences.First().GetSyntax() is ClassDeclarationSyntax classDeclarationSyntax)
+                    {
+                        SyntaxTokenList tokenList = classDeclarationSyntax.Modifiers;
+                        int tokenCount = tokenList.Count;
+
+                        bool isPartial = false;
+
+                        string[] declarationElements = new string[tokenCount + 2];
+
+                        for (int i = 0; i < tokenCount; i++)
+                        {
+                            SyntaxToken token = tokenList[i];
+                            declarationElements[i] = token.Text;
+
+                            if (token.IsKind(SyntaxKind.PartialKeyword))
+                            {
+                                isPartial = true;
+                            }
+                        }
+
+                        if (!isPartial)
+                        {
+                            classDeclaration = null;
+                            return false;
+                        }
+
+                        declarationElements[tokenCount] = "class";
+                        declarationElements[tokenCount + 1] = currentSymbol.Name;
+
+                        classDeclaration = string.Join(" ", declarationElements);
+                        return true;
+                    }
+
+                    currentSymbol = currentSymbol.ContainingType;
+                }
+
+                return true;
             }
 
             // Returns true if a given type derives directly from PartitionKeyMapperBase.
