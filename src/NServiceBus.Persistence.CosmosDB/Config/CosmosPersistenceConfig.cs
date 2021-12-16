@@ -69,5 +69,6 @@
         }
 
         //TODO: Add a setting to enable pessimistic locking - with a overridable timeout TimeSpan
+        // https://github.com/Particular/NServiceBus.RavenDB/blob/master/src/NServiceBus.RavenDB/SagaPersister/SagaPersistenceConfiguration.cs#L22
     }
 }

@@ -104,10 +104,11 @@
 
                 var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(container, storageSession, context, sagaStream, responseMessage);
+                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(container, context, sagaStream, responseMessage);
             }
         }
 
+        //TODO: change parameters, you will need access to Container
         TSagaData ReadSagaFromStream<TSagaData>(Container container, ContextBag context, Stream sagaStream, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
         {
             using (sagaStream)
