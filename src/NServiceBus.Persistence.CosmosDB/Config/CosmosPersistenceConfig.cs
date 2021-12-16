@@ -67,5 +67,7 @@
 
             persistenceExtensions.GetSettings().Set(SettingsKeys.EnableMigrationMode, true);
         }
+
+        //TODO: Add a setting to enable pessimistic locking - with a overridable timeout TimeSpan
     }
 }

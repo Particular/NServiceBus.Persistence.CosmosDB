@@ -13,6 +13,8 @@
 
     class SagaPersister : ISagaPersister
     {
+
+        //TODO: pass in the pessimistic locking settings
         public SagaPersister(JsonSerializer serializer, bool migrationModeEnabled)
         {
             this.serializer = serializer;
@@ -81,7 +83,7 @@
                     }
                 }
 
-                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
+                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(container, context, sagaStream, responseMessage);
             }
         }
 
@@ -102,17 +104,24 @@
 
                 var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
+                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(container, storageSession, context, sagaStream, responseMessage);
             }
         }
 
-        TSagaData ReadSagaFromStream<TSagaData>(ContextBag context, Stream sagaStream, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
+        TSagaData ReadSagaFromStream<TSagaData>(Container container, ContextBag context, Stream sagaStream, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
         {
             using (sagaStream)
             using (var streamReader = new StreamReader(sagaStream))
             using (var jsonReader = new JsonTextReader(streamReader))
             {
+                //change to deserialize to JOBject instead if pessimistic locking is enabled?
                 var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
+
+                // if pessimistic locking is turned on
+                // look at the saga metadata in the JObject, if the lease time is not in the past throw an exception
+                // update the saga record (adding to the metadata object that we add. Use the current time + lock time as the lease value (LeaseUntil) 
+                var response = container.ReplaceItemStreamAsync(null, "", PartitionKey.None, new ItemRequestOptions { IfMatchEtag = responseMessage.Headers.ETag }).GetAwaiter().GetResult();
+
 
                 context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
 
