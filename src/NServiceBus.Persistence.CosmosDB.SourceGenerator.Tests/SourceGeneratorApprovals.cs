@@ -1,47 +1,50 @@
-﻿namespace NServiceBus.AzureFunctions.SourceGenerator.Tests
+﻿namespace NServiceBus.Persistence.CosmosDB.SourceGenerator.Tests
 {
     using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
+    using Microsoft.Azure.Cosmos;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using NUnit.Framework;
     using Particular.Approvals;
-    using Persistence.CosmosDB.SourceGenerator;
+    using SourceGenerator;
 
     [TestFixture]
     public class SourceGeneratorApprovals
     {
         [Test]
-        public void UsingNamespace()
+        public void Playground()
         {
             var source =
-@"using NServiceBus;
+@"using System;
+using NServiceBus.Persistence.CosmosDB;
 
 namespace Foo
 {
-    public class Startup
+    public interface IProvideOrderId
     {
-        public const string EndpointName = ""endpoint"";
+        public Guid OrderId { get; } 
     }
-}";
-            var (output, _) = GetGeneratedOutput(source);
-
-            Approver.Verify(output);
-        }
-
-        [Test]
-        public void UsingFullyQualifiedAttributeName()
-        {
-            var source =
-@"
-
-namespace Foo
-{
-    public class Startup
+    public class OrderAccepted : IProvideOrderId
     {
-        public const string EndpointName = ""endpoint"";
+         public Guid OrderId { get; set; } 
+    }
+
+    public class OrderDeclined
+    {
+         public string OrderId { get; set; } 
+    }
+
+    internal partial class PartitionKeyMapper : PartitionKeyMapperBase
+    {
+        public PartitionKeyMapper()
+        {
+            ExtractFromMessage<IProvideOrderId>(x => x.OrderId);
+            ExtractFromMessage<OrderDeclined>(x => x.OrderId);
+            ExtractFromHeader(""HeaderName"");
+        }
     }
 }";
             var (output, _) = GetGeneratedOutput(source);
@@ -73,14 +76,14 @@ namespace Foo
                 syntaxTree
             }, references);
 
-            var generator = new PartitionKeyMappingGenerator();
+            var generator = new PartitionKeyMappingSourceGenerator();
 
             var driver = CSharpGeneratorDriver.Create(generator);
             driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generateDiagnostics);
 
             // add necessary references for the generated trigger
-            // references.Add(MetadataReference.CreateFromFile(typeof(ServiceBusTriggerAttribute).Assembly.Location));
-            // references.Add(MetadataReference.CreateFromFile(typeof(ExecutionContext).Assembly.Location));
+            references.Add(MetadataReference.CreateFromFile(typeof(PartitionKeyMapperBase).Assembly.Location));
+            references.Add(MetadataReference.CreateFromFile(typeof(PartitionKey).Assembly.Location));
             // references.Add(MetadataReference.CreateFromFile(typeof(Message).Assembly.Location));
             // references.Add(MetadataReference.CreateFromFile(typeof(ILogger).Assembly.Location));
             Compile(outputCompilation.SyntaxTrees, references);
