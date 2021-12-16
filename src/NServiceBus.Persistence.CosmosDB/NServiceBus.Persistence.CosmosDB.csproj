@@ -8,9 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.SourceGenerator\NServiceBus.Persistence.CosmosDB.SourceGenerator.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Particular.Packaging" Version="1.4.0" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[8.0.0-alpha.1900, 9.0.0)" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="[3.23.0, 4)" />
   </ItemGroup>
+
+  <Target Name="AddSourceGeneratorToPackage" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <None Include="..\NServiceBus.Persistence.CosmosDB.SourceGenerator\bin\$(Configuration)\**\NServiceBus.Persistence.CosmosDB.SourceGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs/NServiceBus.Persistence.CosmosDB.SourceGenerator.dll" />
+    </ItemGroup>
+  </Target>
 
 </Project>
