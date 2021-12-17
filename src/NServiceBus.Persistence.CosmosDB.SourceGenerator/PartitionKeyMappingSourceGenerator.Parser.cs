@@ -61,7 +61,21 @@
                         continue;
                     }
 
-                    return new SourceGenerationSpec(classDeclaration, contextTypeSymbol, contextLocation);
+                    var usings = new HashSet<string>();
+                    foreach (var usingDirectiveSyntax in compilationUnitSyntax.Usings)
+                    {
+                        usings.Add(usingDirectiveSyntax.ToString());
+                    }
+                    var namespaceDeclarationSyntax = classDeclarationSyntax.FirstAncestorOrSelf<NamespaceDeclarationSyntax>();
+                    if (namespaceDeclarationSyntax != null)
+                    {
+                        foreach (var usingDirectiveSyntax in namespaceDeclarationSyntax.Usings)
+                        {
+                            usings.Add(usingDirectiveSyntax.ToString());
+                        }
+                    }
+
+                    return new SourceGenerationSpec(classDeclaration, usings, contextTypeSymbol, contextLocation, visitor.TypeName);
                 }
 
                 return null;
@@ -69,10 +83,7 @@
 
             class PropertyAndHeaderMappingSyntaxWalker : CSharpSyntaxWalker
             {
-                public List<(string typeName, string propertyName)> TypeAndProperty { get; } =
-                    new List<(string typeName, string propertyName)>();
-
-                public HashSet<string> HeaderNames { get; } = new HashSet<string>();
+                public List<string> TypeName { get; } = new List<string>();
 
                 public override void VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
                 {
@@ -84,22 +95,11 @@
 
                 public override void VisitInvocationExpression(InvocationExpressionSyntax node)
                 {
-                    if (node.Expression is GenericNameSyntax nameSyntax && nameSyntax.TypeArgumentList.Arguments.Count == 1 && nameSyntax.Identifier.ValueText.StartsWith("ExtractFromMessage"))
+                    if (node.Expression is GenericNameSyntax { TypeArgumentList: { Arguments: { Count: 1 or 2 } } } nameSyntax && nameSyntax.Identifier.ValueText.StartsWith("ExtractFromMessage"))
                     {
-                        if (node.ArgumentList.Arguments[0].Expression is SimpleLambdaExpressionSyntax { Body: MemberAccessExpressionSyntax syntax })
+                        if (node.ArgumentList.Arguments[0].Expression is SimpleLambdaExpressionSyntax)
                         {
-                            TypeAndProperty.Add((nameSyntax.TypeArgumentList.Arguments[0].ToString(), syntax.Name.Identifier.ValueText));
-                        }
-
-                        return;
-                    }
-
-                    if (node.Expression is IdentifierNameSyntax identifierNameSyntax && identifierNameSyntax.Identifier.ValueText.StartsWith("ExtractFromHeader"))
-                    {
-                        if (node.ArgumentList.Arguments[0]
-                                .Expression is LiteralExpressionSyntax literalExpressionSyntax)
-                        {
-                            HeaderNames.Add(literalExpressionSyntax.ToString());
+                            TypeName.Add(nameSyntax.TypeArgumentList.Arguments[0].ToString());
                         }
                     }
                 }

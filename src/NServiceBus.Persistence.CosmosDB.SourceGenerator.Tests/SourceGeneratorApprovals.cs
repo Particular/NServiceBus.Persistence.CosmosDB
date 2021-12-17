@@ -15,46 +15,160 @@
     public class SourceGeneratorApprovals
     {
         [Test]
-        public void Playground()
+        public void SimpleMappingToTypeInSameNamespace()
         {
             var source =
-@"using System;
-using NServiceBus.Persistence.CosmosDB;
-
-namespace Foo
+@"
+namespace Some.Complex
 {
-    public interface IProvideOrderId
-    {
-        public Guid OrderId { get; } 
-    }
-    public class OrderAccepted : IProvideOrderId
-    {
-         public Guid OrderId { get; set; } 
-    }
-
-    public class OrderDeclined
-    {
-         public string OrderId { get; set; } 
-    }
+    using System;
+    using Microsoft.Azure.Cosmos;
+    using NServiceBus.Persistence.CosmosDB;
 
     internal partial class PartitionKeyMapper : PartitionKeyMapperBase
     {
         public PartitionKeyMapper()
         {
-            ExtractFromMessage<IProvideOrderId>(x => x.OrderId);
-            ExtractFromMessage<OrderDeclined>(x => x.OrderId);
-            ExtractFromHeader(""HeaderName"");
+            ExtractFromMessage<IProvideOrderId>(x => new PartitionKey(x.OrderId));
         }
     }
-}";
+
+    public interface IProvideOrderId
+    {
+        string OrderId { get; }
+    }
+    public class OrderAccepted : IProvideOrderId
+    {
+        public string OrderId { get; set; }
+    }
+}
+";
             var (output, _) = GetGeneratedOutput(source);
 
             Approver.Verify(output);
         }
 
-        [OneTimeSetUp]
-        public void Init()
+        [Test]
+        public void SimpleMappingToTypeInDifferentNamespace()
         {
+            var source =
+                @"
+namespace Some.Complex
+{
+    using System;
+    using Microsoft.Azure.Cosmos;
+    using NServiceBus.Persistence.CosmosDB;
+    using Some.Other.Namespace;
+
+    internal partial class PartitionKeyMapper : PartitionKeyMapperBase
+    {
+        public PartitionKeyMapper()
+        {
+            ExtractFromMessage<IProvideOrderId>(x => new PartitionKey(x.OrderId));
+        }
+    }
+}
+namespace Some.Other.Namespace
+{
+    public interface IProvideOrderId
+    {
+        string OrderId { get; }
+    }
+    public class OrderAccepted : IProvideOrderId
+    {
+        public string OrderId { get; set; }
+    }
+}
+";
+            var (output, _) = GetGeneratedOutput(source);
+
+            Approver.Verify(output);
+        }
+
+        [Test]
+        public void MultipleMappingsInDifferentNamespace()
+        {
+            var source =
+                @"
+namespace Some.Complex
+{
+    using System;
+    using Microsoft.Azure.Cosmos;
+    using NServiceBus.Persistence.CosmosDB;
+    using Some.Other.Namespace;
+    using Yet.Another.Namespace;
+
+    internal partial class PartitionKeyMapper : PartitionKeyMapperBase
+    {
+        public PartitionKeyMapper()
+        {
+            ExtractFromMessage<IProvideOrderId>(x => new PartitionKey(x.OrderId));
+            ExtractFromMessage<OrderDeclined>(x => new PartitionKey(x.OrderId));
+        }
+    }
+}
+namespace Some.Other.Namespace
+{
+    public interface IProvideOrderId
+    {
+        string OrderId { get; }
+    }
+    public class OrderAccepted : IProvideOrderId
+    {
+        public string OrderId { get; set; }
+    }
+}
+namespace Yet.Another.Namespace
+{
+    using Some.Other.Namespace;
+
+    public class OrderDeclined : IProvideOrderId
+    {
+        public string OrderId { get; set; }
+    }
+}
+";
+            var (output, _) = GetGeneratedOutput(source);
+
+            Approver.Verify(output);
+        }
+
+        [Test]
+        public void SimpleMappingToTypeInDifferentNamespaceWithUsingOutside()
+        {
+            var source =
+                @"
+using Some.Other.Namespace;
+
+namespace Some.Complex
+{
+    using System;
+    using Microsoft.Azure.Cosmos;
+    using NServiceBus.Persistence.CosmosDB;
+    
+    internal partial class PartitionKeyMapper : PartitionKeyMapperBase
+    {
+        public PartitionKeyMapper()
+        {
+            ExtractFromMessage<IProvideOrderId>(x => new PartitionKey(x.OrderId));
+        }
+    }
+}
+namespace Some.Other.Namespace
+{
+    public interface IProvideOrderId
+    {
+        string OrderId { get; }
+    }
+    public class OrderAccepted : IProvideOrderId
+    {
+        public string OrderId { get; set; }
+    }
+}
+";
+            var (output, _) = GetGeneratedOutput(source);
+
+            Approver.Verify(output);
         }
 
         static (string output, ImmutableArray<Diagnostic> diagnostics) GetGeneratedOutput(string source, bool suppressGeneratedDiagnosticsErrors = false)
