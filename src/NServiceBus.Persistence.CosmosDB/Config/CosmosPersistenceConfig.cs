@@ -74,5 +74,54 @@
         /// </summary>
         public static SagaPersistenceConfiguration Sagas(this PersistenceExtensions<CosmosPersistence> persistenceExtensions) =>
             persistenceExtensions.GetSettings().GetOrCreate<SagaPersistenceConfiguration>();
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="persistenceExtensions"></param>
+        /// <param name="extractor"></param>
+        /// <returns></returns>
+        // TODO: Better name? Nesting on some type?
+        public static PersistenceExtensions<CosmosPersistence> ExtractWith(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, TransactionInformationExtractor extractor)
+        {
+            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+            Guard.AgainstNull(nameof(extractor), extractor);
+
+            persistenceExtensions.GetSettings().Set<IExtractTransactionInformationFromHeaders>(extractor);
+            persistenceExtensions.GetSettings().Set<IExtractTransactionInformationFromMessages>(extractor);
+            return persistenceExtensions;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="persistenceExtensions"></param>
+        /// <param name="extractor"></param>
+        /// <returns></returns>
+        // TODO: Better name? Nesting on some type?
+        public static PersistenceExtensions<CosmosPersistence> ExtractFromHeaders(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, IExtractTransactionInformationFromHeaders extractor)
+        {
+            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+            Guard.AgainstNull(nameof(extractor), extractor);
+
+            persistenceExtensions.GetSettings().Set(extractor);
+            return persistenceExtensions;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="persistenceExtensions"></param>
+        /// <param name="extractor"></param>
+        /// <returns></returns>
+        // TODO: Better name? Nesting on some type?
+        public static PersistenceExtensions<CosmosPersistence> ExtractFromMessages(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, IExtractTransactionInformationFromMessages extractor)
+        {
+            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+            Guard.AgainstNull(nameof(extractor), extractor);
+
+            persistenceExtensions.GetSettings().Set(extractor);
+            return persistenceExtensions;
+        }
     }
 }

@@ -27,6 +27,9 @@ namespace NServiceBus
             " 3.0.0.", true)]
         public static void EnableMigrationMode(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
         public static NServiceBus.Persistence.CosmosDB.SagaPersistenceConfiguration Sagas(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> ExtractFromHeaders(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, NServiceBus.Persistence.CosmosDB.IExtractTransactionInformationFromHeaders extractor) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> ExtractFromMessages(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, NServiceBus.Persistence.CosmosDB.IExtractTransactionInformationFromMessages extractor) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> ExtractWith(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, NServiceBus.Persistence.CosmosDB.TransactionInformationExtractor extractor) { }
     }
     public interface ICosmosStorageSession
     {
@@ -48,6 +51,14 @@ namespace NServiceBus
 }
 namespace NServiceBus.Persistence.CosmosDB
 {
+    public interface IExtractTransactionInformationFromHeaders
+    {
+        bool TryExtract(System.Collections.Generic.IReadOnlyDictionary<string, string> headers, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey, out NServiceBus.ContainerInformation? containerInformation);
+    }
+    public interface IExtractTransactionInformationFromMessages
+    {
+        bool TryExtract(object message, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey, out NServiceBus.ContainerInformation? containerInformation);
+    }
     public interface IProvideCosmosClient
     {
         Microsoft.Azure.Cosmos.CosmosClient Client { get; }
@@ -55,6 +66,15 @@ namespace NServiceBus.Persistence.CosmosDB
     public sealed class LogicalOutboxBehavior : NServiceBus.Pipeline.IBehavior, NServiceBus.Pipeline.IBehavior<NServiceBus.Pipeline.IIncomingLogicalMessageContext, NServiceBus.Pipeline.IIncomingLogicalMessageContext>
     {
         public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
+    }
+    public class TransactionInformationExtractor : NServiceBus.Persistence.CosmosDB.IExtractTransactionInformationFromHeaders, NServiceBus.Persistence.CosmosDB.IExtractTransactionInformationFromMessages
+    {
+        public TransactionInformationExtractor() { }
+        public void ExtractFromHeader(string headerKey, NServiceBus.ContainerInformation? containerInformation = default) { }
+        public void ExtractFromHeader(string headerKey, System.Func<string, string> converter, NServiceBus.ContainerInformation? containerInformation = default) { }
+        public void ExtractFromHeader<TState>(string headerKey, System.Func<string, TState, string> converter, NServiceBus.ContainerInformation? containerInformation = default, TState state = default) { }
+        public void ExtractFromMessage<TMessage>(System.Func<TMessage, Microsoft.Azure.Cosmos.PartitionKey> extractor, NServiceBus.ContainerInformation? containerInformation = default) { }
+        public void ExtractFromMessage<TMessage, TState>(System.Func<TMessage, TState, Microsoft.Azure.Cosmos.PartitionKey> extractor, NServiceBus.ContainerInformation? containerInformation = default, TState state = default) { }
     }
     public class PessimisticLockingConfiguration
     {
