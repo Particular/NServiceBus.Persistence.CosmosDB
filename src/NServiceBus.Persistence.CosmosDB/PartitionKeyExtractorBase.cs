@@ -9,13 +9,11 @@
     /// </summary>
     public abstract class PartitionKeyExtractorBase
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        protected IDictionary<Type, (Func<object, object, PartitionKey>, ContainerInformation?, object)> Extractors { get; } =
-            new Dictionary<Type, (Func<object, object, PartitionKey>, ContainerInformation?, object)>();
+        readonly Dictionary<Type, IExtractPartitionKeyFromMessage> partitionKeyFromMessageExtractorsByTypeName =
+            new Dictionary<Type, IExtractPartitionKeyFromMessage>();
 
-        readonly Dictionary<string, IExtractHeader> headerMappers = new Dictionary<string, IExtractHeader>();
+        readonly Dictionary<string, IExtractPartitionKeyFromHeader> partitionKeyFromHeaderExtractorsByHeaderName =
+            new Dictionary<string, IExtractPartitionKeyFromHeader>();
 
         /// <summary>
         /// 
@@ -48,7 +46,20 @@
         /// <param name="containerInformation"></param>
         /// <typeparam name="TMessage"></typeparam>
         protected void ExtractFromMessage<TMessage>(Func<TMessage, PartitionKey> extractor, ContainerInformation? containerInformation = default)
-            => Extractors.Add(typeof(TMessage), ((msg, state) => ((Func<TMessage, PartitionKey>)state)((TMessage)msg), containerInformation, extractor));
+            // TODO: When moving to CSharp 9 these can be static lambdas
+            => partitionKeyFromMessageExtractorsByTypeName.Add(typeof(TMessage), new ExtractPartitionKeyFromMessage<TMessage, Func<TMessage, PartitionKey>>((msg, invoker) => invoker(msg), containerInformation, extractor));
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="extractor"></param>
+        /// <param name="containerInformation"></param>
+        /// <param name="state"></param>
+        /// <typeparam name="TMessage"></typeparam>
+        /// <typeparam name="TState"></typeparam>
+        protected void ExtractFromMessage<TMessage, TState>(Func<TMessage, TState, PartitionKey> extractor, ContainerInformation? containerInformation = default, TState state = default)
+            // TODO: Discuss if should not add but overwrite?
+            => partitionKeyFromMessageExtractorsByTypeName.Add(typeof(TMessage), new ExtractPartitionKeyFromMessage<TMessage, TState>(extractor, containerInformation, state));
 
         /// <summary>
         /// 
@@ -71,9 +82,9 @@
         {
             partitionKey = null;
             containerInformation = null;
-            foreach (var mapper in headerMappers.Values)
+            foreach (var mapper in partitionKeyFromHeaderExtractorsByHeaderName.Values)
             {
-                if (mapper.TryMap(headers, out partitionKey, out containerInformation))
+                if (mapper.TryExtract(headers, out partitionKey, out containerInformation))
                 {
                     return true;
                 }
@@ -89,6 +100,7 @@
         /// <param name="containerInformation"></param>
         protected void ExtractFromHeader(string headerName, Func<string, string> converter,
             ContainerInformation? containerInformation = default) =>
+            // TODO: When moving to CSharp 9 these can be static lambdas
             ExtractFromHeader(headerName, (headerValue, invoker) => invoker(headerValue), containerInformation, converter);
 
         /// <summary>
@@ -102,7 +114,7 @@
         protected void ExtractFromHeader<TState>(string headerName, Func<string, TState, string> converter,
             ContainerInformation? containerInformation = default, TState state = default) =>
             // TODO: Discuss if should not add but overwrite?
-            headerMappers.Add(headerName, new ExtractHeader<TState>(headerName, converter, containerInformation, state));
+            partitionKeyFromHeaderExtractorsByHeaderName.Add(headerName, new ExtractPartitionKeyFromFromHeader<TState>(headerName, converter, containerInformation, state));
 
         /// <summary>
         /// 
@@ -110,25 +122,55 @@
         /// <param name="headerName"></param>
         /// <param name="containerInformation"></param>
         protected void ExtractFromHeader(string headerName, ContainerInformation? containerInformation = default) =>
+            // TODO: When moving to CSharp 9 these can be static lambdas
             ExtractFromHeader<object>(headerName, (headerValue, _) => headerValue, containerInformation);
 
-        interface IMapMessages
+        interface IExtractPartitionKeyFromMessage
         {
+            bool TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation);
         }
 
-        interface IExtractHeader
+        sealed class ExtractPartitionKeyFromMessage<TMessage, TState> : IExtractPartitionKeyFromMessage
         {
-            bool TryMap(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation);
+            readonly Func<TMessage, TState, PartitionKey> extractor;
+            readonly ContainerInformation? container;
+            readonly TState state;
+
+            public ExtractPartitionKeyFromMessage(Func<TMessage, TState, PartitionKey> extractor, ContainerInformation? container, TState state = default)
+            {
+                this.state = state;
+                this.container = container;
+                this.extractor = extractor;
+            }
+
+            public bool TryExtract(object message, out PartitionKey? partitionKey,
+                out ContainerInformation? containerInformation)
+            {
+                partitionKey = null;
+                containerInformation = null;
+                if (message is TMessage typedMessage)
+                {
+                    partitionKey = extractor(typedMessage, state);
+                    containerInformation = container;
+                    return true;
+                }
+                return false;
+            }
         }
 
-        sealed class ExtractHeader<TState> : IExtractHeader
+        interface IExtractPartitionKeyFromHeader
+        {
+            bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation);
+        }
+
+        sealed class ExtractPartitionKeyFromFromHeader<TState> : IExtractPartitionKeyFromHeader
         {
             readonly Func<string, TState, string> converter;
             readonly ContainerInformation? container;
             readonly TState state;
             readonly string headerName;
 
-            public ExtractHeader(string headerName, Func<string, TState, string> converter, ContainerInformation? container, TState state = default)
+            public ExtractPartitionKeyFromFromHeader(string headerName, Func<string, TState, string> converter, ContainerInformation? container, TState state = default)
             {
                 this.headerName = headerName;
                 this.state = state;
@@ -136,7 +178,7 @@
                 this.converter = converter;
             }
 
-            public bool TryMap(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+            public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
             {
                 partitionKey = null;
                 containerInformation = null;
