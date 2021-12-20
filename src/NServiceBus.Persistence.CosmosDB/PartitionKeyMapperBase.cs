@@ -15,11 +15,7 @@
         protected IDictionary<Type, (Func<object, object, PartitionKey>, ContainerInformation?, object)> Extractors { get; } =
             new Dictionary<Type, (Func<object, object, PartitionKey>, ContainerInformation?, object)>();
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected IDictionary<string, (Func<string, string>, ContainerInformation?)> HeaderKeys { get; } =
-            new Dictionary<string, (Func<string, string>, ContainerInformation?)>();
+        readonly Dictionary<string, IMapHeaders> headerMappers = new Dictionary<string, IMapHeaders>();
 
         /// <summary>
         /// 
@@ -75,13 +71,10 @@
         {
             partitionKey = null;
             containerInformation = null;
-            foreach (var headerKey in HeaderKeys)
+            foreach (var mapper in headerMappers.Values)
             {
-                if (headers.TryGetValue(headerKey.Key, out var headerValue))
+                if (mapper.Map(headers, out partitionKey, out containerInformation))
                 {
-                    var (invoker, container) = headerKey.Value;
-                    partitionKey = new PartitionKey(invoker(headerValue));
-                    containerInformation = container;
                     return true;
                 }
             }
@@ -96,8 +89,20 @@
         /// <param name="containerInformation"></param>
         protected void ExtractFromHeader(string headerName, Func<string, string> converter,
             ContainerInformation? containerInformation = default) =>
+            ExtractFromHeader(headerName, (headerValue, invoker) => invoker(headerValue), containerInformation, converter);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="headerName"></param>
+        /// <param name="converter"></param>
+        /// <param name="containerInformation"></param>
+        /// <param name="state"></param>
+        /// <typeparam name="TState"></typeparam>
+        protected void ExtractFromHeader<TState>(string headerName, Func<string, TState, string> converter,
+            ContainerInformation? containerInformation = default, TState state = default) =>
             // TODO: Discuss if should not add but overwrite?
-            HeaderKeys.Add(headerName, (converter, containerInformation));
+            headerMappers.Add(headerName, new MapHeader<TState>(headerName, converter, containerInformation, state));
 
         /// <summary>
         /// 
@@ -105,7 +110,40 @@
         /// <param name="headerName"></param>
         /// <param name="containerInformation"></param>
         protected void ExtractFromHeader(string headerName, ContainerInformation? containerInformation = default) =>
-            // TODO: Discuss if should not add but overwrite?
-            HeaderKeys.Add(headerName, (value => value, containerInformation));
+            ExtractFromHeader<object>(headerName, (headerValue, _) => headerValue, containerInformation);
+
+        interface IMapHeaders
+        {
+            bool Map(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation);
+        }
+
+        class MapHeader<TState> : IMapHeaders
+        {
+            readonly Func<string, TState, string> converter;
+            readonly ContainerInformation? container;
+            readonly TState state;
+            readonly string headerName;
+
+            public MapHeader(string headerName, Func<string, TState, string> converter, ContainerInformation? container, TState state = default)
+            {
+                this.headerName = headerName;
+                this.state = state;
+                this.container = container;
+                this.converter = converter;
+            }
+
+            public bool Map(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+            {
+                partitionKey = null;
+                containerInformation = null;
+                if (headers.TryGetValue(headerName, out var headerValue))
+                {
+                    partitionKey = new PartitionKey(converter(headerValue, state));
+                    containerInformation = container;
+                    return true;
+                }
+                return false;
+            }
+        }
     }
 }
