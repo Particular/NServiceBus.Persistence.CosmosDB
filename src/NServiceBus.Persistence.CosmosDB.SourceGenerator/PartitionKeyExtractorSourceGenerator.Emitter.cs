@@ -4,7 +4,7 @@
     using System.Text;
     using Microsoft.CodeAnalysis.Text;
 
-    public sealed partial class PartitionKeyMappingSourceGenerator
+    public sealed partial class PartitionKeyExtractorSourceGenerator
     {
         sealed class Emitter
         {
@@ -63,7 +63,7 @@ namespace {@namespace}
                 }
 
                 sb.Append($@"
-        protected override bool TryMapMessageCore(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        protected override bool TryExtractFromMessageCore(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {{");
                 sb.Append($@"
             partitionKey = null;

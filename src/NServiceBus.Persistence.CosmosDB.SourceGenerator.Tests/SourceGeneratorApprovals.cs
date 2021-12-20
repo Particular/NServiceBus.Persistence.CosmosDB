@@ -25,7 +25,7 @@ namespace Some.Complex
     using Microsoft.Azure.Cosmos;
     using NServiceBus.Persistence.CosmosDB;
 
-    internal partial class PartitionKeyMapper : PartitionKeyMapperBase
+    internal partial class PartitionKeyMapper : PartitionKeyExtractorBase
     {
         public PartitionKeyMapper()
         {
@@ -60,7 +60,7 @@ namespace Some.Complex
     using NServiceBus.Persistence.CosmosDB;
     using Some.Other.Namespace;
 
-    internal partial class PartitionKeyMapper : PartitionKeyMapperBase
+    internal partial class PartitionKeyMapper : PartitionKeyExtractorBase
     {
         public PartitionKeyMapper()
         {
@@ -98,7 +98,7 @@ namespace Some.Complex
     using Some.Other.Namespace;
     using Yet.Another.Namespace;
 
-    internal partial class PartitionKeyMapper : PartitionKeyMapperBase
+    internal partial class PartitionKeyMapper : PartitionKeyExtractorBase
     {
         public PartitionKeyMapper()
         {
@@ -146,7 +146,7 @@ namespace Some.Complex
     using Microsoft.Azure.Cosmos;
     using NServiceBus.Persistence.CosmosDB;
     
-    internal partial class PartitionKeyMapper : PartitionKeyMapperBase
+    internal partial class PartitionKeyMapper : PartitionKeyExtractorBase
     {
         public PartitionKeyMapper()
         {
@@ -190,13 +190,13 @@ namespace Some.Other.Namespace
                 syntaxTree
             }, references);
 
-            var generator = new PartitionKeyMappingSourceGenerator();
+            var generator = new PartitionKeyExtractorSourceGenerator();
 
             var driver = CSharpGeneratorDriver.Create(generator);
             driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generateDiagnostics);
 
             // add necessary references for the generated trigger
-            references.Add(MetadataReference.CreateFromFile(typeof(PartitionKeyMapperBase).Assembly.Location));
+            references.Add(MetadataReference.CreateFromFile(typeof(PartitionKeyExtractorBase).Assembly.Location));
             references.Add(MetadataReference.CreateFromFile(typeof(PartitionKey).Assembly.Location));
             // references.Add(MetadataReference.CreateFromFile(typeof(Message).Assembly.Location));
             // references.Add(MetadataReference.CreateFromFile(typeof(ILogger).Assembly.Location));

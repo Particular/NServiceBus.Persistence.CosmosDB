@@ -6,11 +6,11 @@
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-    public sealed partial class PartitionKeyMappingSourceGenerator
+    public sealed partial class PartitionKeyExtractorSourceGenerator
     {
         sealed class Parser
         {
-            const string PartitionKeyMapperBaseFullName = "NServiceBus.Persistence.CosmosDB.PartitionKeyMapperBase";
+            const string PartitionKeyExtractorBaseFullName = "NServiceBus.Persistence.CosmosDB.PartitionKeyExtractorBase";
             readonly Compilation compilation;
             readonly PartitionKeyMapperSourceGenerationContext sourceGenerationContext;
 
@@ -30,7 +30,7 @@
 
             public SourceGenerationSpec? GetGenerationSpec(IEnumerable<ClassDeclarationSyntax> classDeclarationSyntaxList)
             {
-                INamedTypeSymbol? partitionKeyMapperBaseSymbol = compilation.GetBestTypeByMetadataName(PartitionKeyMapperBaseFullName);
+                INamedTypeSymbol? partitionKeyMapperBaseSymbol = compilation.GetBestTypeByMetadataName(PartitionKeyExtractorBaseFullName);
                 if (partitionKeyMapperBaseSymbol == null)
                 {
                     return null;
@@ -41,7 +41,7 @@
                     CompilationUnitSyntax compilationUnitSyntax = classDeclarationSyntax.FirstAncestorOrSelf<CompilationUnitSyntax>()!;
                     SemanticModel compilationSemanticModel = compilation.GetSemanticModel(compilationUnitSyntax.SyntaxTree);
 
-                    if (!DerivesFromPartitionKeyMapperBase(classDeclarationSyntax, partitionKeyMapperBaseSymbol,
+                    if (!DerivesFromPartitionKeyExtractorBase(classDeclarationSyntax, partitionKeyMapperBaseSymbol,
                             compilationSemanticModel))
                     {
                         continue;
@@ -152,7 +152,7 @@
             }
 
             // Returns true if a given type derives directly from PartitionKeyMapperBase.
-            static bool DerivesFromPartitionKeyMapperBase(
+            static bool DerivesFromPartitionKeyExtractorBase(
                 ClassDeclarationSyntax classDeclarationSyntax,
                 INamedTypeSymbol partitionKeyMapperBaseSymbol,
                 SemanticModel compilationSemanticModel)

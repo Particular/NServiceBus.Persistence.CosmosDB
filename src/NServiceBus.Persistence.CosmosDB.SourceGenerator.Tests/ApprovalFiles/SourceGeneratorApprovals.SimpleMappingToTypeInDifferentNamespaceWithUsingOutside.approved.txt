@@ -11,7 +11,7 @@ namespace Some.Complex
     internal partial class PartitionKeyMapper
     {
 
-        protected override bool TryMapMessageCore(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        protected override bool TryExtractFromMessageCore(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {
             partitionKey = null;
             containerInformation = null;

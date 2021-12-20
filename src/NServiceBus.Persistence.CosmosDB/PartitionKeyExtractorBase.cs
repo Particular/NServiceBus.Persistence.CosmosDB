@@ -7,7 +7,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public abstract class PartitionKeyMapperBase
+    public abstract class PartitionKeyExtractorBase
     {
         /// <summary>
         /// 
@@ -15,7 +15,7 @@
         protected IDictionary<Type, (Func<object, object, PartitionKey>, ContainerInformation?, object)> Extractors { get; } =
             new Dictionary<Type, (Func<object, object, PartitionKey>, ContainerInformation?, object)>();
 
-        readonly Dictionary<string, IMapHeaders> headerMappers = new Dictionary<string, IMapHeaders>();
+        readonly Dictionary<string, IExtractHeader> headerMappers = new Dictionary<string, IExtractHeader>();
 
         /// <summary>
         /// 
@@ -24,8 +24,8 @@
         /// <param name="partitionKey"></param>
         /// <param name="containerInformation"></param>
         /// <returns></returns>
-        public bool TryMapMessage(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
-            => TryMapMessageCore(message, out partitionKey, out containerInformation);
+        public bool TryExtractFromMessage(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+            => TryExtractFromMessageCore(message, out partitionKey, out containerInformation);
 
         /// <summary>
         /// 
@@ -34,7 +34,7 @@
         /// <param name="partitionKey"></param>
         /// <param name="containerInformation"></param>
         /// <returns></returns>
-        protected virtual bool TryMapMessageCore(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        protected virtual bool TryExtractFromMessageCore(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {
             partitionKey = null;
             containerInformation = null;
@@ -57,8 +57,8 @@
         /// <param name="partitionKey"></param>
         /// <param name="containerInformation"></param>
         /// <returns></returns>
-        public bool TryMapHeader(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
-            => TryMapHeaderCore(headers, out partitionKey, out containerInformation);
+        public bool TryExtractFromHeader(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+            => TryExtractFromHeaderCore(headers, out partitionKey, out containerInformation);
 
         /// <summary>
         /// 
@@ -67,13 +67,13 @@
         /// <param name="partitionKey"></param>
         /// <param name="containerInformation"></param>
         /// <returns></returns>
-        protected virtual bool TryMapHeaderCore(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        protected virtual bool TryExtractFromHeaderCore(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {
             partitionKey = null;
             containerInformation = null;
             foreach (var mapper in headerMappers.Values)
             {
-                if (mapper.Map(headers, out partitionKey, out containerInformation))
+                if (mapper.TryMap(headers, out partitionKey, out containerInformation))
                 {
                     return true;
                 }
@@ -102,7 +102,7 @@
         protected void ExtractFromHeader<TState>(string headerName, Func<string, TState, string> converter,
             ContainerInformation? containerInformation = default, TState state = default) =>
             // TODO: Discuss if should not add but overwrite?
-            headerMappers.Add(headerName, new MapHeader<TState>(headerName, converter, containerInformation, state));
+            headerMappers.Add(headerName, new ExtractHeader<TState>(headerName, converter, containerInformation, state));
 
         /// <summary>
         /// 
@@ -112,19 +112,23 @@
         protected void ExtractFromHeader(string headerName, ContainerInformation? containerInformation = default) =>
             ExtractFromHeader<object>(headerName, (headerValue, _) => headerValue, containerInformation);
 
-        interface IMapHeaders
+        interface IMapMessages
         {
-            bool Map(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation);
         }
 
-        class MapHeader<TState> : IMapHeaders
+        interface IExtractHeader
+        {
+            bool TryMap(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation);
+        }
+
+        sealed class ExtractHeader<TState> : IExtractHeader
         {
             readonly Func<string, TState, string> converter;
             readonly ContainerInformation? container;
             readonly TState state;
             readonly string headerName;
 
-            public MapHeader(string headerName, Func<string, TState, string> converter, ContainerInformation? container, TState state = default)
+            public ExtractHeader(string headerName, Func<string, TState, string> converter, ContainerInformation? container, TState state = default)
             {
                 this.headerName = headerName;
                 this.state = state;
@@ -132,7 +136,7 @@
                 this.converter = converter;
             }
 
-            public bool Map(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+            public bool TryMap(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
             {
                 partitionKey = null;
                 containerInformation = null;
