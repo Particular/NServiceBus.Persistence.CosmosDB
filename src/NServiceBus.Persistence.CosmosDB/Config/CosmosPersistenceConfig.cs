@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus
 {
+    using System;
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;
@@ -68,7 +69,24 @@
             persistenceExtensions.GetSettings().Set(SettingsKeys.EnableMigrationMode, true);
         }
 
-        //TODO: Add a setting to enable pessimistic locking - with a overridable timeout TimeSpan
-        // https://github.com/Particular/NServiceBus.RavenDB/blob/master/src/NServiceBus.RavenDB/SagaPersister/SagaPersistenceConfiguration.cs#L22
+        /// <summary>
+        /// Set saga persistence pessimistic lease lock duration. Default is 60 seconds.
+        /// </summary>
+        /// <param name="persistenceExtensions"></param>
+        /// <param name="value">Pessimistic lease lock duration.</param>
+        public static void SetPessimisticLeaseLockTime(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, TimeSpan value)
+        {
+            Guard.AgainstNull(nameof(TimeSpan), value);
+
+            persistenceExtensions.GetSettings().Set(SettingsKeys.LeaseLockTime, value);
+        }
+
+        /// <summary>
+        /// Disables default saga persistence pessimistic locking. Default to optimistic locking when not used.
+        /// </summary>
+        public static void UsePessimisticLocking(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
+        {
+            persistenceExtensions.GetSettings().Set(SettingsKeys.EnablePessimisticsLocking, true);
+        }
     }
 }
