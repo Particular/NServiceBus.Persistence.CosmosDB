@@ -3,7 +3,9 @@
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
+    using Pipeline;
     using Testing;
+    using Unicast.Messages;
 
     [TestFixture]
     public class TransactionInformationBeforeTheLogicalOutboxBehaviorTests
@@ -69,6 +71,30 @@
 
             Assert.That(context.Extensions.TryGet<ContainerInformation>(out var containerInformation), Is.True);
             Assert.AreEqual(new ContainerInformation("containerName", new PartitionKeyPath("/deep/down")), containerInformation);
+        }
+
+        [Test]
+        public async Task Should_pass_message()
+        {
+            object capturedMessageInstance = null;
+            var extractor = new Extractor(
+                delegate (object msg, out PartitionKey? key, out ContainerInformation? container)
+                {
+                    key = null;
+                    container = null;
+                    capturedMessageInstance = msg;
+                    return true;
+                });
+
+            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(extractor);
+
+            var context = new TestableIncomingLogicalMessageContext();
+            var messageInstance = new object();
+            context.Message = new LogicalMessage(new MessageMetadata(typeof(object)), messageInstance);
+
+            await behavior.Invoke(context, _ => Task.CompletedTask);
+
+            Assert.That(capturedMessageInstance, Is.Not.Null.And.EqualTo(messageInstance));
         }
 
         delegate bool TryExtract(object message, out PartitionKey? partitionKey,
