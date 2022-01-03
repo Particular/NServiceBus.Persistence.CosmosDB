@@ -5,6 +5,7 @@
     using AcceptanceTesting;
     using AcceptanceTesting.Support;
     using EndpointTemplates;
+    using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
     using Persistence.CosmosDB;
 
@@ -18,13 +19,7 @@
 
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointWithFluentExtractor>(b => b.When((session, ctx) =>
-                {
-                    var sendOptions = new SendOptions();
-                    sendOptions.RouteToThisEndpoint();
-                    sendOptions.SetHeader("PartitionKeyHeader", ctx.TestRunId.ToString());
-
-                    return session.Send(new StartSaga1 { DataId = Guid.NewGuid() }, sendOptions);
-                }))
+                    session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid(), PartitionKey = ctx.TestRunId })))
                 .Done(c => c.SagaReceivedMessage)
                 .Run(runSettings);
 
@@ -44,10 +39,10 @@
                 EndpointSetup<DefaultServer>((config, r) =>
                 {
                     var extractor = new TransactionInformationExtractor();
-                    extractor.ExtractFromHeader("PartitionKeyHeader", (value, state) =>
+                    extractor.ExtractFromMessage<StartSaga1, Context>((startSaga, state) =>
                     {
-                        state.StateMatched = Guid.Parse(value).Equals(state.TestRunId);
-                        return value;
+                        state.StateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
+                        return new PartitionKey(startSaga.PartitionKey.ToString());
                     }, new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)), (Context)r.ScenarioContext);
 
                     var persistence = config.UsePersistence<CosmosPersistence>();
@@ -87,6 +82,7 @@
         public class StartSaga1 : ICommand
         {
             public Guid DataId { get; set; }
+            public Guid PartitionKey { get; set; }
         }
     }
 }
