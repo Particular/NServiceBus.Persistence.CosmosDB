@@ -12,6 +12,12 @@
         protected readonly OutboxRecord record;
         protected Stream stream = Stream.Null;
 
+        protected static readonly JObject metadata = new JObject
+        {
+            { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
+            { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
+        };
+
         protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context)
         {
             this.record = record;
@@ -33,11 +39,6 @@
         {
             var jObject = JObject.FromObject(record, Serializer);
 
-            var metadata = new JObject
-            {
-                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
-                { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
-            };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
             jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
@@ -66,11 +67,6 @@
         {
             var jObject = JObject.FromObject(record, Serializer);
 
-            var metadata = new JObject
-            {
-                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
-                { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
-            };
             jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
             jObject.Add("ttl", ttlInSeconds);
