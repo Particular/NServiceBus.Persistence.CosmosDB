@@ -32,7 +32,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    public class PartitionKeyProvider : IExtractTransactionInformationFromMessages
+    class PartitionKeyProvider : IExtractTransactionInformationFromMessages
     {
         ScenarioContext scenarioContext;
 

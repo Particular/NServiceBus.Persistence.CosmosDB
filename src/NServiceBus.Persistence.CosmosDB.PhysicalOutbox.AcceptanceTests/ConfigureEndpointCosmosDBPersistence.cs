@@ -23,8 +23,11 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        // This populates the partition key at the physical stage to test the conventional outbox use-case
-        configuration.RegisterComponents(services => services.AddSingleton<IExtractTransactionInformationFromHeaders, PartitionKeyProvider>());
+        if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
+        {
+            // This populates the partition key at the physical stage to test the conventional outbox use-case
+            configuration.RegisterComponents(services => services.AddSingleton<IExtractTransactionInformationFromHeaders, PartitionKeyProvider>());
+        }
 
         return Task.FromResult(0);
     }
@@ -34,7 +37,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    public class PartitionKeyProvider : IExtractTransactionInformationFromHeaders
+    class PartitionKeyProvider : IExtractTransactionInformationFromHeaders
     {
         ScenarioContext scenarioContext;
 

@@ -5,6 +5,7 @@
     using System.Linq;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using AcceptanceTesting.Support;
     using EndpointTemplates;
     using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
@@ -15,13 +16,16 @@
         [Test]
         public async Task Should_be_used()
         {
+            var runSettings = new RunSettings();
+            runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointWithCustomExtractor>(b => b.When(session => session.SendLocal(new StartSaga1
                 {
                     DataId = Guid.NewGuid()
                 })))
                 .Done(c => c.SagaReceivedMessage)
-                .Run();
+                .Run(runSettings);
 
             Assert.True(context.ExtractorWasCalled);
         }
@@ -38,16 +42,6 @@
             {
                 EndpointSetup<DefaultServer>((config, r) =>
                 {
-                    config.RegisterComponents(services =>
-                    {
-                        // since DI takes precedence we need to remove any existing registrations
-                        // TODO: Discuss because this might be difficult to backport
-                        var registration = services.Single(s =>
-                            s.ServiceType == typeof(IExtractTransactionInformationFromHeaders) &&
-                            s.ImplementationType == typeof(ConfigureEndpointCosmosDBPersistence.PartitionKeyProvider));
-                        _ = services.Remove(registration);
-                    });
-
                     var persistence = config.UsePersistence<CosmosPersistence>();
                     persistence.ExtractFromHeaders(new CustomExtractor((Context)r.ScenarioContext));
                 });
