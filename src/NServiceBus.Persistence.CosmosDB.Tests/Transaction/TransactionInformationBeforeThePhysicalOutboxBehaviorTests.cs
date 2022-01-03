@@ -72,6 +72,30 @@
             Assert.AreEqual(new ContainerInformation("containerName", new PartitionKeyPath("/deep/down")), containerInformation);
         }
 
+        [Test]
+        public async Task Should_pass_headers()
+        {
+            IReadOnlyDictionary<string, string> capturedHeaders = null;
+            var extractor = new Extractor(
+                delegate (IReadOnlyDictionary<string, string> headers, out PartitionKey? key, out ContainerInformation? container)
+                {
+                    key = null;
+                    container = null;
+                    capturedHeaders = headers;
+                    return false;
+                });
+
+            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(extractor);
+
+            var context = new TestableTransportReceiveContext();
+            context.Message.Headers.Clear();
+            context.Message.Headers.Add("TheAnswer", "Is42");
+
+            await behavior.Invoke(context, _ => Task.CompletedTask);
+
+            Assert.That(capturedHeaders, Is.Not.Null.And.ContainKey("TheAnswer").WithValue("Is42").And.Count.EqualTo(1));
+        }
+
         delegate bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey,
             out ContainerInformation? containerInformation);
 
