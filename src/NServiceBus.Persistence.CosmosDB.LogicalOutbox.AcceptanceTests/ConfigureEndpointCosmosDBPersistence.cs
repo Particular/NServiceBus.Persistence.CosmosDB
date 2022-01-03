@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using NServiceBus;
@@ -8,7 +7,6 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Persistence.CosmosDB;
-using NServiceBus.Pipeline;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
 {
@@ -34,7 +32,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    class PartitionKeyProvider : IExtractTransactionInformationFromMessages
+    public class PartitionKeyProvider : IExtractTransactionInformationFromMessages
     {
         ScenarioContext scenarioContext;
 
