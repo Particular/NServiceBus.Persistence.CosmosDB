@@ -23,7 +23,7 @@
                     DataId = Guid.NewGuid()
                 })))
                 .Done(c => c.SagaReceivedMessage)
-                .Run();
+                .Run(runSettings);
 
             Assert.True(context.ExtractorWasCalled);
         }
