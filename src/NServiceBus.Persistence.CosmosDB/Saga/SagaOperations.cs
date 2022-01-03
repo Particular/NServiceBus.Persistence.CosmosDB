@@ -23,6 +23,28 @@
             Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
         }
 
+        protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
+        {
+            var jObject = JObject.FromObject(sagaData, Serializer);
+
+            var metadata = new JObject
+            {
+                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current },
+                { MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaData.GetType().FullName }
+            };
+
+            if (Context.TryGet($"cosmos_migratedsagaid:{sagaData.Id}", out Guid migratedSagaId))
+            {
+                metadata.Add(MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, migratedSagaId);
+            }
+
+            jObject.Add(MetadataExtensions.MetadataKey, metadata);
+
+            EnrichWithPartitionKeyIfNecessary(jObject, partitionKeyPath);
+
+            return jObject;
+        }
+
         public override void Dispose()
         {
             stream.Dispose();
@@ -43,16 +65,7 @@
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
-            var jObject = JObject.FromObject(sagaData, Serializer);
-
-            var metadata = new JObject
-            {
-                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current },
-                { MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaData.GetType().FullName }
-            };
-            jObject.Add(MetadataExtensions.MetadataKey, metadata);
-
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
+            var jObject = ToEnrichedJObject(partitionKeyPath);
 
             // Has to be kept open for transaction batch to be able to use the stream
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
@@ -77,22 +90,7 @@
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
-            var jObject = JObject.FromObject(sagaData, Serializer);
-
-            var metadata = new JObject
-            {
-                { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current },
-                { MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaData.GetType().FullName }
-            };
-
-            if (Context.TryGet($"cosmos_migratedsagaid:{sagaData.Id}", out Guid migratedSagaId))
-            {
-                metadata.Add(MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, migratedSagaId);
-            }
-
-            jObject.Add(MetadataExtensions.MetadataKey, metadata);
-
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
+            var jObject = ToEnrichedJObject(partitionKeyPath);
 
             // only update if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);

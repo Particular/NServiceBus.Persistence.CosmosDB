@@ -12,7 +12,9 @@
         protected readonly OutboxRecord record;
         protected Stream stream = Stream.Null;
 
-        protected static readonly JObject metadata = new JObject
+        static JObject metadata;
+
+        static JObject Metadata => metadata ??= new JObject
         {
             { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
             { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
@@ -22,6 +24,19 @@
         {
             this.record = record;
         }
+
+        protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
+        {
+            var jObject = JObject.FromObject(record, Serializer);
+
+            EnrichWithOutboxMetadata(jObject);
+
+            EnrichWithPartitionKeyIfNecessary(jObject, partitionKeyPath);
+
+            return jObject;
+        }
+
+        void EnrichWithOutboxMetadata(JObject toBeEnriched) => toBeEnriched.Add(MetadataExtensions.MetadataKey, Metadata);
 
         public override void Dispose()
         {
@@ -37,11 +52,7 @@
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
-            var jObject = JObject.FromObject(record, Serializer);
-
-            jObject.Add(MetadataExtensions.MetadataKey, metadata);
-
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
+            var jObject = ToEnrichedJObject(partitionKeyPath);
 
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
@@ -65,13 +76,9 @@
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
-            var jObject = JObject.FromObject(record, Serializer);
-
-            jObject.Add(MetadataExtensions.MetadataKey, metadata);
+            var jObject = ToEnrichedJObject(partitionKeyPath);
 
             jObject.Add("ttl", ttlInSeconds);
-
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
