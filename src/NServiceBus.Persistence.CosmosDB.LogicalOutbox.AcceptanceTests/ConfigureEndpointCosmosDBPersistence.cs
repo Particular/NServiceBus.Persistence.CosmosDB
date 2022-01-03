@@ -22,7 +22,10 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        configuration.RegisterComponents(services => services.AddSingleton<IExtractTransactionInformationFromMessages, PartitionKeyProvider>());
+        if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
+        {
+            configuration.RegisterComponents(services => services.AddSingleton<IExtractTransactionInformationFromMessages, PartitionKeyProvider>());
+        }
 
         return Task.FromResult(0);
     }
