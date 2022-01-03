@@ -43,7 +43,7 @@
                     {
                         state.StateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
                         return new PartitionKey(startSaga.PartitionKey.ToString());
-                    }, new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)), (Context)r.ScenarioContext);
+                    }, (Context)r.ScenarioContext, new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
 
                     var persistence = config.UsePersistence<CosmosPersistence>();
                     persistence.ExtractWith(extractor);
