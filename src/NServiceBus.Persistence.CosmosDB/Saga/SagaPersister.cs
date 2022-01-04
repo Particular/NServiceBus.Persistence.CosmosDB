@@ -151,16 +151,19 @@
                 var token = combinedTokenSource.Token;
                 while (!token.IsCancellationRequested)
                 {
-                    long unixTimeNow = (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                    // File time is using 100s nanoseconds which is a bit too granular for us but it is the simplest way to get
+                    // a deterministic increasing time value
+                    var now = DateTime.UtcNow.ToFileTimeUtc();
+                    var reservedUntil = DateTime.UtcNow.Add(leaseLockTime).ToFileTimeUtc();
 
                     IReadOnlyList<PatchOperation> patchOperations = new List<PatchOperation>
                     {
-                        PatchOperation.Add("/ReserveUntil", unixTimeNow + leaseLockTime.Seconds)
+                        PatchOperation.Add("/ReserveUntil", reservedUntil)
                     };
                     var requestOptions = new PatchItemRequestOptions
                     {
                         FilterPredicate =
-                            $"from c where (NOT IS_DEFINED(c.ReserveUntil) OR c.ReserveUntil < {unixTimeNow})"
+                            $"from c where (NOT IS_DEFINED(c.ReserveUntil) OR c.ReserveUntil < {now})"
                     };
 
                     using (var responseMessage = await container.PatchItemStreamAsync(sagaId.ToString(), partitionKey,
