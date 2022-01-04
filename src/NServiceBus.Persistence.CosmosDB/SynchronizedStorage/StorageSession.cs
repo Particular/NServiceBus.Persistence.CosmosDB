@@ -17,10 +17,8 @@
             ContainerHolder = resolver.ResolveAndSetIfAvailable(context);
         }
 
-        Task ICompletableSynchronizedStorageSession.CompleteAsync(CancellationToken cancellationToken)
-        {
-            return commitOnComplete ? Commit(cancellationToken) : Task.CompletedTask;
-        }
+        Task ICompletableSynchronizedStorageSession.CompleteAsync(CancellationToken cancellationToken) =>
+            commitOnComplete ? Commit(cancellationToken) : Task.CompletedTask;
 
         void IDisposable.Dispose()
         {
