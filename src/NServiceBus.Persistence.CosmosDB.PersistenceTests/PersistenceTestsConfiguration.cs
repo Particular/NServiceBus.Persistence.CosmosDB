@@ -44,11 +44,7 @@
 
         public bool SupportsFinders => false;
 
-        public bool SupportsPessimisticConcurrency
-        {
-            get => false;
-            set => throw new NotImplementedException();
-        }
+        public bool SupportsPessimisticConcurrency { get; private set; }
 
         public ISagaIdGenerator SagaIdGenerator { get; } = new SagaIdGenerator();
 
