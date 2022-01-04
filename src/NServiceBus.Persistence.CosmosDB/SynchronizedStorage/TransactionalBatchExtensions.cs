@@ -62,6 +62,7 @@
 
         internal static async Task ExecuteAndDisposeOperationsAsync(this TransactionalBatch transactionalBatch, Dictionary<int, Operation> operationMappings, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
         {
+            // TODO: We probably should ignore the result of the operations and just continue instead of throwing. Rethink this
             try
             {
                 await transactionalBatch.ExecuteOperationsAsync(operationMappings, partitionKeyPath, cancellationToken)
