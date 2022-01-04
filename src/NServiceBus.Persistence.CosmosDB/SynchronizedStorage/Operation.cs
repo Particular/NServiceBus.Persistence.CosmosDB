@@ -7,6 +7,11 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
+    // Marker interface to distinguish cleanup operations that need to come last and need to be executed when failure happened
+    interface ICleanupOnFailureOperation
+    {
+    }
+
     abstract class Operation : IDisposable
     {
         protected Operation(PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
@@ -44,7 +49,6 @@
             }
 #pragma warning restore IDE0010
         }
-
         public abstract void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath);
         public virtual void Dispose() { }
 

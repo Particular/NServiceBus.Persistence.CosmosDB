@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -34,6 +35,18 @@
         {
             var operationPartitionKey = operation.PartitionKey;
 
+            if (operation is ICleanupOnFailureOperation)
+            {
+                cleanupOperations ??= new Dictionary<PartitionKey, Dictionary<int, Operation>>();
+                AddOperation(operation, operationPartitionKey, cleanupOperations);
+                return;
+            }
+
+            AddOperation(operation, operationPartitionKey, operations);
+        }
+
+        static void AddOperation(Operation operation, PartitionKey operationPartitionKey, Dictionary<PartitionKey, Dictionary<int, Operation>> operations)
+        {
             if (!operations.ContainsKey(operationPartitionKey))
             {
                 operations.Add(operationPartitionKey, new Dictionary<int, Operation>());
@@ -74,7 +87,17 @@
                 }
             }
 
+            foreach (var batchOfOperations in cleanupOperations ?? Enumerable.Empty<KeyValuePair<PartitionKey, Dictionary<int, Operation>>>())
+            {
+                var transactionalBatch = ContainerHolder.Container.CreateTransactionalBatch(batchOfOperations.Key);
+
+                // We are optimistic and fire-and-forget the releasing of the lock and just continue. In case this fails the next message that needs to acquire the lock wil have to wait.
+                _ = transactionalBatch.ExecuteAndDisposeOperationsAsync(batchOfOperations.Value, ContainerHolder.PartitionKeyPath,
+                    cancellationToken: CancellationToken.None);
+            }
+
             operations.Clear();
+            // not clearing the cleanup operations to avoid races
         }
 
         readonly bool commitOnComplete;
@@ -84,5 +107,6 @@
         public ContainerHolder ContainerHolder { get; set; }
 
         readonly Dictionary<PartitionKey, Dictionary<int, Operation>> operations = new Dictionary<PartitionKey, Dictionary<int, Operation>>();
+        Dictionary<PartitionKey, Dictionary<int, Operation>> cleanupOperations;
     }
 }

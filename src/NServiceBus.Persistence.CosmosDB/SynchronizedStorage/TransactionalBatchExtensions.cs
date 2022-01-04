@@ -59,5 +59,21 @@
                 }
             }
         }
+
+        internal static async Task ExecuteAndDisposeOperationsAsync(this TransactionalBatch transactionalBatch, Dictionary<int, Operation> operationMappings, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await transactionalBatch.ExecuteOperationsAsync(operationMappings, partitionKeyPath, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                foreach (var operation in operationMappings.Values)
+                {
+                    operation.Apply(transactionalBatch, partitionKeyPath);
+                }
+            }
+        }
     }
 }

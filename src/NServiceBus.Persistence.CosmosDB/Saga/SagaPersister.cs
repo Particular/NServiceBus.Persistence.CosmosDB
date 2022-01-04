@@ -79,6 +79,8 @@
                 //return await FindSagaInMigrationMode<TSagaData>(sagaId, context, container, responseMessage, cancellationToken);
             }
 
+            storageSession.AddOperation(new SagaReleaseReservation(patchRes.Item2, partitionKey, serializer, context));
+
             return patchRes.Item2;
         }
 

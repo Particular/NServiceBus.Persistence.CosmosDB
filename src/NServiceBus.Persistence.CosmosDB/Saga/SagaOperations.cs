@@ -18,14 +18,9 @@
             new ConcurrentDictionary<Type, JObject>();
 
         protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context)
-        {
-            this.sagaData = sagaData;
-        }
+            => this.sagaData = sagaData;
 
-        public override void Success(TransactionalBatchOperationResult result)
-        {
-            Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
-        }
+        public override void Success(TransactionalBatchOperationResult result) => Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
 
         protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
         {
@@ -58,10 +53,7 @@
                 {MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataType.FullName}
             };
 
-        public override void Dispose()
-        {
-            stream.Dispose();
-        }
+        public override void Dispose() => stream.Dispose();
     }
 
     sealed class SagaSave : SagaOperation
@@ -136,6 +128,34 @@
             Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var deleteEtag);
             var deleteOptions = new TransactionalBatchItemRequestOptions { IfMatchEtag = deleteEtag };
             transactionalBatch.DeleteItem(sagaData.Id.ToString(), deleteOptions);
+        }
+    }
+
+    // Special cleanup operation that only gets executed for pessimistic locking
+    sealed class SagaReleaseReservation : SagaOperation, ICleanupOnFailureOperation
+    {
+        static IReadOnlyList<PatchOperation> cleanupPatchOperations;
+
+        static IReadOnlyList<PatchOperation> CleanupPatchOperations => cleanupPatchOperations ??= new List<PatchOperation>
+        {
+            PatchOperation.Remove("/ReserveUntil")
+        };
+
+        public SagaReleaseReservation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
+        {
+        }
+
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
+        {
+            // TODO: Now this patch will always be executed even if the saga operation was successful
+            // only update if we have the same version as in CosmosDB
+            Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);
+            var requestOptions = new TransactionalBatchPatchItemRequestOptions
+            {
+                IfMatchEtag = updateEtag
+            };
+
+            transactionalBatch.PatchItem(sagaData.Id.ToString(), CleanupPatchOperations, requestOptions);
         }
     }
 }
