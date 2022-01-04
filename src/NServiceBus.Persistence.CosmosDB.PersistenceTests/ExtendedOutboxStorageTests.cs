@@ -1,13 +1,9 @@
 ﻿namespace NServiceBus.PersistenceTesting.Outbox
 {
     using System;
-    using System.Collections.Generic;
-    using System.Net;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Cosmos;
     using NServiceBus.Outbox;
     using NUnit.Framework;
-    using Sagas;
 
     [TestFixtureSource(typeof(PersistenceTestsConfiguration), "OutboxVariants")]
     class ExtendedOutboxStorageTests
@@ -62,53 +58,6 @@
             }
 
             Assert.That(message, Is.Null, "The outbox record was not expired.");
-        }
-
-        //TODO: should be removed during clean-up after pessimistic locking implementation
-        [Test]
-        public async Task TestPatchTest()
-        {
-            var gd = Guid.NewGuid().ToString();
-
-            await SetupFixture.CosmosDbClient.GetDatabase(SetupFixture.DatabaseName).CreateContainerIfNotExistsAsync(gd, "/id");
-            var container = SetupFixture.CosmosDbClient.GetContainer(SetupFixture.DatabaseName, gd);
-
-            var pK = new PartitionKey(gd);
-            long unixTimeNow = (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-
-            //await container.CreateItemAsync(new TestPatch { ReserveUntil = unixTimeNow + 1, id = gd }, pK);
-            await container.CreateItemAsync(new TestPatch { id = gd }, pK);
-
-            var piro = new PatchItemRequestOptions
-            {
-                FilterPredicate = $"from c where (NOT IS_DEFINED(c.ReserveUntil) OR c.ReserveUntil < {unixTimeNow})"
-            };
-
-            try
-            {
-                var patchItemAsyncRes = await container.PatchItemAsync<TestPatch>(gd, pK, new List<PatchOperation> { PatchOperation.Add("/ReserveUntil", unixTimeNow + 6) }, piro);
-
-                Console.WriteLine(patchItemAsyncRes);
-            }
-            catch (CosmosException ce) when (ce.StatusCode == HttpStatusCode.NotFound)
-            {
-                Console.WriteLine(ce);
-                throw;
-            }
-            catch (CosmosException ce) when (ce.StatusCode == HttpStatusCode.PreconditionFailed)
-            {
-                Console.WriteLine(ce);
-                throw;
-            }
-
-        }
-
-        public class TestPatch
-        {
-#pragma warning disable IDE1006 // Naming Styles
-            public string id { get; set; }
-#pragma warning restore IDE1006 // Naming Styles
-            public long? ReserveUntil { get; set; }
         }
 
         IPersistenceTestsConfiguration configuration;
