@@ -23,6 +23,7 @@ namespace NServiceBus
         public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> DefaultContainer(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, string containerName, string partitionKeyPath) { }
         public static void DisableContainerCreation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
         public static void EnableMigrationMode(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
+        public static NServiceBus.Persistence.CosmosDB.SagaPersistenceConfiguration Sagas(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
     }
     public interface ICosmosStorageSession
     {
@@ -51,6 +52,15 @@ namespace NServiceBus.Persistence.CosmosDB
     public sealed class LogicalOutboxBehavior : NServiceBus.Pipeline.IBehavior, NServiceBus.Pipeline.IBehavior<NServiceBus.Pipeline.IIncomingLogicalMessageContext, NServiceBus.Pipeline.IIncomingLogicalMessageContext>
     {
         public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
+    }
+    public class SagaPersistenceConfiguration
+    {
+        public SagaPersistenceConfiguration() { }
+        public void EnableMigrationMode() { }
+        public void SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(System.TimeSpan value) { }
+        public void SetPessimisticLeaseLockAcquisitionTimeout(System.TimeSpan value) { }
+        public void SetPessimisticLeaseLockTime(System.TimeSpan value) { }
+        public void UsePessimisticLocking() { }
     }
     public sealed class TransactionalBatchOperationException : System.Exception
     {

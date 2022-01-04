@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus
 {
-    using System;
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;
@@ -59,45 +58,21 @@
             installerSettings.Disabled = true;
         }
 
-        // TODO: Move all those settings below here to a saga configuration? Also add extended validation
         /// <summary>
         /// Enable support for sagas migrated from other persistence technologies by querying the saga from storage using a migrated saga id.
         /// </summary>
+        /// TODO: Obsolete with replacement member
         public static void EnableMigrationMode(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
         {
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.EnableMigrationMode, true);
+            persistenceExtensions.GetSettings().GetOrCreate<SagaPersistenceConfiguration>().EnableMigrationMode();
         }
 
         /// <summary>
-        /// Set saga persistence pessimistic lease lock duration. Default is 60 seconds.
+        /// Obtains the saga persistence configuration options.
         /// </summary>
-        /// <param name="persistenceExtensions"></param>
-        /// <param name="value">Pessimistic lease lock duration.</param>
-        public static void SetPessimisticLeaseLockTime(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, TimeSpan value)
-        {
-            Guard.AgainstNull(nameof(TimeSpan), value);
-
-            persistenceExtensions.GetSettings().Set(SettingsKeys.LeaseLockTime, value);
-        }
-
-        /// <summary>
-        /// Disables default saga persistence pessimistic locking. Default to optimistic locking when not used.
-        /// </summary>
-        public static void UsePessimisticLocking(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
-        {
-            persistenceExtensions.GetSettings().Set(SettingsKeys.EnablePessimisticsLocking, true);
-        }
-
-        /// <summary>
-        /// Set saga persistence pessimistic lease lock acquisition timeout. Default is 60 seconds.
-        /// </summary>
-        public static void SetPessimisticLeaseLockAcquisitionTimeout(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, TimeSpan value)
-        {
-            Guard.AgainstNull(nameof(TimeSpan), value);
-
-            persistenceExtensions.GetSettings().Set(SettingsKeys.LeaseLockAcquisitionTimeout, value);
-        }
+        public static SagaPersistenceConfiguration Sagas(this PersistenceExtensions<CosmosPersistence> persistenceExtensions) =>
+            persistenceExtensions.GetSettings().GetOrCreate<SagaPersistenceConfiguration>();
     }
 }

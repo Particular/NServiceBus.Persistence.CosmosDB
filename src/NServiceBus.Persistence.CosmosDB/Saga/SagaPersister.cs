@@ -14,14 +14,14 @@
 
     class SagaPersister : ISagaPersister
     {
-        public SagaPersister(JsonSerializer serializer, bool migrationModeEnabled, bool usePessimisticsLockingMode, TimeSpan leaseLockTime, TimeSpan leaseLockAcquisitionMaximumRefreshDelay, TimeSpan acquireLeaseLockTimeout)
+        public SagaPersister(JsonSerializer serializer, SagaPersistenceConfiguration options)
         {
-            this.acquireLeaseLockTimeout = acquireLeaseLockTimeout;
             this.serializer = serializer;
-            this.migrationModeEnabled = migrationModeEnabled;
-            this.usePessimisticsLockingMode = usePessimisticsLockingMode;
-            this.leaseLockTime = leaseLockTime;
-            acquireLeaseLockRefreshMaximumDelayTicks = (int)leaseLockAcquisitionMaximumRefreshDelay.Ticks;
+            migrationModeEnabled = options.MigrationModeEnabled;
+            leaseLockTime = options.LeaseLockTime;
+            pessimisticLockingEnabled = options.PessimisticLockingEnabled;
+            acquireLeaseLockRefreshMaximumDelayTicks = (int)options.LeaseLockAcquisitionMaximumRefreshDelay.Ticks;
+            acquireLeaseLockTimeout = options.LeaseLockAcquisitionTimeout;
         }
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
@@ -50,7 +50,7 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            if (!usePessimisticsLockingMode)
+            if (!pessimisticLockingEnabled)
             {
                 using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
                 {
@@ -124,7 +124,7 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            if (!usePessimisticsLockingMode)
+            if (!pessimisticLockingEnabled)
             {
                 using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
                 {
@@ -226,7 +226,7 @@
 
         JsonSerializer serializer;
         readonly bool migrationModeEnabled;
-        readonly bool usePessimisticsLockingMode;
+        readonly bool pessimisticLockingEnabled;
         readonly TimeSpan leaseLockTime;
         readonly int acquireLeaseLockRefreshMaximumDelayTicks;
         readonly TimeSpan acquireLeaseLockTimeout;
