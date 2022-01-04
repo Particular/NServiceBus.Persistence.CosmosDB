@@ -30,9 +30,10 @@
             var migrationModeEnabled = context.Settings.GetOrDefault<bool>(SettingsKeys.EnableMigrationMode);
             var usePessimisticsLockingMode = context.Settings.GetOrDefault<bool>(SettingsKeys.EnablePessimisticsLocking);
             var leaseLockTime = context.Settings.Get<TimeSpan>(SettingsKeys.LeaseLockTime);
-            var LeaseLockAcquisitionMaximumRefreshDelay = context.Settings.Get<TimeSpan>(SettingsKeys.LeaseLockAcquisitionMaximumRefreshDelay);
+            var leaseLockAcquisitionMaximumRefreshDelay = context.Settings.Get<TimeSpan>(SettingsKeys.LeaseLockAcquisitionMaximumRefreshDelay);
+            var leaseLockAcquisitionTimeout = context.Settings.Get<TimeSpan>(SettingsKeys.LeaseLockAcquisitionMaximumRefreshDelay);
 
-            context.Services.AddSingleton<ISagaPersister>(builder => new SagaPersister(serializer, migrationModeEnabled, usePessimisticsLockingMode, leaseLockTime, LeaseLockAcquisitionMaximumRefreshDelay));
+            context.Services.AddSingleton<ISagaPersister>(builder => new SagaPersister(serializer, migrationModeEnabled, usePessimisticsLockingMode, leaseLockTime, leaseLockAcquisitionMaximumRefreshDelay, leaseLockAcquisitionTimeout));
         }
     }
 }

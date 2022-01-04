@@ -14,8 +14,9 @@
 
     class SagaPersister : ISagaPersister
     {
-        public SagaPersister(JsonSerializer serializer, bool migrationModeEnabled, bool usePessimisticsLockingMode, TimeSpan leaseLockTime, TimeSpan leaseLockAcquisitionMaximumRefreshDelay)
+        public SagaPersister(JsonSerializer serializer, bool migrationModeEnabled, bool usePessimisticsLockingMode, TimeSpan leaseLockTime, TimeSpan leaseLockAcquisitionMaximumRefreshDelay, TimeSpan acquireLeaseLockTimeout)
         {
+            this.acquireLeaseLockTimeout = acquireLeaseLockTimeout;
             this.serializer = serializer;
             this.migrationModeEnabled = migrationModeEnabled;
             this.usePessimisticsLockingMode = usePessimisticsLockingMode;
@@ -144,36 +145,49 @@
         async Task<Tuple<bool, TSagaData>> Patch<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
             where TSagaData : class, IContainSagaData
         {
-            while (!cancellationToken.IsCancellationRequested)
+            using (var timedTokenSource = new CancellationTokenSource(acquireLeaseLockTimeout))
+            using (var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(timedTokenSource.Token, cancellationToken))
             {
-                long unixTimeNow = (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-
-                IReadOnlyList<PatchOperation> patchOperations = new List<PatchOperation>
+                var token = combinedTokenSource.Token;
+                while (!token.IsCancellationRequested)
                 {
-                    PatchOperation.Add("/ReserveUntil", unixTimeNow + leaseLockTime.Seconds)
-                };
-                var requestOptions = new PatchItemRequestOptions
-                {
-                    FilterPredicate = $"from c where (NOT IS_DEFINED(c.ReserveUntil) OR c.ReserveUntil < {unixTimeNow})"
-                };
+                    long unixTimeNow = (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
 
-                using (var responseMessage = await container.PatchItemStreamAsync(sagaId.ToString(), partitionKey, patchOperations, requestOptions, cancellationToken).ConfigureAwait(false))
-                {
-                    var sagaStream = responseMessage.Content;
-
-                    if (responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
+                    IReadOnlyList<PatchOperation> patchOperations = new List<PatchOperation>
                     {
-                        await Task.Delay(TimeSpan.FromTicks(5 + random.Next(acquireLeaseLockRefreshMaximumDelayTicks)), cancellationToken).ConfigureAwait(false);
-                        continue;
+                        PatchOperation.Add("/ReserveUntil", unixTimeNow + leaseLockTime.Seconds)
+                    };
+                    var requestOptions = new PatchItemRequestOptions
+                    {
+                        FilterPredicate =
+                            $"from c where (NOT IS_DEFINED(c.ReserveUntil) OR c.ReserveUntil < {unixTimeNow})"
+                    };
+
+                    using (var responseMessage = await container.PatchItemStreamAsync(sagaId.ToString(), partitionKey,
+                               patchOperations, requestOptions, token).ConfigureAwait(false))
+                    {
+                        var sagaStream = responseMessage.Content;
+
+                        if (responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
+                        {
+                            await Task.Delay(
+                                TimeSpan.FromTicks(5 + random.Next(acquireLeaseLockRefreshMaximumDelayTicks)),
+                                token).ConfigureAwait(false);
+                            continue;
+                        }
+
+                        var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+
+                        return new Tuple<bool, TSagaData>(!sagaNotFound,
+                            sagaNotFound
+                                ? default
+                                : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
                     }
-
-                    var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
-
-                    return new Tuple<bool, TSagaData>(!sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
                 }
-            }
 
-            throw new TimeoutException($"Unable to acquire exclusive write lock for saga with id '{sagaId}' within allocated time '{leaseLockTime}'.");
+                throw new TimeoutException(
+                    $"Unable to acquire exclusive write lock for saga with id '{sagaId}' within allocated time '{leaseLockTime}'.");
+            }
         }
 
         TSagaData ReadSagaFromStream<TSagaData>(ContextBag context, Stream sagaStream, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
@@ -215,6 +229,7 @@
         readonly bool usePessimisticsLockingMode;
         readonly TimeSpan leaseLockTime;
         readonly int acquireLeaseLockRefreshMaximumDelayTicks;
+        readonly TimeSpan acquireLeaseLockTimeout;
         static readonly Random random = new Random();
     }
 }

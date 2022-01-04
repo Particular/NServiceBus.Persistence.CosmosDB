@@ -9,5 +9,6 @@
         public const string EnablePessimisticsLocking = nameof(baseName) + nameof(EnablePessimisticsLocking);
         public const string LeaseLockTime = nameof(baseName) + nameof(LeaseLockTime);
         public const string LeaseLockAcquisitionMaximumRefreshDelay = nameof(baseName) + nameof(LeaseLockAcquisitionMaximumRefreshDelay);
+        public const string LeaseLockAcquisitionTimeout = nameof(baseName) + nameof(LeaseLockAcquisitionTimeout);
     }
 }

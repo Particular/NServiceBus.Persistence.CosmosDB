@@ -59,6 +59,7 @@
             installerSettings.Disabled = true;
         }
 
+        // TODO: Move all those settings below here to a saga configuration? Also add extended validation
         /// <summary>
         /// Enable support for sagas migrated from other persistence technologies by querying the saga from storage using a migrated saga id.
         /// </summary>
@@ -87,6 +88,16 @@
         public static void UsePessimisticLocking(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
         {
             persistenceExtensions.GetSettings().Set(SettingsKeys.EnablePessimisticsLocking, true);
+        }
+
+        /// <summary>
+        /// Set saga persistence pessimistic lease lock acquisition timeout. Default is 60 seconds.
+        /// </summary>
+        public static void SetPessimisticLeaseLockAcquisitionTimeout(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, TimeSpan value)
+        {
+            Guard.AgainstNull(nameof(TimeSpan), value);
+
+            persistenceExtensions.GetSettings().Set(SettingsKeys.LeaseLockAcquisitionTimeout, value);
         }
     }
 }
