@@ -12,7 +12,7 @@
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.23.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
     <PackageReference Include="NServiceBus.Testing" Version="8.0.0-alpha.189" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.2.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.1.0" />
     <PackageReference Include="Nunit" Version="3.13.2" />
     <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="8.0.0-alpha.1900" />
   </ItemGroup>
@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <Compile Include="..\SharedAcceptanceTests.All\*.cs" />
-    <Compile Include="..\SharedAcceptanceTests.RequirePartitionKey\*.cs" />
+    <None Include="..\SharedAcceptanceTests.All\*.txt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,6 +53,7 @@
     <Compile Remove="\**\TimeToBeReceived\*.*" />
     <Compile Remove="\**\Tx\**\*.*" />
     <Compile Remove="\**\Versioning\*.*" />
+    <Compile Remove="\**\Outbox\*.*" />
   </ItemGroup>
 
 </Project>
