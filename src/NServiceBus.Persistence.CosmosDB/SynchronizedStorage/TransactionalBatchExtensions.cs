@@ -8,7 +8,7 @@
 
     static class TransactionalBatchExtensions
     {
-        internal static async Task ExecuteOperationAsync(this TransactionalBatch transactionalBatch, Operation operation, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
+        internal static async Task ExecuteOperationAsync(this TransactionalBatch transactionalBatch, IOperation operation, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
         {
             operation.Apply(transactionalBatch, partitionKeyPath);
 
@@ -32,7 +32,8 @@
             }
         }
 
-        internal static async Task ExecuteOperationsAsync(this TransactionalBatch transactionalBatch, Dictionary<int, Operation> operationMappings, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
+        internal static async Task ExecuteOperationsAsync<TOperation>(this TransactionalBatch transactionalBatch, Dictionary<int, TOperation> operationMappings, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
+            where TOperation : IOperation
         {
             foreach (var operation in operationMappings.Values)
             {
@@ -46,23 +47,23 @@
                     var result = batchOutcomeResponse[i];
 
                     operationMappings.TryGetValue(i, out var operation);
-                    operation ??= ThrowOnConflictOperation.Instance;
+                    IOperation operationToBeExecuted = operation ?? ThrowOnConflictOperation.Instance;
 
                     if (result.IsSuccessStatusCode)
                     {
-                        operation.Success(result);
+                        operationToBeExecuted.Success(result);
                         continue;
                     }
 
                     // guaranteed to throw
-                    operation.Conflict(result);
+                    operationToBeExecuted.Conflict(result);
                 }
             }
         }
 
-        internal static async Task ExecuteAndDisposeOperationsAsync(this TransactionalBatch transactionalBatch, Dictionary<int, Operation> operationMappings, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
+        internal static async Task ExecuteAndDisposeOperationsAsync<TOperation>(this TransactionalBatch transactionalBatch, Dictionary<int, TOperation> operationMappings, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
+            where TOperation : IOperation
         {
-            // TODO: We probably should ignore the result of the operations and just continue instead of throwing. Rethink this
             try
             {
                 await transactionalBatch.ExecuteOperationsAsync(operationMappings, partitionKeyPath, cancellationToken)
@@ -72,7 +73,7 @@
             {
                 foreach (var operation in operationMappings.Values)
                 {
-                    operation.Apply(transactionalBatch, partitionKeyPath);
+                    operation.Dispose();
                 }
             }
         }

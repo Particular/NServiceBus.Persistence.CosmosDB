@@ -140,7 +140,7 @@
 
             //else
             var patchRes = await Patch<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
-
+            storageSession.AddOperation(new SagaReleaseReservation(patchRes.Item2, partitionKey, serializer, context));
             return patchRes.Item2;
         }
 
@@ -203,6 +203,8 @@
             {
                 var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
 
+                // we always require the etag even when using the pessimistic locking approach in order to have retries
+                // in rare edge cases like when another concurrent update has stolen the reservation
                 context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
 
                 return sagaData;

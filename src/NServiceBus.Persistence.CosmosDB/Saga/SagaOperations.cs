@@ -20,7 +20,12 @@
         protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context)
             => this.sagaData = sagaData;
 
-        public override void Success(TransactionalBatchOperationResult result) => Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
+        public override void Success(TransactionalBatchOperationResult result)
+        {
+            base.Success(result);
+
+            Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
+        }
 
         protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
         {
@@ -132,7 +137,7 @@
     }
 
     // Special cleanup operation that only gets executed for pessimistic locking
-    sealed class SagaReleaseReservation : SagaOperation, ICleanupOnFailureOperation
+    sealed class SagaReleaseReservation : SagaOperation, ICleanupOperation
     {
         static IReadOnlyList<PatchOperation> cleanupPatchOperations;
 
@@ -145,6 +150,8 @@
         {
         }
 
+        public bool ExecutesOnFailure => true;
+
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             // TODO: Now this patch will always be executed even if the saga operation was successful
@@ -156,6 +163,11 @@
             };
 
             transactionalBatch.PatchItem(sagaData.Id.ToString(), CleanupPatchOperations, requestOptions);
+        }
+
+        public override void Conflict(TransactionalBatchOperationResult result)
+        {
+            // we do not care about possible conflicts since the cleanup is best effort
         }
     }
 }

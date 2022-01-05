@@ -7,12 +7,24 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    // Marker interface to distinguish cleanup operations that need to come last and need to be executed when failure happened
-    interface ICleanupOnFailureOperation
+    interface ICleanupOperation : IOperation
     {
+        /// <summary>
+        /// <c>true</c> indicates the cleanup operation is only executed when the regular operations failed.
+        /// </summary>
+        bool ExecutesOnFailure { get; }
     }
 
-    abstract class Operation : IDisposable
+    interface IOperation : IDisposable
+    {
+        bool Successful { get; }
+        PartitionKey PartitionKey { get; }
+        void Success(TransactionalBatchOperationResult result);
+        void Conflict(TransactionalBatchOperationResult result);
+        void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath);
+    }
+
+    abstract class Operation : IOperation
     {
         protected Operation(PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
         {
@@ -21,13 +33,12 @@
             Context = context;
         }
 
+        public bool Successful { get; private set; }
         public ContextBag Context { get; }
         public PartitionKey PartitionKey { get; }
         public JsonSerializer Serializer { get; }
 
-        public virtual void Success(TransactionalBatchOperationResult result)
-        {
-        }
+        public virtual void Success(TransactionalBatchOperationResult result) => Successful = true;
 
         public virtual void Conflict(TransactionalBatchOperationResult result)
         {
@@ -90,7 +101,7 @@
         {
         }
 
-        public static Operation Instance { get; } = new ThrowOnConflictOperation();
+        public static IOperation Instance { get; } = new ThrowOnConflictOperation();
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
