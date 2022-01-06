@@ -160,12 +160,12 @@
 
                     IReadOnlyList<PatchOperation> patchOperations = new List<PatchOperation>
                     {
-                        PatchOperation.Add("/ReserveUntil", reservedUntil)
+                        PatchOperation.Add($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}", reservedUntil)
                     };
                     var requestOptions = new PatchItemRequestOptions
                     {
                         FilterPredicate =
-                            $"from c where (NOT IS_DEFINED(c.ReserveUntil) OR c.ReserveUntil < {now})"
+                            $"from c where (NOT IS_DEFINED(c[\"{MetadataExtensions.MetadataKey}\"][\"{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}\"]) OR c[\"{MetadataExtensions.MetadataKey}\"][\"{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}\"] < {now})"
                     };
 
                     using (var responseMessage = await container.PatchItemStreamAsync(sagaId.ToString(), partitionKey,
