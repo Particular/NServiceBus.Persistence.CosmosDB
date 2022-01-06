@@ -7,17 +7,12 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    interface ICleanupOperation : IOperation
+    interface IReleaseLockOperation : IOperation
     {
-        /// <summary>
-        /// <c>true</c> indicates the cleanup operation is only executed when the regular operations failed.
-        /// </summary>
-        bool ExecutesOnFailure { get; }
     }
 
     interface IOperation : IDisposable
     {
-        bool Successful { get; }
         PartitionKey PartitionKey { get; }
         void Success(TransactionalBatchOperationResult result);
         void Conflict(TransactionalBatchOperationResult result);
@@ -33,12 +28,13 @@
             Context = context;
         }
 
-        public bool Successful { get; private set; }
         public ContextBag Context { get; }
         public PartitionKey PartitionKey { get; }
         public JsonSerializer Serializer { get; }
 
-        public virtual void Success(TransactionalBatchOperationResult result) => Successful = true;
+        public virtual void Success(TransactionalBatchOperationResult result)
+        {
+        }
 
         public virtual void Conflict(TransactionalBatchOperationResult result)
         {

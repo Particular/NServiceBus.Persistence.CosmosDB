@@ -131,13 +131,17 @@
         {
             // only delete if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var deleteEtag);
-            var deleteOptions = new TransactionalBatchItemRequestOptions { IfMatchEtag = deleteEtag };
+            var deleteOptions = new TransactionalBatchItemRequestOptions
+            {
+                IfMatchEtag = deleteEtag,
+                EnableContentResponseOnWrite = false,
+            };
             transactionalBatch.DeleteItem(sagaData.Id.ToString(), deleteOptions);
         }
     }
 
     // Special cleanup operation that only gets executed for pessimistic locking
-    sealed class SagaReleaseReservation : SagaOperation, ICleanupOperation
+    sealed class SagaReleaseLock : SagaOperation, IReleaseLockOperation
     {
         static IReadOnlyList<PatchOperation> cleanupPatchOperations;
 
@@ -146,20 +150,18 @@
             PatchOperation.Remove("/ReserveUntil")
         };
 
-        public SagaReleaseReservation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
+        public SagaReleaseLock(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
         {
         }
 
-        public bool ExecutesOnFailure => true;
-
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
-            // TODO: Now this patch will always be executed even if the saga operation was successful
             // only update if we have the same version as in CosmosDB
             Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);
             var requestOptions = new TransactionalBatchPatchItemRequestOptions
             {
-                IfMatchEtag = updateEtag
+                IfMatchEtag = updateEtag,
+                EnableContentResponseOnWrite = false
             };
 
             transactionalBatch.PatchItem(sagaData.Id.ToString(), CleanupPatchOperations, requestOptions);

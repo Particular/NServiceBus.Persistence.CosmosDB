@@ -79,7 +79,7 @@
                 //return await FindSagaInMigrationMode<TSagaData>(sagaId, context, container, responseMessage, cancellationToken);
             }
 
-            storageSession.AddOperation(new SagaReleaseReservation(patchRes.Item2, partitionKey, serializer, context));
+            storageSession.AddOperation(new SagaReleaseLock(patchRes.Item2, partitionKey, serializer, context));
 
             return patchRes.Item2;
         }
@@ -140,7 +140,7 @@
 
             //else
             var patchRes = await Patch<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
-            storageSession.AddOperation(new SagaReleaseReservation(patchRes.Item2, partitionKey, serializer, context));
+            storageSession.AddOperation(new SagaReleaseLock(patchRes.Item2, partitionKey, serializer, context));
             return patchRes.Item2;
         }
 

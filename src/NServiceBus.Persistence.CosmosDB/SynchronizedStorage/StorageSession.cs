@@ -35,10 +35,10 @@
         {
             var operationPartitionKey = operation.PartitionKey;
 
-            if (operation is ICleanupOperation cleanupOperation)
+            if (operation is IReleaseLockOperation cleanupOperation)
             {
-                cleanupOperations ??= new Dictionary<PartitionKey, Dictionary<int, ICleanupOperation>>();
-                AddOperation(cleanupOperation, operationPartitionKey, cleanupOperations);
+                releaseLockOperations ??= new Dictionary<PartitionKey, Dictionary<int, IReleaseLockOperation>>();
+                AddOperation(cleanupOperation, operationPartitionKey, releaseLockOperations);
                 return;
             }
 
@@ -76,56 +76,37 @@
 
                 await transactionalBatch.ExecuteOperationsAsync(batchOfOperations.Value, ContainerHolder.PartitionKeyPath, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
+
+            // when we successfully executed all operations we know we don't have to execute any release operations, so we dispose if necessary and clear them out
+            foreach (var batchOfReleaseLockOperations in releaseLockOperations ?? Enumerable.Empty<KeyValuePair<PartitionKey, Dictionary<int, IReleaseLockOperation>>>())
+            {
+                foreach (var operation in batchOfReleaseLockOperations.Value.Values)
+                {
+                    operation.Dispose();
+                }
+            }
+            releaseLockOperations = null;
         }
 
         public void Dispose()
         {
-            /*
-             * This is an ugly hack. The persistence tests do Saga Get requests wrapped with a storage session like the core behaves which is good.
-             * Normally though a get request would always be accompanied with a Save, Update Or Delete before completing the session.
-             * In order to execute cleanup operations for those Get request too we continue the assumption that Get request will never be lazy
-             * executed with operations and always go directly against the container. Hence we treat those Get request from the cleanup perspective as not
-             * successful requests and still execute the cleanup behavior that are marked with ExecutesOnFailure = true
-             */
-            var successful = operations.Count > 0;
             foreach (var batchOfOperations in operations)
             {
                 foreach (var operation in batchOfOperations.Value.Values)
                 {
-                    if (successful)
-                    {
-                        successful = operation.Successful;
-                    }
                     operation.Dispose();
                 }
             }
 
-            foreach (var batchOfOperations in cleanupOperations ?? Enumerable.Empty<KeyValuePair<PartitionKey, Dictionary<int, ICleanupOperation>>>())
+            // The persistence tests to Get requests within a synchronized storage session scope that is completed at the end. Since these get requests never add
+            // any operations there is nothing to commit (operations.Count == 0) and the release operations will not be cleaned making sure the acquired lock will be freed to not block
+            // other get requests and slow down tests.
+            foreach (var batchOfReleaseLockOperations in releaseLockOperations ?? Enumerable.Empty<KeyValuePair<PartitionKey, Dictionary<int, IReleaseLockOperation>>>())
             {
-                Dictionary<int, ICleanupOperation> operationMappings = batchOfOperations.Value;
-                List<int> indexesToRemove = null;
-                foreach (var operation in operationMappings)
-                {
-                    if (successful && operation.Value.ExecutesOnFailure)
-                    {
-                        indexesToRemove ??= new List<int>(operationMappings.Count);
-                        indexesToRemove.Add(operation.Key);
-                    }
-                }
-
-                foreach (var indexToRemove in indexesToRemove ?? Enumerable.Empty<int>())
-                {
-                    operationMappings.Remove(indexToRemove);
-                }
-
-                if (operationMappings.Count == 0)
-                {
-                    continue;
-                }
-                var transactionalBatch = ContainerHolder.Container.CreateTransactionalBatch(batchOfOperations.Key);
+                var transactionalBatch = ContainerHolder.Container.CreateTransactionalBatch(batchOfReleaseLockOperations.Key);
 
                 // We are optimistic and fire-and-forget the releasing of the lock and just continue. In case this fails the next message that needs to acquire the lock wil have to wait.
-                _ = transactionalBatch.ExecuteAndDisposeOperationsAsync(operationMappings, ContainerHolder.PartitionKeyPath, CancellationToken.None);
+                _ = transactionalBatch.ExecuteAndDisposeOperationsAsync(batchOfReleaseLockOperations.Value, ContainerHolder.PartitionKeyPath, CancellationToken.None);
             }
         }
 
@@ -136,6 +117,6 @@
         public ContainerHolder ContainerHolder { get; set; }
 
         readonly Dictionary<PartitionKey, Dictionary<int, IOperation>> operations = new Dictionary<PartitionKey, Dictionary<int, IOperation>>();
-        Dictionary<PartitionKey, Dictionary<int, ICleanupOperation>> cleanupOperations;
+        Dictionary<PartitionKey, Dictionary<int, IReleaseLockOperation>> releaseLockOperations;
     }
 }
