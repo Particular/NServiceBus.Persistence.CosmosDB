@@ -10,7 +10,6 @@
         /// <summary>
         /// Enable support for sagas migrated from other persistence technologies by querying the saga from storage using a migrated saga id.
         /// </summary>
-        /// TODO: Discuss naming between Enable/Use...
         public void EnableMigrationMode() => MigrationModeEnabled = true;
 
         /// <summary>

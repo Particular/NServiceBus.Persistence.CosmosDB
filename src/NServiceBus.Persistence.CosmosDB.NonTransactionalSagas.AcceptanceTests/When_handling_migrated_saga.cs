@@ -71,7 +71,7 @@
             public MigratingEndpoint() => EndpointSetup<DefaultServer>(ec =>
             {
                 var persistence = ec.UsePersistence<CosmosPersistence>();
-                persistence.EnableMigrationMode();
+                persistence.Sagas().EnableMigrationMode();
             });
 
             public class MigratingSaga : Saga<MigratingFromAsp2SagaData>,
