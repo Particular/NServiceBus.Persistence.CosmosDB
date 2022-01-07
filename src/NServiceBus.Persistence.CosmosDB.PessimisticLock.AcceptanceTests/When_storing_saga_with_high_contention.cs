@@ -17,7 +17,6 @@
             var scenario = await Scenario.Define<HighContentionScenario>()
                 .WithEndpoint<HighContentionEndpoint>(behavior =>
                 {
-                    behavior.CustomConfig(configuration => configuration.UsePersistence<CosmosPersistence>().Sagas());
                     behavior.When(session => session.SendLocal(new StartSaga { SomeId = Guid.NewGuid() }));
                 })
                 .Done(s => s.SagaCompleted)
