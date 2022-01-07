@@ -20,7 +20,8 @@
             migrationModeEnabled = options.MigrationModeEnabled;
             leaseLockTime = options.LeaseLockTime;
             pessimisticLockingEnabled = options.PessimisticLockingEnabled;
-            acquireLeaseLockRefreshMaximumDelayTicks = (int)options.LeaseLockAcquisitionMaximumRefreshDelay.Ticks;
+            acquireLeaseLockRefreshMaximumDelayMilliseconds = Convert.ToInt32(options.LeaseLockAcquisitionMaximumRefreshDelay.TotalMilliseconds);
+            acquireLeaseLockRefreshMinimumDelayMilliseconds = 5;
             acquireLeaseLockTimeout = options.LeaseLockAcquisitionTimeout;
         }
 
@@ -83,6 +84,35 @@
             return sagaData;
         }
 
+        public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
+            where TSagaData : class, IContainSagaData
+        {
+            var storageSession = (StorageSession)session;
+
+            // Saga ID needs to be calculated the same way as in SagaIdGenerator does
+            var sagaId = CosmosSagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
+
+            // reads need to go directly
+            var container = storageSession.ContainerHolder.Container;
+            var partitionKey = GetPartitionKey(context, sagaId);
+
+            if (!pessimisticLockingEnabled)
+            {
+                using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
+                {
+                    var sagaStream = responseMessage.Content;
+
+                    var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+
+                    return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
+                }
+            }
+
+            var (_, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+            storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
+            return sagaData;
+        }
+
         async Task<TSagaData> FindSagaInMigrationMode<TSagaData>(Guid sagaId, ContextBag context, Container container,
             ResponseMessage responseMessage, CancellationToken cancellationToken) where TSagaData : class, IContainSagaData
         {
@@ -111,35 +141,6 @@
                     return sagaData;
                 }
             }
-        }
-
-        public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
-            where TSagaData : class, IContainSagaData
-        {
-            var storageSession = (StorageSession)session;
-
-            // Saga ID needs to be calculated the same way as in SagaIdGenerator does
-            var sagaId = CosmosSagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
-
-            // reads need to go directly
-            var container = storageSession.ContainerHolder.Container;
-            var partitionKey = GetPartitionKey(context, sagaId);
-
-            if (!pessimisticLockingEnabled)
-            {
-                using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
-                {
-                    var sagaStream = responseMessage.Content;
-
-                    var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
-
-                    return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
-                }
-            }
-
-            var (_, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
-            storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
-            return sagaData;
         }
 
         async Task<(bool sagaNotFound, TSagaData sagaData)> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
@@ -173,9 +174,7 @@
 
                         if (responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
                         {
-                            await Task.Delay(
-                                TimeSpan.FromTicks(5 + random.Next(acquireLeaseLockRefreshMaximumDelayTicks)),
-                                token).ConfigureAwait(false);
+                            await Task.Delay(TimeSpan.FromMilliseconds(random.Next(acquireLeaseLockRefreshMinimumDelayMilliseconds, acquireLeaseLockRefreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
                             continue;
                         }
 
@@ -233,7 +232,8 @@
         readonly bool migrationModeEnabled;
         readonly bool pessimisticLockingEnabled;
         readonly TimeSpan leaseLockTime;
-        readonly int acquireLeaseLockRefreshMaximumDelayTicks;
+        readonly int acquireLeaseLockRefreshMaximumDelayMilliseconds;
+        readonly int acquireLeaseLockRefreshMinimumDelayMilliseconds;
         readonly TimeSpan acquireLeaseLockTimeout;
         static readonly Random random = new Random();
     }
