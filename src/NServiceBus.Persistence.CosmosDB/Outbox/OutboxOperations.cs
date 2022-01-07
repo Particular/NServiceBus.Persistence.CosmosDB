@@ -12,10 +12,31 @@
         protected readonly OutboxRecord record;
         protected Stream stream = Stream.Null;
 
+        static JObject metadata;
+
+        static JObject Metadata => metadata = metadata ?? new JObject
+        {
+            { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
+            { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
+        };
+
         protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context)
         {
             this.record = record;
         }
+
+        protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
+        {
+            var jObject = JObject.FromObject(record, Serializer);
+
+            EnrichWithOutboxMetadata(jObject);
+
+            EnrichWithPartitionKeyIfNecessary(jObject, partitionKeyPath);
+
+            return jObject;
+        }
+
+        void EnrichWithOutboxMetadata(JObject toBeEnriched) => toBeEnriched.Add(MetadataExtensions.MetadataKey, Metadata);
 
         public override void Dispose()
         {
@@ -31,16 +52,7 @@
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
-            var jObject = JObject.FromObject(record, Serializer);
-
-            var metadata = new JObject
-            {
-                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
-                { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
-            };
-            jObject.Add(MetadataExtensions.MetadataKey, metadata);
-
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
+            var jObject = ToEnrichedJObject(partitionKeyPath);
 
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
@@ -64,18 +76,9 @@
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
-            var jObject = JObject.FromObject(record, Serializer);
-
-            var metadata = new JObject
-            {
-                { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
-                { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
-            };
-            jObject.Add(MetadataExtensions.MetadataKey, metadata);
+            var jObject = ToEnrichedJObject(partitionKeyPath);
 
             jObject.Add("ttl", ttlInSeconds);
-
-            jObject.EnrichWithPartitionKeyIfNecessary(PartitionKey.ToString(), partitionKeyPath);
 
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
