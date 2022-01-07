@@ -140,22 +140,15 @@
                         return default;
                     }
 
-                    // TODO: Find a better way
-                    var tempContainer = documents[0].ToObject<TempContainer>(serializer);
-                    if (tempContainer is { Id: { } migratedSagaId })
+                    if (documents[0].Value<string>("id") is { } migratedSagaId)
                     {
                         context.Set($"cosmos_migratedsagaid:{migratedSagaId}", sagaId);
-                        return migratedSagaId;
+                        return Guid.Parse(migratedSagaId);
                     }
 
                     return null;
                 }
             }
-        }
-
-        class TempContainer
-        {
-            public Guid? Id { get; set; }
         }
 
         async Task<ValueTuple<bool, TSagaData>> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
