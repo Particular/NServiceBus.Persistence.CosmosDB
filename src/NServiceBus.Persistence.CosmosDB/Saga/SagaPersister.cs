@@ -69,19 +69,18 @@
                 }
             }
 
-            var patchRes = await Patch<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+            var (sagaWasNotFound, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
 
-            //NotFound
-            if (!patchRes.Item1 && migrationModeEnabled)
+            if (sagaWasNotFound && migrationModeEnabled)
             {
                 //TODO: I was trying to refactor the code to extract a common code as much as possible, but... needs to be reviewed by second pair of eyes..
                 //Possible potential simplest solution - just skip it
                 //return await FindSagaInMigrationMode<TSagaData>(sagaId, context, container, responseMessage, cancellationToken);
             }
 
-            storageSession.AddOperation(new SagaReleaseLock(patchRes.Item2, partitionKey, serializer, context));
+            storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
 
-            return patchRes.Item2;
+            return sagaData;
         }
 
         async Task<TSagaData> FindSagaInMigrationMode<TSagaData>(Guid sagaId, ContextBag context, Container container,
@@ -138,13 +137,12 @@
                 }
             }
 
-            //else
-            var patchRes = await Patch<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
-            storageSession.AddOperation(new SagaReleaseLock(patchRes.Item2, partitionKey, serializer, context));
-            return patchRes.Item2;
+            var (_, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+            storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
+            return sagaData;
         }
 
-        async Task<Tuple<bool, TSagaData>> Patch<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
+        async Task<(bool sagaNotFound, TSagaData sagaData)> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
             where TSagaData : class, IContainSagaData
         {
             using (var timedTokenSource = new CancellationTokenSource(acquireLeaseLockTimeout))
@@ -183,7 +181,7 @@
 
                         var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                        return new Tuple<bool, TSagaData>(!sagaNotFound,
+                        return new ValueTuple<bool, TSagaData>(!sagaNotFound,
                             sagaNotFound
                                 ? default
                                 : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
