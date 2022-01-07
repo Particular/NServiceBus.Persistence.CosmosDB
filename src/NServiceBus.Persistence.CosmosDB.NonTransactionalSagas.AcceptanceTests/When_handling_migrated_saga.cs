@@ -37,7 +37,6 @@
         ""SagaDataContainer-MigratedSagaId"": ""{0}""
     }},
     ""id"": ""{1}"",
-    ""Id"": ""{1}"",
     ""MyId"": ""{2}"",
     ""Originator"": ""Migrationendtoend.MigratingEndpoint"",
     ""OriginalMessageId"": ""6492af3f-1d60-43f6-8e62-ae1600ab23a2""

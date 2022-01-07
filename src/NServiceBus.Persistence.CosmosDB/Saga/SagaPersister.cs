@@ -51,32 +51,30 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
+            bool sagaNotFound;
+            TSagaData sagaData;
             if (!pessimisticLockingEnabled)
             {
-                using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
+                (sagaNotFound, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+                // if the previous lookup by id wasn't successful and the migration mode is enabled try to query for the saga data because the saga id probably represents
+                // the saga id of the migrated saga.
+                if (sagaNotFound && migrationModeEnabled &&
+                    await FindSagaIdInMigrationMode(sagaId, context, container, cancellationToken).ConfigureAwait(false) is { } migratedSagaId)
                 {
-                    var sagaStream = responseMessage.Content;
-
-                    var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
-
-                    // if the previous lookup by id wasn't successful and the migration mode is enabled try to query for the saga data because the saga id probably represents
-                    // the saga id of the migrated saga.
-                    if (sagaNotFound && migrationModeEnabled)
-                    {
-                        return await FindSagaInMigrationMode<TSagaData>(sagaId, context, container, responseMessage, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
+                    partitionKey = GetPartitionKey(context, migratedSagaId);
+                    (_, sagaData) = await ReadSagaData<TSagaData>(migratedSagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
                 }
+                return sagaData;
             }
 
-            var (sagaWasNotFound, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
-
-            if (sagaWasNotFound && migrationModeEnabled)
+            (sagaNotFound, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+            // if the previous lookup by id wasn't successful and the migration mode is enabled try to query for the saga data because the saga id probably represents
+            // the saga id of the migrated saga.
+            if (sagaNotFound && migrationModeEnabled &&
+                await FindSagaIdInMigrationMode(sagaId, context, container, cancellationToken).ConfigureAwait(false) is { } previousSagaId)
             {
-                //TODO: I was trying to refactor the code to extract a common code as much as possible, but... needs to be reviewed by second pair of eyes..
-                //Possible potential simplest solution - just skip it
-                //return await FindSagaInMigrationMode<TSagaData>(sagaId, context, container, responseMessage, cancellationToken);
+                partitionKey = GetPartitionKey(context, previousSagaId);
+                (_, sagaData) = await AcquireLease<TSagaData>(previousSagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
             }
 
             storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
@@ -96,28 +94,35 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
+            TSagaData sagaData;
             if (!pessimisticLockingEnabled)
             {
-                using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
-                {
-                    var sagaStream = responseMessage.Content;
-
-                    var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
-
-                    return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
-                }
+                (_, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+                return sagaData;
             }
 
-            var (_, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+            (_, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
             storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
             return sagaData;
         }
 
-        async Task<TSagaData> FindSagaInMigrationMode<TSagaData>(Guid sagaId, ContextBag context, Container container,
-            ResponseMessage responseMessage, CancellationToken cancellationToken) where TSagaData : class, IContainSagaData
+        async Task<ValueTuple<bool, TSagaData>> ReadSagaData<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
+            where TSagaData : class, IContainSagaData
+        {
+            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
+            {
+                var sagaStream = responseMessage.Content;
+
+                var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+
+                return new ValueTuple<bool, TSagaData>(sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
+            }
+        }
+
+        async Task<Guid?> FindSagaIdInMigrationMode(Guid sagaId, ContextBag context, Container container, CancellationToken cancellationToken)
         {
             var query =
-                $@"SELECT TOP 1 * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
+                $@"SELECT TOP 1 c.id FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
             var queryDefinition = new QueryDefinition(query);
             var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
 
@@ -130,20 +135,30 @@
                 {
                     var iteratorResult = await JObject.LoadAsync(jsonReader, cancellationToken).ConfigureAwait(false);
 
-                    if (!(iteratorResult["Documents"] is JArray documents) || !documents.HasValues)
+                    if (!(iteratorResult["Documents"] is JArray { HasValues: true } documents))
                     {
                         return default;
                     }
 
-                    var sagaData = documents[0].ToObject<TSagaData>(serializer);
-                    context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
-                    context.Set($"cosmos_migratedsagaid:{sagaData.Id}", sagaId);
-                    return sagaData;
+                    // TODO: Find a better way
+                    var tempContainer = documents[0].ToObject<TempContainer>(serializer);
+                    if (tempContainer is { Id: { } migratedSagaId })
+                    {
+                        context.Set($"cosmos_migratedsagaid:{migratedSagaId}", sagaId);
+                        return migratedSagaId;
+                    }
+
+                    return null;
                 }
             }
         }
 
-        async Task<(bool sagaNotFound, TSagaData sagaData)> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
+        class TempContainer
+        {
+            public Guid? Id { get; set; }
+        }
+
+        async Task<ValueTuple<bool, TSagaData>> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
             where TSagaData : class, IContainSagaData
         {
             using (var timedTokenSource = new CancellationTokenSource(acquireLeaseLockTimeout))
@@ -180,10 +195,7 @@
 
                         var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                        return new ValueTuple<bool, TSagaData>(!sagaNotFound,
-                            sagaNotFound
-                                ? default
-                                : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
+                        return new ValueTuple<bool, TSagaData>(sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
                     }
                 }
 

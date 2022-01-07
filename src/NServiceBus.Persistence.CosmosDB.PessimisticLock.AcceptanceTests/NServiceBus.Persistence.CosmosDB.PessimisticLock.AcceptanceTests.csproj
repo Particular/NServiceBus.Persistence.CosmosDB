@@ -26,6 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests\When_handling_migrated_saga.cs">
+      <Link>When_handling_migrated_saga.cs</Link>
+    </Compile>
     <Compile Include="..\SharedAcceptanceTests.All\*.cs" />
     <None Include="..\SharedAcceptanceTests.All\*.txt" />
   </ItemGroup>
