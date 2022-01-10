@@ -81,7 +81,7 @@
             SupportsPessimisticConcurrency = sagaPersistenceConfiguration.PessimisticLockingEnabled;
             if (SessionTimeout.HasValue)
             {
-                sagaPersistenceConfiguration.SetPessimisticLeaseLockAcquisitionTimeout(SessionTimeout.Value);
+                sagaPersistenceConfiguration.PessimisticLockingConfiguration.SetPessimisticLeaseLockAcquisitionTimeout(SessionTimeout.Value);
             }
 
             var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);

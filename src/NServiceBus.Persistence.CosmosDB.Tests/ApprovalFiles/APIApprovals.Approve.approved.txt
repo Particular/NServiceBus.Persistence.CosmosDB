@@ -56,14 +56,18 @@ namespace NServiceBus.Persistence.CosmosDB
     {
         public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
     }
-    public class SagaPersistenceConfiguration
+    public class PessimisticLockingConfiguration
     {
-        public SagaPersistenceConfiguration() { }
-        public void EnableMigrationMode() { }
+        public PessimisticLockingConfiguration() { }
         public void SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(System.TimeSpan value) { }
         public void SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(System.TimeSpan value) { }
         public void SetPessimisticLeaseLockAcquisitionTimeout(System.TimeSpan value) { }
         public void SetPessimisticLeaseLockTime(System.TimeSpan value) { }
+    }
+    public class SagaPersistenceConfiguration
+    {
+        public SagaPersistenceConfiguration() { }
+        public void EnableMigrationMode() { }
         public void UsePessimisticLocking() { }
     }
     public sealed class TransactionalBatchOperationException : System.Exception
