@@ -1,6 +1,6 @@
 namespace NServiceBus.Persistence.CosmosDB
 {
-    using System.Linq;
+    using System.Collections.Generic;
     using Features;
     using Microsoft.Extensions.DependencyInjection;
 
@@ -10,23 +10,23 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             Defaults(s =>
             {
-                s.SetDefault<IExtractTransactionInformationFromHeaders>(new ExtractNothingFromHeaders());
-                s.SetDefault<IExtractTransactionInformationFromMessages>(new ExtractNothingFromMessages());
+                s.SetDefault(new List<IExtractTransactionInformationFromHeaders>());
+                s.SetDefault(new List<IExtractTransactionInformationFromMessages>());
             });
         }
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            // TODO: Decide whether we want to allow multiple registrations
-            if (!context.Services.Any(descriptor => descriptor.ServiceType == typeof(IExtractTransactionInformationFromHeaders)))
+            var extractTransactionInformationFromHeaders = context.Settings.Get<List<IExtractTransactionInformationFromHeaders>>();
+            foreach (var extractTransactionInformationFromHeader in extractTransactionInformationFromHeaders)
             {
-                context.Services.AddSingleton(context.Settings.Get<IExtractTransactionInformationFromHeaders>());
+                context.Services.AddSingleton(extractTransactionInformationFromHeader);
             }
 
-            // TODO: Decide whether we want to allow multiple registrations
-            if (!context.Services.Any(descriptor => descriptor.ServiceType == typeof(IExtractTransactionInformationFromMessages)))
+            var extractTransactionInformationFromMessages = context.Settings.Get<List<IExtractTransactionInformationFromMessages>>();
+            foreach (var extractTransactionInformationFromMessage in extractTransactionInformationFromMessages)
             {
-                context.Services.AddSingleton(context.Settings.Get<IExtractTransactionInformationFromMessages>());
+                context.Services.AddSingleton(extractTransactionInformationFromMessage);
             }
 
             context.Pipeline.Register<TransactionInformationBeforeTheLogicalOutboxBehavior.RegisterStep>();

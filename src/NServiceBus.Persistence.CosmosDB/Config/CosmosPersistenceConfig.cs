@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus
 {
+    using System.Collections.Generic;
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;
@@ -87,8 +88,8 @@
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(extractor), extractor);
 
-            persistenceExtensions.GetSettings().Set<IExtractTransactionInformationFromHeaders>(extractor);
-            persistenceExtensions.GetSettings().Set<IExtractTransactionInformationFromMessages>(extractor);
+            persistenceExtensions.ExtractFromHeaders(extractor);
+            persistenceExtensions.ExtractFromMessages(extractor);
             return persistenceExtensions;
         }
 
@@ -104,7 +105,8 @@
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(extractor), extractor);
 
-            persistenceExtensions.GetSettings().Set(extractor);
+            var settings = persistenceExtensions.GetSettings();
+            settings.GetOrCreate<List<IExtractTransactionInformationFromHeaders>>().Add(extractor);
             return persistenceExtensions;
         }
 
@@ -120,7 +122,8 @@
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(extractor), extractor);
 
-            persistenceExtensions.GetSettings().Set(extractor);
+            var settings = persistenceExtensions.GetSettings();
+            settings.GetOrCreate<List<IExtractTransactionInformationFromMessages>>().Add(extractor);
             return persistenceExtensions;
         }
     }

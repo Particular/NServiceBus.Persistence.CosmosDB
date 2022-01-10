@@ -1,32 +1,36 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Pipeline;
 
     class TransactionInformationBeforeThePhysicalOutboxBehavior : IBehavior<ITransportReceiveContext, ITransportReceiveContext>
     {
-        readonly IExtractTransactionInformationFromHeaders extractTransactionInformationFromHeaders;
+        readonly IEnumerable<IExtractTransactionInformationFromHeaders> extractTransactionInformationFromHeaders;
 
-        public TransactionInformationBeforeThePhysicalOutboxBehavior(IExtractTransactionInformationFromHeaders extractTransactionInformationFromHeaders)
-        {
+        public TransactionInformationBeforeThePhysicalOutboxBehavior(IEnumerable<IExtractTransactionInformationFromHeaders> extractTransactionInformationFromHeaders) =>
             this.extractTransactionInformationFromHeaders = extractTransactionInformationFromHeaders;
-        }
 
         public Task Invoke(ITransportReceiveContext context, Func<ITransportReceiveContext, Task> next)
         {
-            if (extractTransactionInformationFromHeaders.TryExtract(context.Message.Headers, out var partitionKey,
-                    out var containerInformation))
+            foreach (var extractTransactionInformationFromHeader in extractTransactionInformationFromHeaders)
             {
-                // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
-                if (partitionKey.HasValue)
+                if (extractTransactionInformationFromHeader.TryExtract(context.Message.Headers, out var partitionKey,
+                        out var containerInformation))
                 {
-                    context.Extensions.Set(partitionKey.Value);
-                }
+                    // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
+                    if (partitionKey.HasValue)
+                    {
+                        context.Extensions.Set(partitionKey.Value);
+                    }
 
-                if (containerInformation.HasValue)
-                {
-                    context.Extensions.Set(containerInformation.Value);
+                    if (containerInformation.HasValue)
+                    {
+                        context.Extensions.Set(containerInformation.Value);
+                    }
+                    // first match wins
+                    break;
                 }
             }
             return next(context);

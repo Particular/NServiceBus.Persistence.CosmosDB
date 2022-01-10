@@ -20,7 +20,7 @@
                     return false;
                 });
 
-            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(extractor);
+            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(new[] { extractor });
 
             var context = new TestableTransportReceiveContext();
 
@@ -28,6 +28,44 @@
 
             Assert.That(context.Extensions.TryGet<PartitionKey>(out _), Is.False);
             Assert.That(context.Extensions.TryGet<ContainerInformation>(out _), Is.False);
+        }
+
+        [Test]
+        public async Task Should_skip_remaining_extractors_once_one_returns_true()
+        {
+            bool lastWasCalled = false;
+            var firstExtractor = new Extractor(
+                delegate (IReadOnlyDictionary<string, string> headers, out PartitionKey? key, out ContainerInformation? container)
+                {
+                    key = null;
+                    container = null;
+                    return false;
+                });
+
+            var matchingExtractor = new Extractor(
+                delegate (IReadOnlyDictionary<string, string> headers, out PartitionKey? key, out ContainerInformation? container)
+                {
+                    key = null;
+                    container = null;
+                    return true;
+                });
+
+            var lastExtractor = new Extractor(
+                delegate (IReadOnlyDictionary<string, string> headers, out PartitionKey? key, out ContainerInformation? container)
+                {
+                    key = null;
+                    container = null;
+                    lastWasCalled = true;
+                    return false;
+                });
+
+            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(new[] { firstExtractor, matchingExtractor, lastExtractor });
+
+            var context = new TestableTransportReceiveContext();
+
+            await behavior.Invoke(context, _ => Task.CompletedTask);
+
+            Assert.That(lastWasCalled, Is.False);
         }
 
         [Test]
@@ -41,7 +79,7 @@
                     return true;
                 });
 
-            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(extractor);
+            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(new[] { extractor });
 
             var context = new TestableTransportReceiveContext();
 
@@ -62,7 +100,7 @@
                     return true;
                 });
 
-            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(extractor);
+            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(new[] { extractor });
 
             var context = new TestableTransportReceiveContext();
 
@@ -85,7 +123,7 @@
                     return false;
                 });
 
-            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(extractor);
+            var behavior = new TransactionInformationBeforeThePhysicalOutboxBehavior(new[] { extractor });
 
             var context = new TestableTransportReceiveContext();
             context.Message.Headers.Clear();
