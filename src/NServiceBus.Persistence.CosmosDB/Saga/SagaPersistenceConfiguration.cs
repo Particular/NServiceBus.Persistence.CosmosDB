@@ -61,6 +61,11 @@
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition maximum refresh delay must be between zero and 1 second");
             }
 
+            if (value < LeaseLockAcquisitionMinimumRefreshDelay)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, $"Lease lock acquisition maximum refresh delay must be equal or larger than the minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}').");
+            }
+
             LeaseLockAcquisitionMaximumRefreshDelay = value;
         }
 
