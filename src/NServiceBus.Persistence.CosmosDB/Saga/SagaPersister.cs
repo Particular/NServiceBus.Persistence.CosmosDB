@@ -21,7 +21,7 @@
             leaseLockTime = options.LeaseLockTime;
             pessimisticLockingEnabled = options.PessimisticLockingEnabled;
             acquireLeaseLockRefreshMaximumDelayMilliseconds = Convert.ToInt32(options.LeaseLockAcquisitionMaximumRefreshDelay.TotalMilliseconds);
-            acquireLeaseLockRefreshMinimumDelayMilliseconds = 5;
+            acquireLeaseLockRefreshMinimumDelayMilliseconds = Convert.ToInt32(options.LeaseLockAcquisitionMinimumRefreshDelay.TotalMilliseconds);
             acquireLeaseLockTimeout = options.LeaseLockAcquisitionTimeout;
         }
 

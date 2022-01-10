@@ -61,6 +61,7 @@ namespace NServiceBus.Persistence.CosmosDB
         public SagaPersistenceConfiguration() { }
         public void EnableMigrationMode() { }
         public void SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(System.TimeSpan value) { }
+        public void SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(System.TimeSpan value) { }
         public void SetPessimisticLeaseLockAcquisitionTimeout(System.TimeSpan value) { }
         public void SetPessimisticLeaseLockTime(System.TimeSpan value) { }
         public void UsePessimisticLocking() { }
