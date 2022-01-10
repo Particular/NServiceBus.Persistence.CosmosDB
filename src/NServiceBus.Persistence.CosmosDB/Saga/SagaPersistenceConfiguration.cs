@@ -46,7 +46,7 @@
         }
 
         /// <summary>
-        /// Set maximum saga persistence lease lock acquisition refresh delay. Default is 20 milliseconds.
+        /// Set maximum saga persistence lease lock acquisition refresh delay. Default is 1000 milliseconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition maximum refresh duration.</param>
         public void SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan value)
@@ -65,7 +65,7 @@
         }
 
         /// <summary>
-        /// Set minimum saga persistence lease lock acquisition refresh delay. Default is 5 milliseconds.
+        /// Set minimum saga persistence lease lock acquisition refresh delay. Default is 500 milliseconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition minimum refresh duration.</param>
         public void SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan value)
@@ -85,8 +85,8 @@
 
         internal TimeSpan LeaseLockAcquisitionTimeout { get; private set; } = TimeSpan.FromSeconds(60);
         internal TimeSpan LeaseLockTime { get; private set; } = TimeSpan.FromSeconds(60);
-        internal TimeSpan LeaseLockAcquisitionMaximumRefreshDelay { get; private set; } = TimeSpan.FromMilliseconds(20);
-        internal TimeSpan LeaseLockAcquisitionMinimumRefreshDelay { get; private set; } = TimeSpan.FromMilliseconds(5);
+        internal TimeSpan LeaseLockAcquisitionMaximumRefreshDelay { get; private set; } = TimeSpan.FromMilliseconds(1000);
+        internal TimeSpan LeaseLockAcquisitionMinimumRefreshDelay { get; private set; } = TimeSpan.FromMilliseconds(500);
         internal bool PessimisticLockingEnabled { get; private set; }
         internal bool MigrationModeEnabled { get; private set; }
     }
