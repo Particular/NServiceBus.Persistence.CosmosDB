@@ -370,12 +370,9 @@
 
         class ThrowsOnExecuteAsyncTransactionalBatch : TransactionalBatch
         {
-            public override async Task<TransactionalBatchResponse> ExecuteAsync(
-                CancellationToken cancellationToken = new CancellationToken())
-            {
-                await Task.Yield();
+            public override Task<TransactionalBatchResponse> ExecuteAsync(
+                CancellationToken cancellationToken = new CancellationToken()) =>
                 throw new InvalidOperationException();
-            }
 
             #region Not Important
             public override TransactionalBatch CreateItem<T>(T item, TransactionalBatchItemRequestOptions requestOptions = null) => throw new NotImplementedException();
