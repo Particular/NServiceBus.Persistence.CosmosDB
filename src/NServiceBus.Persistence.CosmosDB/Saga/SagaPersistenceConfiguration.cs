@@ -53,12 +53,7 @@
         {
             if (value <= TimeSpan.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition maximum refresh delay must be between zero and 1 second");
-            }
-
-            if (value > TimeSpan.FromSeconds(1))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition maximum refresh delay must be between zero and 1 second");
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition maximum refresh delay must be equal or larger than zero.");
             }
 
             if (value < LeaseLockAcquisitionMinimumRefreshDelay)
@@ -77,12 +72,7 @@
         {
             if (value <= TimeSpan.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition minimum refresh delay must be between zero and 1 second");
-            }
-
-            if (value > TimeSpan.FromSeconds(1))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition minimum refresh delay must be between zero and 1 second");
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition minimum refresh delay must be equal or larger than zero.");
             }
 
             if (value > LeaseLockAcquisitionMaximumRefreshDelay)
