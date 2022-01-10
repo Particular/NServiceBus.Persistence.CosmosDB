@@ -180,9 +180,29 @@
                     {
                         var sagaStream = responseMessage.Content;
 
+                        bool throttlingRequired = false;
+                        int refreshMinimumDelayMilliseconds = acquireLeaseLockRefreshMinimumDelayMilliseconds;
+                        int refreshMaximumDelayMilliseconds = acquireLeaseLockRefreshMaximumDelayMilliseconds;
+
                         if (responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
                         {
-                            await Task.Delay(TimeSpan.FromMilliseconds(random.Next(acquireLeaseLockRefreshMinimumDelayMilliseconds, acquireLeaseLockRefreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
+                            throttlingRequired = true;
+                        }
+
+                        // In case of TooManyRequests we might be violating the AcquireLeaseLockRefreshMaximumDelayMilliseconds but that's OK
+                        if ((int)responseMessage.StatusCode == 429 && responseMessage.Headers.TryGetValue("x-ms-retry-after-ms",
+                                out var operationWaitTime)) // TooManyRequests
+                        {
+                            throttlingRequired = true;
+
+                            int retryOperationWaitTimeInMilliseconds = Convert.ToInt32(operationWaitTime);
+                            refreshMinimumDelayMilliseconds = Math.Max(retryOperationWaitTimeInMilliseconds, refreshMinimumDelayMilliseconds);
+                            refreshMaximumDelayMilliseconds = Math.Max(retryOperationWaitTimeInMilliseconds, refreshMaximumDelayMilliseconds);
+                        }
+
+                        if (throttlingRequired)
+                        {
+                            await Task.Delay(TimeSpan.FromMilliseconds(random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
                             continue;
                         }
 
