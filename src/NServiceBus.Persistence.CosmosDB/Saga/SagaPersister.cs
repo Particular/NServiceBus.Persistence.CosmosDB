@@ -106,7 +106,7 @@
             return sagaData;
         }
 
-        async Task<ValueTuple<bool, TSagaData>> ReadSagaData<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
+        async Task<(bool sagaNotFound, TSagaData sagaData)> ReadSagaData<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
             where TSagaData : class, IContainSagaData
         {
             using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
@@ -115,7 +115,7 @@
 
                 var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                return new ValueTuple<bool, TSagaData>(sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
+                return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
             }
         }
 
@@ -151,7 +151,7 @@
             }
         }
 
-        async Task<ValueTuple<bool, TSagaData>> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
+        async Task<(bool sagaNotFound, TSagaData sagaData)> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
             where TSagaData : class, IContainSagaData
         {
             using (var timedTokenSource = new CancellationTokenSource(acquireLeaseLockTimeout))
@@ -208,7 +208,7 @@
 
                         var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                        return new ValueTuple<bool, TSagaData>(sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
+                        return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
                     }
                 }
 
