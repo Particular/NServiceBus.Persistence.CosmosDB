@@ -21,7 +21,7 @@
                     return false;
                 });
 
-            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(new[] { extractor });
+            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(extractor);
 
             var context = new TestableIncomingLogicalMessageContext();
 
@@ -29,44 +29,6 @@
 
             Assert.That(context.Extensions.TryGet<PartitionKey>(out _), Is.False);
             Assert.That(context.Extensions.TryGet<ContainerInformation>(out _), Is.False);
-        }
-
-        [Test]
-        public async Task Should_skip_remaining_extractors_once_one_returns_true()
-        {
-            bool lastWasCalled = false;
-            var firstExtractor = new Extractor(
-                delegate (object msg, out PartitionKey? key, out ContainerInformation? container)
-                {
-                    key = null;
-                    container = null;
-                    return false;
-                });
-
-            var matchingExtractor = new Extractor(
-                delegate (object msg, out PartitionKey? key, out ContainerInformation? container)
-                {
-                    key = null;
-                    container = null;
-                    return true;
-                });
-
-            var lastExtractor = new Extractor(
-                delegate (object msg, out PartitionKey? key, out ContainerInformation? container)
-                {
-                    key = null;
-                    container = null;
-                    lastWasCalled = true;
-                    return false;
-                });
-
-            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(new[] { firstExtractor, matchingExtractor, lastExtractor });
-
-            var context = new TestableIncomingLogicalMessageContext();
-
-            await behavior.Invoke(context, _ => Task.CompletedTask);
-
-            Assert.That(lastWasCalled, Is.False);
         }
 
         [Test]
@@ -80,7 +42,7 @@
                     return true;
                 });
 
-            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(new[] { extractor });
+            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(extractor);
 
             var context = new TestableIncomingLogicalMessageContext();
 
@@ -101,7 +63,7 @@
                     return true;
                 });
 
-            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(new[] { extractor });
+            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(extractor);
 
             var context = new TestableIncomingLogicalMessageContext();
 
@@ -124,7 +86,7 @@
                     return true;
                 });
 
-            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(new[] { extractor });
+            var behavior = new TransactionInformationBeforeTheLogicalOutboxBehavior(extractor);
 
             var context = new TestableIncomingLogicalMessageContext();
             var messageInstance = new object();

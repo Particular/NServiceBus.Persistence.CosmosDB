@@ -16,6 +16,16 @@ namespace NServiceBus.Persistence.CosmosDB
         readonly List<ITransactionInformationFromHeadersExtractor> extractTransactionInformationFromHeaders =
             new List<ITransactionInformationFromHeadersExtractor>();
 
+        public TransactionInformationExtractor()
+        {
+            ExtractFromHeaders(this);
+            ExtractFromMessages(this);
+        }
+
+        public IReadOnlyCollection<ITransactionInformationFromHeadersExtractor> HeaderExtractors => extractTransactionInformationFromHeaders;
+
+        public IReadOnlyCollection<ITransactionInformationFromMessagesExtractor> MessageExtractors => extractTransactionInformationFromMessages;
+
         /// <inheritdoc />
         bool ITransactionInformationFromMessagesExtractor.TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {
@@ -49,6 +59,13 @@ namespace NServiceBus.Persistence.CosmosDB
             {
                 throw new ArgumentException($"The message type '{typeof(TMessage).FullName}' is already being handled by a message extractor and cannot be processed by another one.", nameof(TMessage));
             }
+        }
+
+        public void ExtractFromMessages(ITransactionInformationFromMessagesExtractor extractor)
+        {
+            Guard.AgainstNull(nameof(extractor), extractor);
+
+            extractTransactionInformationFromMessages.Add(extractor);
         }
 
         sealed class PartitionKeyFromMessageExtractor<TMessage, TArg> : ITransactionInformationFromMessagesExtractor
@@ -118,6 +135,13 @@ namespace NServiceBus.Persistence.CosmosDB
         public void ExtractFromHeader(string headerKey, ContainerInformation? containerInformation = default) =>
             // When moving to CSharp 9 these can be static lambdas
             ExtractFromHeader<object>(headerKey, (headerValue, _) => headerValue, null, containerInformation);
+
+        public void ExtractFromHeaders(ITransactionInformationFromHeadersExtractor extractor)
+        {
+            Guard.AgainstNull(nameof(extractor), extractor);
+
+            extractTransactionInformationFromHeaders.Add(extractor);
+        }
 
         sealed class PartitionKeyFromFromHeaderExtractor<TArg> : ITransactionInformationFromHeadersExtractor
         {
