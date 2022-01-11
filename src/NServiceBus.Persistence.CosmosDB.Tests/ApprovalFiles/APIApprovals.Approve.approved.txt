@@ -61,6 +61,7 @@ namespace NServiceBus.Persistence.CosmosDB
     {
         bool TryExtract(object message, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey, out NServiceBus.ContainerInformation? containerInformation);
     }
+    [System.Obsolete(@"This class was only ever used as a constant to place custom behaviors in the right part of the pipeline. It is no longer necessary to have a custom behavior to extract the transaction information. Use `persistence.TransactionInformation()` to conveniently map headers or message content to partition keys. Will be removed in version 3.0.0.", true)]
     public sealed class LogicalOutboxBehavior : NServiceBus.Pipeline.IBehavior, NServiceBus.Pipeline.IBehavior<NServiceBus.Pipeline.IIncomingLogicalMessageContext, NServiceBus.Pipeline.IIncomingLogicalMessageContext>
     {
         public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
