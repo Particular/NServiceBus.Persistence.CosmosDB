@@ -73,7 +73,7 @@ namespace NServiceBus.Persistence.CosmosDB
     {
         public SagaPersistenceConfiguration() { }
         public void EnableMigrationMode() { }
-        public void UsePessimisticLocking() { }
+        public NServiceBus.Persistence.CosmosDB.PessimisticLockingConfiguration UsePessimisticLocking() { }
     }
     public sealed class TransactionalBatchOperationException : System.Exception
     {
