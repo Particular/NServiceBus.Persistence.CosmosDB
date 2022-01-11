@@ -14,7 +14,7 @@
 
         static JObject metadata;
 
-        static JObject Metadata => metadata = metadata ?? new JObject
+        static JObject Metadata => metadata ??= new JObject
         {
             { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
             { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }

@@ -23,9 +23,9 @@
 
             var serializer = new JsonSerializer { ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver() };
 
-            var migrationModeEnabled = context.Settings.GetOrDefault<bool>(SettingsKeys.EnableMigrationMode);
+            var options = context.Settings.GetOrDefault<SagaPersistenceConfiguration>() ?? new SagaPersistenceConfiguration();
 
-            context.Container.ConfigureComponent(builder => new SagaPersister(serializer, migrationModeEnabled), DependencyLifecycle.SingleInstance);
+            context.Container.ConfigureComponent(builder => new SagaPersister(serializer, options), DependencyLifecycle.SingleInstance);
         }
     }
 }

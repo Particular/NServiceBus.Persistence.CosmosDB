@@ -7,18 +7,43 @@
     using Newtonsoft.Json;
     using NServiceBus.Outbox;
     using NServiceBus.Sagas;
+    using NUnit.Framework;
     using Persistence;
     using Persistence.CosmosDB;
 
     public partial class PersistenceTestsConfiguration : IProvideCosmosClient
     {
+        static PersistenceTestsConfiguration()
+        {
+            SagaVariants = new[]
+            {
+                new TestFixtureData(new TestVariant(new PersistenceConfiguration(usePessimisticLocking: false))).SetArgDisplayNames("Optimistic"),
+                new TestFixtureData(new TestVariant(new PersistenceConfiguration(usePessimisticLocking: true))).SetArgDisplayNames("Pessimistic"),
+            };
+
+            OutboxVariants = new[]
+            {
+                new TestFixtureData(new TestVariant(new PersistenceConfiguration(usePessimisticLocking: false))).SetArgDisplayNames("Optimistic"),
+            };
+        }
+        public class PersistenceConfiguration
+        {
+            public readonly bool UsePessimisticLocking;
+
+            public PersistenceConfiguration(bool usePessimisticLocking)
+            {
+                UsePessimisticLocking = usePessimisticLocking;
+            }
+        }
+
+
         public bool SupportsDtc => false;
 
         public bool SupportsOutbox => true;
 
         public bool SupportsFinders => false;
 
-        public bool SupportsPessimisticConcurrency => false;
+        public bool SupportsPessimisticConcurrency { get; private set; }
 
         public ISagaIdGenerator SagaIdGenerator { get; } = new SagaIdGenerator();
 
@@ -44,10 +69,23 @@
                 ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver()
             };
 
+            var persistenceConfiguration = (PersistenceConfiguration)Variant.Values[0];
+
+            var sagaPersistenceConfiguration = new SagaPersistenceConfiguration();
+            if (persistenceConfiguration.UsePessimisticLocking)
+            {
+                sagaPersistenceConfiguration.UsePessimisticLocking();
+            }
+            SupportsPessimisticConcurrency = sagaPersistenceConfiguration.PessimisticLockingEnabled;
+            if (SessionTimeout.HasValue)
+            {
+                sagaPersistenceConfiguration.PessimisticLockingConfiguration.SetPessimisticLeaseLockAcquisitionTimeout(SessionTimeout.Value);
+            }
+
             var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
             var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);
             SynchronizedStorage = new StorageSessionFactory(resolver, null);
-            SagaStorage = new SagaPersister(serializer, false);
+            SagaStorage = new SagaPersister(serializer, sagaPersistenceConfiguration);
             OutboxStorage = new OutboxPersister(resolver, serializer, OutboxTimeToLiveInSeconds);
 
             GetContextBagForSagaStorage = () =>

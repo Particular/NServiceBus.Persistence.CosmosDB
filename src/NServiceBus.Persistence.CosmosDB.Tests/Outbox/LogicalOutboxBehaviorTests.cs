@@ -25,32 +25,24 @@
         {
             var messageId = Guid.NewGuid().ToString();
 
-            var fakeCosmosClient = new FakeCosmosClient
+            var fakeCosmosClient = new FakeCosmosClient(new FakeContainer
             {
-                Container =
+                ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord
                 {
-                    ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord
+                    Dispatched = false,
+                    Id = messageId,
+                    TransportOperations = new[]
                     {
-                        Dispatched = false,
-                        Id = messageId,
-                        TransportOperations = new[]
-                        {
-                            new TransportOperation("42", new Dictionary<string, string>
-                            {
-                                {"Destination", "somewhere"}
-                            }, Array.Empty<byte>(), new Dictionary<string, string>()),
-                        }
+                         new TransportOperation("42", new Dictionary<string, string>
+                         {
+                             {"Destination", "somewhere"}
+                         }, Array.Empty<byte>(), new Dictionary<string, string>()),
                     }
                 }
-            };
+            });
 
-            var containerHolderHolderResolver = new ContainerHolderResolver(new Provider()
-            {
-                Client = fakeCosmosClient
-            },
-                new ContainerInformation("fakeContainer",
-                    new PartitionKeyPath("")),
-                "fakeDatabase");
+            var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
+                new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
 
             var behavior = new LogicalOutboxBehavior(containerHolderHolderResolver, new JsonSerializer());
 
@@ -70,18 +62,6 @@
             Assert.IsTrue(pendingTransportOperations.HasOperations, "Should have exactly one operation added found on the outbox record");
             Assert.AreEqual("42", pendingTransportOperations.Operations.ElementAt(0).Message.MessageId, "Should have exactly one operation added found on the outbox record");
         }
-    }
-
-    class Provider : IProvideCosmosClient
-    {
-        public CosmosClient Client { get; set; }
-    }
-
-    class FakeCosmosClient : CosmosClient
-    {
-        public FakeContainer Container { get; set; } = new FakeContainer();
-
-        public override Container GetContainer(string databaseId, string containerId) => Container;
     }
 
     class FakeContainer : Container

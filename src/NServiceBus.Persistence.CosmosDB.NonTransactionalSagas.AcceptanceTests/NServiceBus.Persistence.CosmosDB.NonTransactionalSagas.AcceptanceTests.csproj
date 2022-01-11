@@ -37,6 +37,7 @@
     <Compile Remove="\**\DataBus\*.*" />
     <Compile Remove="\**\DelayedDelivery\*.*" />
     <Compile Remove="\**\Forwarding\*.*" />
+    <Compile Remove="\**\Feature\*.*" />
     <Compile Remove="\**\MessageId\*.*" />
     <Compile Remove="\**\Pipeline\*.*" />
     <Compile Remove="\**\Recoverability\*.*" />

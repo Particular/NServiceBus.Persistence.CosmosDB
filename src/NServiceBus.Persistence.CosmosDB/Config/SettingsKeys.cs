@@ -2,9 +2,8 @@
 {
     static class SettingsKeys
     {
-        const string baseName = "CosmosDB.";
-        public const string DatabaseName = nameof(baseName) + nameof(DatabaseName);
-        public const string OutboxTimeToLiveInSeconds = nameof(baseName) + nameof(OutboxTimeToLiveInSeconds);
-        public const string EnableMigrationMode = nameof(baseName) + nameof(EnableMigrationMode);
+        const string BaseName = "CosmosDB.";
+        public const string DatabaseName = nameof(BaseName) + nameof(DatabaseName);
+        public const string OutboxTimeToLiveInSeconds = nameof(BaseName) + nameof(OutboxTimeToLiveInSeconds);
     }
 }

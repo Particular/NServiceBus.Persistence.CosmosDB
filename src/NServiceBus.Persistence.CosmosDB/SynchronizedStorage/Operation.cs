@@ -7,7 +7,19 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    abstract class Operation : IDisposable
+    interface IReleaseLockOperation : IOperation
+    {
+    }
+
+    interface IOperation : IDisposable
+    {
+        PartitionKey PartitionKey { get; }
+        void Success(TransactionalBatchOperationResult result);
+        void Conflict(TransactionalBatchOperationResult result);
+        void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath);
+    }
+
+    abstract class Operation : IOperation
     {
         protected Operation(PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
         {
@@ -81,7 +93,6 @@
                     throw new TransactionalBatchOperationException(result);
             }
         }
-
         public abstract void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath);
         public virtual void Dispose() { }
 
@@ -123,7 +134,7 @@
         {
         }
 
-        public static Operation Instance { get; } = new ThrowOnConflictOperation();
+        public static IOperation Instance { get; } = new ThrowOnConflictOperation();
 
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
