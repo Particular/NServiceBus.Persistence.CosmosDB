@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Net;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
@@ -21,6 +22,13 @@
 
     abstract class Operation : IOperation
     {
+        static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> partitionKeyPathAndSegments;
+
+        static readonly string[] PathSeparator = { "." };
+
+        static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> PartitionKeyPathAndSegments =>
+            partitionKeyPathAndSegments ??= new ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)>();
+
         protected Operation(PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
         {
             PartitionKey = partitionKey;
@@ -99,9 +107,12 @@
         protected void EnrichWithPartitionKeyIfNecessary(JObject toBeEnriched, PartitionKeyPath partitionKeyPath)
         {
             var partitionKeyAsJArray = JArray.Parse(PartitionKey.ToString())[0];
-            // we should probably optimize this a bit and the result might be cacheable but let's worry later
-            var pathToMatch = partitionKeyPath.ToString().Replace("/", ".");
-            var segments = pathToMatch.Split(new[] { "." }, StringSplitOptions.RemoveEmptyEntries);
+            var (pathToMatch, segments) = PartitionKeyPathAndSegments.GetOrAdd(partitionKeyPath, path =>
+            {
+                var toMatch = path.ToString().Replace("/", ".");
+                var segmentsSplit = toMatch.Split(PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+                return (pathToMatch: toMatch, segments: segmentsSplit);
+            });
 
             var start = new JObject();
             var current = start;

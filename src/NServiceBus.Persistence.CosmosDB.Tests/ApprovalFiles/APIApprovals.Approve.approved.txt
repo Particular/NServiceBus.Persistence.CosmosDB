@@ -38,8 +38,13 @@ namespace NServiceBus
     public readonly struct PartitionKeyPath
     {
         public PartitionKeyPath(string partitionKeyPath) { }
+        public bool Equals(NServiceBus.PartitionKeyPath other) { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
         public override string ToString() { }
         public static string op_Implicit(NServiceBus.PartitionKeyPath path) { }
+        public static bool operator !=(NServiceBus.PartitionKeyPath left, NServiceBus.PartitionKeyPath right) { }
+        public static bool operator ==(NServiceBus.PartitionKeyPath left, NServiceBus.PartitionKeyPath right) { }
     }
     public static class SynchronizedStorageSessionExtensions
     {
