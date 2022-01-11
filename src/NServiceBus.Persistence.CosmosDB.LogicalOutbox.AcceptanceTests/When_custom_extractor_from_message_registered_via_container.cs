@@ -3,6 +3,7 @@
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using AcceptanceTesting.Support;
     using EndpointTemplates;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Extensions.DependencyInjection;
@@ -14,13 +15,16 @@
         [Test]
         public async Task Should_be_used()
         {
+            var runSettings = new RunSettings();
+            runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointWithCustomExtractor>(b => b.When(session => session.SendLocal(new StartSaga1
                 {
                     DataId = Guid.NewGuid()
                 })))
                 .Done(c => c.SagaReceivedMessage)
-                .Run();
+                .Run(runSettings);
 
             Assert.True(context.ExtractorWasCalled);
         }
