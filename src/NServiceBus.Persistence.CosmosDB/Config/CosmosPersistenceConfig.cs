@@ -74,7 +74,7 @@
         /// </summary>
         public static SagaPersistenceConfiguration Sagas(this PersistenceExtensions<CosmosPersistence> persistenceExtensions) =>
             persistenceExtensions.GetSettings().GetOrCreate<SagaPersistenceConfiguration>();
-        
+
         /// <summary>
         /// Obtains the transaction information configuration options.
         /// </summary>
