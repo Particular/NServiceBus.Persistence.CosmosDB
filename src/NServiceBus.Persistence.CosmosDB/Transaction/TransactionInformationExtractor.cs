@@ -16,12 +16,6 @@ namespace NServiceBus.Persistence.CosmosDB
         readonly List<ITransactionInformationFromHeadersExtractor> extractTransactionInformationFromHeaders =
             new List<ITransactionInformationFromHeadersExtractor>();
 
-        public TransactionInformationExtractor()
-        {
-            ExtractFromHeaders(this);
-            ExtractFromMessages(this);
-        }
-
         public IReadOnlyCollection<ITransactionInformationFromHeadersExtractor> HeaderExtractors => extractTransactionInformationFromHeaders;
 
         public IReadOnlyCollection<ITransactionInformationFromMessagesExtractor> MessageExtractors => extractTransactionInformationFromMessages;
