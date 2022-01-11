@@ -76,12 +76,12 @@
             var sagaPersistenceConfiguration = new SagaPersistenceConfiguration();
             if (persistenceConfiguration.UsePessimisticLocking)
             {
-                sagaPersistenceConfiguration.UsePessimisticLocking();
-            }
-            SupportsPessimisticConcurrency = sagaPersistenceConfiguration.PessimisticLockingEnabled;
-            if (SessionTimeout.HasValue)
-            {
-                sagaPersistenceConfiguration.PessimisticLockingConfiguration.SetPessimisticLeaseLockAcquisitionTimeout(SessionTimeout.Value);
+                var pessimisticLocking = sagaPersistenceConfiguration.UsePessimisticLocking();
+                if (SessionTimeout.HasValue)
+                {
+                    pessimisticLocking.SetPessimisticLeaseLockAcquisitionTimeout(SessionTimeout.Value);
+                }
+                SupportsPessimisticConcurrency = pessimisticLocking.PessimisticLockingEnabled;
             }
 
             var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);

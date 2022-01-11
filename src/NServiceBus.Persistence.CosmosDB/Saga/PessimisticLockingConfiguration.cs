@@ -77,5 +77,7 @@
         internal TimeSpan LeaseLockTime { get; private set; } = TimeSpan.FromSeconds(60);
         internal TimeSpan LeaseLockAcquisitionMaximumRefreshDelay { get; private set; } = TimeSpan.FromMilliseconds(1000);
         internal TimeSpan LeaseLockAcquisitionMinimumRefreshDelay { get; private set; } = TimeSpan.FromMilliseconds(500);
+
+        internal bool PessimisticLockingEnabled { get; set; }
     }
 }

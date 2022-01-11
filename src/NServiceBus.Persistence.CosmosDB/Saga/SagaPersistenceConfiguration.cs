@@ -13,11 +13,14 @@
         /// <summary>
         /// Enables default saga persistence pessimistic locking. Default to optimistic locking when not used.
         /// </summary>
-        public void UsePessimisticLocking() => PessimisticLockingEnabled = true;
+        public PessimisticLockingConfiguration UsePessimisticLocking()
+        {
+            PessimisticLockingConfiguration.PessimisticLockingEnabled = true;
+            return PessimisticLockingConfiguration;
+        }
 
-        internal bool PessimisticLockingEnabled { get; private set; }
         internal bool MigrationModeEnabled { get; private set; }
 
-        internal PessimisticLockingConfiguration PessimisticLockingConfiguration { get; private set; } = new PessimisticLockingConfiguration();
+        internal PessimisticLockingConfiguration PessimisticLockingConfiguration { get; } = new PessimisticLockingConfiguration();
     }
 }

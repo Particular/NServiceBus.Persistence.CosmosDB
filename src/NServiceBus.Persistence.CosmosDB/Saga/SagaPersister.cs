@@ -18,11 +18,12 @@
         {
             this.serializer = serializer;
             migrationModeEnabled = options.MigrationModeEnabled;
-            pessimisticLockingEnabled = options.PessimisticLockingEnabled;
-            leaseLockTime = options.PessimisticLockingConfiguration.LeaseLockTime;
-            acquireLeaseLockRefreshMaximumDelayMilliseconds = Convert.ToInt32(options.PessimisticLockingConfiguration.LeaseLockAcquisitionMaximumRefreshDelay.TotalMilliseconds);
-            acquireLeaseLockRefreshMinimumDelayMilliseconds = Convert.ToInt32(options.PessimisticLockingConfiguration.LeaseLockAcquisitionMinimumRefreshDelay.TotalMilliseconds);
-            acquireLeaseLockTimeout = options.PessimisticLockingConfiguration.LeaseLockAcquisitionTimeout;
+            var lockingConfiguration = options.PessimisticLockingConfiguration;
+            pessimisticLockingEnabled = lockingConfiguration.PessimisticLockingEnabled;
+            leaseLockTime = lockingConfiguration.LeaseLockTime;
+            acquireLeaseLockRefreshMaximumDelayMilliseconds = Convert.ToInt32(lockingConfiguration.LeaseLockAcquisitionMaximumRefreshDelay.TotalMilliseconds);
+            acquireLeaseLockRefreshMinimumDelayMilliseconds = Convert.ToInt32(lockingConfiguration.LeaseLockAcquisitionMinimumRefreshDelay.TotalMilliseconds);
+            acquireLeaseLockTimeout = lockingConfiguration.LeaseLockAcquisitionTimeout;
         }
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
