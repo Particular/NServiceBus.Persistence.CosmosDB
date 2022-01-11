@@ -20,8 +20,7 @@ namespace NServiceBus.Persistence.CosmosDB
 
         public IReadOnlyCollection<ITransactionInformationFromMessagesExtractor> MessageExtractors => extractTransactionInformationFromMessages;
 
-        /// <inheritdoc />
-        bool ITransactionInformationFromMessagesExtractor.TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        public bool TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {
             // deliberate use of a for loop
             for (var index = 0; index < extractTransactionInformationFromMessages.Count; index++)
@@ -47,7 +46,7 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             if (extractTransactionInformationFromMessagesTypes.Add(typeof(TMessage)))
             {
-                extractTransactionInformationFromMessages.Add(new PartitionKeyFromMessageExtractor<TMessage, TArg>(extractor, containerInformation, extractorArgument));
+                ExtractFromMessages(new PartitionKeyFromMessageExtractor<TMessage, TArg>(extractor, containerInformation, extractorArgument));
             }
             else
             {
@@ -90,8 +89,7 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        /// <inheritdoc />
-        bool ITransactionInformationFromHeadersExtractor.TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {
             // deliberate use of a for loop
             for (var index = 0; index < extractTransactionInformationFromHeaders.Count; index++)
@@ -118,7 +116,7 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             if (extractTransactionInformationFromHeadersHeaderKeys.Add(headerKey))
             {
-                extractTransactionInformationFromHeaders.Add(new PartitionKeyFromFromHeaderExtractor<TArg>(headerKey, converter, containerInformation, converterArgument));
+                ExtractFromHeaders(new PartitionKeyFromFromHeaderExtractor<TArg>(headerKey, converter, containerInformation, converterArgument));
             }
             else
             {
