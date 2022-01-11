@@ -41,7 +41,8 @@
                 EndpointSetup<DefaultServer>((config, r) =>
                 {
                     var persistence = config.UsePersistence<CosmosPersistence>();
-                    persistence.ExtractFromMessages(new CustomExtractor((Context)r.ScenarioContext));
+                    var transactionInformation = persistence.TransactionInformation();
+                    transactionInformation.ExtractFromMessages(new CustomExtractor((Context)r.ScenarioContext));
                 });
             }
 

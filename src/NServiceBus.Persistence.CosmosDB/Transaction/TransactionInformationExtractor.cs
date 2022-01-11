@@ -4,10 +4,7 @@ namespace NServiceBus.Persistence.CosmosDB
     using System.Collections.Generic;
     using Microsoft.Azure.Cosmos;
 
-    /// <summary>
-    /// 
-    /// </summary>
-    public class TransactionInformationExtractor : ITransactionInformationFromHeadersExtractor, ITransactionInformationFromMessagesExtractor
+    class TransactionInformationExtractor : ITransactionInformationFromHeadersExtractor, ITransactionInformationFromMessagesExtractor
     {
         readonly HashSet<Type> extractTransactionInformationFromMessagesTypes = new HashSet<Type>();
 
@@ -37,24 +34,10 @@ namespace NServiceBus.Persistence.CosmosDB
             return false;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="extractor"></param>
-        /// <param name="containerInformation"></param>
-        /// <typeparam name="TMessage"></typeparam>
         public void ExtractFromMessage<TMessage>(Func<TMessage, PartitionKey> extractor, ContainerInformation? containerInformation = default) =>
             // TODO: When moving to CSharp 9 these can be static lambdas
             ExtractFromMessage<TMessage, Func<TMessage, PartitionKey>>((msg, invoker) => invoker(msg), extractor, containerInformation);
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="extractor"></param>
-        /// <param name="containerInformation"></param>
-        /// <param name="extractorArgument"></param>
-        /// <typeparam name="TMessage"></typeparam>
-        /// <typeparam name="TArg"></typeparam>
         public void ExtractFromMessage<TMessage, TArg>(Func<TMessage, TArg, PartitionKey> extractor,
             TArg extractorArgument, ContainerInformation? containerInformation = default)
         {
@@ -111,25 +94,11 @@ namespace NServiceBus.Persistence.CosmosDB
             return false;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="headerKey"></param>
-        /// <param name="converter"></param>
-        /// <param name="containerInformation"></param>
         public void ExtractFromHeader(string headerKey, Func<string, string> converter,
             ContainerInformation? containerInformation = default) =>
             // TODO: When moving to CSharp 9 these can be static lambdas
             ExtractFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter, containerInformation);
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="headerKey"></param>
-        /// <param name="converter"></param>
-        /// <param name="containerInformation"></param>
-        /// <param name="converterArgument"></param>
-        /// <typeparam name="TArg"></typeparam>
         public void ExtractFromHeader<TArg>(string headerKey, Func<string, TArg, string> converter,
             TArg converterArgument, ContainerInformation? containerInformation = default)
         {
@@ -140,11 +109,6 @@ namespace NServiceBus.Persistence.CosmosDB
             // TODO: Decide what to do in the else case
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="headerKey"></param>
-        /// <param name="containerInformation"></param>
         public void ExtractFromHeader(string headerKey, ContainerInformation? containerInformation = default) =>
             // TODO: When moving to CSharp 9 these can be static lambdas
             ExtractFromHeader<object>(headerKey, (headerValue, _) => headerValue, null, containerInformation);
@@ -153,13 +117,13 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             readonly Func<string, TArg, string> converter;
             readonly ContainerInformation? container;
-            readonly TArg _converterArgument;
+            readonly TArg converterArgument;
             readonly string headerName;
 
             public PartitionKeyFromFromHeaderExtractor(string headerName, Func<string, TArg, string> converter, ContainerInformation? container, TArg converterArgument = default)
             {
                 this.headerName = headerName;
-                this._converterArgument = converterArgument;
+                this.converterArgument = converterArgument;
                 this.container = container;
                 this.converter = converter;
             }
@@ -168,7 +132,7 @@ namespace NServiceBus.Persistence.CosmosDB
             {
                 if (headers.TryGetValue(headerName, out var headerValue))
                 {
-                    partitionKey = new PartitionKey(converter(headerValue, _converterArgument));
+                    partitionKey = new PartitionKey(converter(headerValue, converterArgument));
                     containerInformation = container;
                     return true;
                 }

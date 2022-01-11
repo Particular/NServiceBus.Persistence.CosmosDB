@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Support;
@@ -43,7 +42,8 @@
                 EndpointSetup<DefaultServer>((config, r) =>
                 {
                     var persistence = config.UsePersistence<CosmosPersistence>();
-                    persistence.ExtractFromHeaders(new CustomExtractor((Context)r.ScenarioContext));
+                    var transactionInformation = persistence.TransactionInformation();
+                    transactionInformation.ExtractFromHeaders(new CustomExtractor((Context)r.ScenarioContext));
                 });
             }
 

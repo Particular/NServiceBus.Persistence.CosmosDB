@@ -38,15 +38,13 @@
             {
                 EndpointSetup<DefaultServer>((config, r) =>
                 {
-                    var extractor = new TransactionInformationExtractor();
-                    extractor.ExtractFromMessage<StartSaga1, Context>((startSaga, state) =>
+                    var persistence = config.UsePersistence<CosmosPersistence>();
+                    var transactionInformation = persistence.TransactionInformation();
+                    transactionInformation.ExtractFromMessage<StartSaga1, Context>((startSaga, state) =>
                     {
                         state.StateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
                         return new PartitionKey(startSaga.PartitionKey.ToString());
                     }, (Context)r.ScenarioContext, new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
-
-                    var persistence = config.UsePersistence<CosmosPersistence>();
-                    persistence.ExtractWith(extractor);
                 });
             }
 
