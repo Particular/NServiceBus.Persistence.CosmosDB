@@ -35,7 +35,7 @@ namespace NServiceBus.Persistence.CosmosDB
         }
 
         public void ExtractFromMessage<TMessage>(Func<TMessage, PartitionKey> extractor, ContainerInformation? containerInformation = default) =>
-            // TODO: When moving to CSharp 9 these can be static lambdas
+            // When moving to CSharp 9 these can be static lambdas
             ExtractFromMessage<TMessage, Func<TMessage, PartitionKey>>((msg, invoker) => invoker(msg), extractor, containerInformation);
 
         public void ExtractFromMessage<TMessage, TArg>(Func<TMessage, TArg, PartitionKey> extractor,
@@ -45,7 +45,10 @@ namespace NServiceBus.Persistence.CosmosDB
             {
                 extractTransactionInformationFromMessages.Add(new PartitionKeyFromMessageExtractor<TMessage, TArg>(extractor, containerInformation, extractorArgument));
             }
-            // TODO: Decide what to do in the else case
+            else
+            {
+                throw new ArgumentException($"The message type '{typeof(TMessage).FullName}' is already being handled by a message extractor and cannot be processed by another one.", nameof(TMessage));
+            }
         }
 
         sealed class PartitionKeyFromMessageExtractor<TMessage, TArg> : ITransactionInformationFromMessagesExtractor
@@ -96,7 +99,7 @@ namespace NServiceBus.Persistence.CosmosDB
 
         public void ExtractFromHeader(string headerKey, Func<string, string> converter,
             ContainerInformation? containerInformation = default) =>
-            // TODO: When moving to CSharp 9 these can be static lambdas
+            // When moving to CSharp 9 these can be static lambdas
             ExtractFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter, containerInformation);
 
         public void ExtractFromHeader<TArg>(string headerKey, Func<string, TArg, string> converter,
@@ -106,11 +109,14 @@ namespace NServiceBus.Persistence.CosmosDB
             {
                 extractTransactionInformationFromHeaders.Add(new PartitionKeyFromFromHeaderExtractor<TArg>(headerKey, converter, containerInformation, converterArgument));
             }
-            // TODO: Decide what to do in the else case
+            else
+            {
+                throw new ArgumentException($"The header key '{headerKey}' is already being handled by a header extractor and cannot be processed by another one.", nameof(headerKey));
+            }
         }
 
         public void ExtractFromHeader(string headerKey, ContainerInformation? containerInformation = default) =>
-            // TODO: When moving to CSharp 9 these can be static lambdas
+            // When moving to CSharp 9 these can be static lambdas
             ExtractFromHeader<object>(headerKey, (headerValue, _) => headerValue, null, containerInformation);
 
         sealed class PartitionKeyFromFromHeaderExtractor<TArg> : ITransactionInformationFromHeadersExtractor

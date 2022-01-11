@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using Microsoft.Azure.Cosmos;
@@ -142,6 +143,16 @@
         }
 
         [Test]
+        public void Should_throw_when_header_is_already_mapped()
+        {
+            extractor.ExtractFromHeader("HeaderKey");
+
+            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractFromHeader("HeaderKey"));
+
+            Assert.That(exception.Message, Contains.Substring("The header key 'HeaderKey' is already being handled by a header extractor and cannot be processed by another one."));
+        }
+
+        [Test]
         public void Should_not_extract_from_message_with_no_match()
         {
             extractor.ExtractFromMessage<MyMessage>(m => new PartitionKey(m.SomeId.ToString()));
@@ -225,6 +236,16 @@
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE")));
             Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
+        }
+
+        [Test]
+        public void Should_throw_when_message_type_is_already_mapped()
+        {
+            extractor.ExtractFromMessage<MyMessage>(m => new PartitionKey(m.SomeId));
+
+            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractFromMessage<MyMessage>(m => new PartitionKey(m.SomeId)));
+
+            Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.TransactionInformationExtractorTests+MyMessage' is already being handled by a message extractor and cannot be processed by another one."));
         }
 
         class MyMessage
