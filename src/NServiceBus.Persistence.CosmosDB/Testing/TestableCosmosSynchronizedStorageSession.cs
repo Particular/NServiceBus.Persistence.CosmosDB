@@ -37,7 +37,7 @@
         /// </summary>
         public TransactionalBatch TransactionalBatch { get; set; }
 
-        void IWorkWithSharedTransactionalBatch.AddOperation(Operation operation)
+        void IWorkWithSharedTransactionalBatch.AddOperation(IOperation operation)
         {
             if (TransactionalBatch == null)
             {

@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Net;
     using System.Threading;
@@ -13,10 +14,15 @@
 
     class SagaPersister : ISagaPersister
     {
-        public SagaPersister(JsonSerializer serializer, bool migrationModeEnabled)
+        public SagaPersister(JsonSerializer serializer, SagaPersistenceConfiguration options)
         {
             this.serializer = serializer;
-            this.migrationModeEnabled = migrationModeEnabled;
+            migrationModeEnabled = options.MigrationModeEnabled;
+            pessimisticLockingEnabled = options.PessimisticLockingEnabled;
+            leaseLockTime = options.PessimisticLockingConfiguration.LeaseLockTime;
+            acquireLeaseLockRefreshMaximumDelayMilliseconds = Convert.ToInt32(options.PessimisticLockingConfiguration.LeaseLockAcquisitionMaximumRefreshDelay.TotalMilliseconds);
+            acquireLeaseLockRefreshMinimumDelayMilliseconds = Convert.ToInt32(options.PessimisticLockingConfiguration.LeaseLockAcquisitionMinimumRefreshDelay.TotalMilliseconds);
+            acquireLeaseLockTimeout = options.PessimisticLockingConfiguration.LeaseLockAcquisitionTimeout;
         }
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
@@ -45,47 +51,39 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
-            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
+            bool sagaNotFound;
+            TSagaData sagaData;
+            if (!pessimisticLockingEnabled)
             {
-                var sagaStream = responseMessage.Content;
-
-                var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
-
+                (sagaNotFound, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
                 // if the previous lookup by id wasn't successful and the migration mode is enabled try to query for the saga data because the saga id probably represents
                 // the saga id of the migrated saga.
-                if (sagaNotFound && migrationModeEnabled)
+                if (sagaNotFound && migrationModeEnabled &&
+                    await FindSagaIdInMigrationMode(sagaId, context, container, cancellationToken).ConfigureAwait(false) is { } migratedSagaId)
                 {
-                    var query = $@"SELECT TOP 1 * FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
-                    var queryDefinition = new QueryDefinition(query);
-                    var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
-
-                    using (var iteratorResponse = await queryStreamIterator.ReadNextAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        iteratorResponse.EnsureSuccessStatusCode();
-
-                        using (var streamReader = new StreamReader(iteratorResponse.Content))
-                        using (var jsonReader = new JsonTextReader(streamReader))
-                        {
-                            var iteratorResult = await JObject.LoadAsync(jsonReader, cancellationToken).ConfigureAwait(false);
-
-                            if (!(iteratorResult["Documents"] is JArray documents) || !documents.HasValues)
-                            {
-                                return default;
-                            }
-
-                            var sagaData = documents[0].ToObject<TSagaData>(serializer);
-                            context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
-                            context.Set($"cosmos_migratedsagaid:{sagaData.Id}", sagaId);
-                            return sagaData;
-                        }
-                    }
+                    partitionKey = GetPartitionKey(context, migratedSagaId);
+                    (_, sagaData) = await ReadSagaData<TSagaData>(migratedSagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
                 }
-
-                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
+                return sagaData;
             }
+
+            (sagaNotFound, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+            // if the previous lookup by id wasn't successful and the migration mode is enabled try to query for the saga data because the saga id probably represents
+            // the saga id of the migrated saga.
+            if (sagaNotFound && migrationModeEnabled &&
+                await FindSagaIdInMigrationMode(sagaId, context, container, cancellationToken).ConfigureAwait(false) is { } previousSagaId)
+            {
+                partitionKey = GetPartitionKey(context, previousSagaId);
+                (_, sagaData) = await AcquireLease<TSagaData>(previousSagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+            }
+
+            storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
+
+            return sagaData;
         }
 
-        public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default) where TSagaData : class, IContainSagaData
+        public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
+            where TSagaData : class, IContainSagaData
         {
             var storageSession = (StorageSession)session;
 
@@ -96,13 +94,126 @@
             var container = storageSession.ContainerHolder.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
+            TSagaData sagaData;
+            if (!pessimisticLockingEnabled)
+            {
+                (_, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+                return sagaData;
+            }
+
+            (_, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+            storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
+            return sagaData;
+        }
+
+        async Task<(bool sagaNotFound, TSagaData sagaData)> ReadSagaData<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
+            where TSagaData : class, IContainSagaData
+        {
             using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
             {
                 var sagaStream = responseMessage.Content;
 
                 var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
 
-                return sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage);
+                return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
+            }
+        }
+
+        async Task<Guid?> FindSagaIdInMigrationMode(Guid sagaId, ContextBag context, Container container, CancellationToken cancellationToken)
+        {
+            var query =
+                $@"SELECT TOP 1 c.id FROM c WHERE c[""{MetadataExtensions.MetadataKey}""][""{MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey}""] = '{sagaId}'";
+            var queryDefinition = new QueryDefinition(query);
+            var queryStreamIterator = container.GetItemQueryStreamIterator(queryDefinition);
+
+            using (var iteratorResponse = await queryStreamIterator.ReadNextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                iteratorResponse.EnsureSuccessStatusCode();
+
+                using (var streamReader = new StreamReader(iteratorResponse.Content))
+                using (var jsonReader = new JsonTextReader(streamReader))
+                {
+                    var iteratorResult = await JObject.LoadAsync(jsonReader, cancellationToken).ConfigureAwait(false);
+
+                    if (!(iteratorResult["Documents"] is JArray { HasValues: true } documents))
+                    {
+                        return default;
+                    }
+
+                    if (documents[0].Value<string>("id") is { } migratedSagaId)
+                    {
+                        context.Set($"cosmos_migratedsagaid:{migratedSagaId}", sagaId);
+                        return Guid.Parse(migratedSagaId);
+                    }
+
+                    return null;
+                }
+            }
+        }
+
+        async Task<(bool sagaNotFound, TSagaData sagaData)> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
+            where TSagaData : class, IContainSagaData
+        {
+            using (var timedTokenSource = new CancellationTokenSource(acquireLeaseLockTimeout))
+            using (var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(timedTokenSource.Token, cancellationToken))
+            {
+                var token = combinedTokenSource.Token;
+                while (!token.IsCancellationRequested)
+                {
+                    // File time is using 100s nanoseconds which is a bit too granular for us but it is the simplest way to get
+                    // a deterministic increasing time value
+                    var now = DateTime.UtcNow.ToFileTimeUtc();
+                    var reservedUntil = DateTime.UtcNow.Add(leaseLockTime).ToFileTimeUtc();
+
+                    IReadOnlyList<PatchOperation> patchOperations = new List<PatchOperation>
+                    {
+                        PatchOperation.Add($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}", reservedUntil)
+                    };
+                    var requestOptions = new PatchItemRequestOptions
+                    {
+                        FilterPredicate =
+                            $"from c where (NOT IS_DEFINED(c[\"{MetadataExtensions.MetadataKey}\"][\"{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}\"]) OR c[\"{MetadataExtensions.MetadataKey}\"][\"{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}\"] < {now})"
+                    };
+
+                    using (var responseMessage = await container.PatchItemStreamAsync(sagaId.ToString(), partitionKey,
+                               patchOperations, requestOptions, token).ConfigureAwait(false))
+                    {
+                        var sagaStream = responseMessage.Content;
+
+                        bool throttlingRequired = false;
+                        int refreshMinimumDelayMilliseconds = acquireLeaseLockRefreshMinimumDelayMilliseconds;
+                        int refreshMaximumDelayMilliseconds = acquireLeaseLockRefreshMaximumDelayMilliseconds;
+
+                        if (responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
+                        {
+                            throttlingRequired = true;
+                        }
+
+                        // In case of TooManyRequests we might be violating the AcquireLeaseLockRefreshMaximumDelayMilliseconds but that's OK
+                        if ((int)responseMessage.StatusCode == 429 && responseMessage.Headers.TryGetValue("x-ms-retry-after-ms",
+                                out var operationWaitTime)) // TooManyRequests
+                        {
+                            throttlingRequired = true;
+
+                            int retryOperationWaitTimeInMilliseconds = Convert.ToInt32(operationWaitTime);
+                            refreshMinimumDelayMilliseconds = Math.Max(retryOperationWaitTimeInMilliseconds, refreshMinimumDelayMilliseconds);
+                            refreshMaximumDelayMilliseconds = Math.Max(retryOperationWaitTimeInMilliseconds, refreshMaximumDelayMilliseconds);
+                        }
+
+                        if (throttlingRequired)
+                        {
+                            await Task.Delay(TimeSpan.FromMilliseconds(random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
+                            continue;
+                        }
+
+                        var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+
+                        return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
+                    }
+                }
+
+                throw new TimeoutException(
+                    $"Unable to acquire exclusive write lock for saga with id '{sagaId}' within allocated time '{leaseLockTime}'.");
             }
         }
 
@@ -114,6 +225,8 @@
             {
                 var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
 
+                // we always require the etag even when using the pessimistic locking approach in order to have retries
+                // in rare edge cases like when another concurrent update has stolen the reservation
                 context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
 
                 return sagaData;
@@ -142,5 +255,11 @@
 
         JsonSerializer serializer;
         readonly bool migrationModeEnabled;
+        readonly bool pessimisticLockingEnabled;
+        readonly TimeSpan leaseLockTime;
+        readonly int acquireLeaseLockRefreshMaximumDelayMilliseconds;
+        readonly int acquireLeaseLockRefreshMinimumDelayMilliseconds;
+        readonly TimeSpan acquireLeaseLockTimeout;
+        static readonly Random random = new Random();
     }
 }
