@@ -2,7 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.DependencyInjection;
     using Pipeline;
 
     class TransactionInformationBeforeThePhysicalOutboxBehavior : IBehavior<ITransportReceiveContext, ITransportReceiveContext>
@@ -34,6 +36,19 @@
                 }
             }
             return next(context);
+        }
+
+        public class RegisterStep : Pipeline.RegisterStep
+        {
+            public RegisterStep(
+                IEnumerable<IExtractTransactionInformationFromHeaders> extractTransactionInformationFromHeaders) :
+                base(nameof(TransactionInformationBeforeThePhysicalOutboxBehavior),
+                typeof(TransactionInformationBeforeThePhysicalOutboxBehavior),
+                "Populates the transaction information before the physical outbox.",
+                b => new TransactionInformationBeforeThePhysicalOutboxBehavior(
+                    extractTransactionInformationFromHeaders.Union(b.GetServices<IExtractTransactionInformationFromHeaders>())))
+            {
+            }
         }
     }
 }

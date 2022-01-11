@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
     using Pipeline;
@@ -39,10 +40,11 @@
 
         public class RegisterStep : Pipeline.RegisterStep
         {
-            public RegisterStep() : base(nameof(TransactionInformationBeforeTheLogicalOutboxBehavior),
+            public RegisterStep(IEnumerable<IExtractTransactionInformationFromMessages> extractTransactionInformationFromMessages) :
+                base(nameof(TransactionInformationBeforeTheLogicalOutboxBehavior),
                 typeof(TransactionInformationBeforeTheLogicalOutboxBehavior),
                 "Populates the transaction information before the logical outbox.",
-                b => new TransactionInformationBeforeTheLogicalOutboxBehavior(b.GetServices<IExtractTransactionInformationFromMessages>())) =>
+                b => new TransactionInformationBeforeTheLogicalOutboxBehavior(extractTransactionInformationFromMessages.Union(b.GetServices<IExtractTransactionInformationFromMessages>()))) =>
                 InsertBeforeIfExists(nameof(LogicalOutboxBehavior));
         }
     }
