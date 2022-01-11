@@ -70,7 +70,7 @@
                 readonly Context testContext;
             }
 
-            public class CustomExtractor : IExtractTransactionInformationFromHeaders
+            public class CustomExtractor : ITransactionInformationFromHeadersExtractor
             {
                 readonly Context testContext;
                 public CustomExtractor(Context testContext) => this.testContext = testContext;

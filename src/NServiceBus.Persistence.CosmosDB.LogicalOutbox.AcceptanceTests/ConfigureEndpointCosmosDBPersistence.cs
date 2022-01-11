@@ -24,7 +24,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IExtractTransactionInformationFromMessages, PartitionKeyProvider>());
+            configuration.RegisterComponents(services => services.AddSingleton<ITransactionInformationFromMessagesExtractor, PartitionKeyProvider>());
         }
 
         return Task.FromResult(0);
@@ -35,7 +35,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    class PartitionKeyProvider : IExtractTransactionInformationFromMessages
+    class PartitionKeyProvider : ITransactionInformationFromMessagesExtractor
     {
         ScenarioContext scenarioContext;
 

@@ -5,7 +5,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public interface IExtractTransactionInformationFromMessages
+    public interface ITransactionInformationFromMessagesExtractor
     {
         /// <summary>
         /// 

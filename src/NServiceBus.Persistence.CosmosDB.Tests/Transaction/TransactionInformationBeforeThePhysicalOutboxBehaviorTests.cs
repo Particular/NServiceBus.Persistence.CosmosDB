@@ -137,7 +137,7 @@
         delegate bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey,
             out ContainerInformation? containerInformation);
 
-        class Extractor : IExtractTransactionInformationFromHeaders
+        class Extractor : ITransactionInformationFromHeadersExtractor
         {
             readonly TryExtract tryExtract;
 

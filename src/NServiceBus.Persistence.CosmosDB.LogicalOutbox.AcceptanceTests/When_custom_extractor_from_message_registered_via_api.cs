@@ -68,7 +68,7 @@
                 readonly Context testContext;
             }
 
-            public class CustomExtractor : IExtractTransactionInformationFromMessages
+            public class CustomExtractor : ITransactionInformationFromMessagesExtractor
             {
                 readonly Context testContext;
                 public CustomExtractor(Context testContext) => this.testContext = testContext;

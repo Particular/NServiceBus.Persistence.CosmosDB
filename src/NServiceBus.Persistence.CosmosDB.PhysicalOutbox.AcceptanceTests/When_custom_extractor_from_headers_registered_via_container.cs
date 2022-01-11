@@ -43,7 +43,7 @@
                 EndpointSetup<DefaultServer>(config =>
                 {
                     config.RegisterComponents(c =>
-                        c.AddSingleton<IExtractTransactionInformationFromHeaders>(b => new CustomExtractor(b.GetService<Context>())));
+                        c.AddSingleton<ITransactionInformationFromHeadersExtractor>(b => new CustomExtractor(b.GetService<Context>())));
                 });
             }
 
@@ -70,7 +70,7 @@
                 readonly Context testContext;
             }
 
-            public class CustomExtractor : IExtractTransactionInformationFromHeaders
+            public class CustomExtractor : ITransactionInformationFromHeadersExtractor
             {
                 readonly Context testContext;
                 public CustomExtractor(Context testContext) => this.testContext = testContext;

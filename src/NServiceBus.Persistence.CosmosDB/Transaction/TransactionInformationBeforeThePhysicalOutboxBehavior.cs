@@ -9,16 +9,16 @@
 
     class TransactionInformationBeforeThePhysicalOutboxBehavior : IBehavior<ITransportReceiveContext, ITransportReceiveContext>
     {
-        readonly IEnumerable<IExtractTransactionInformationFromHeaders> extractTransactionInformationFromHeaders;
+        readonly IEnumerable<ITransactionInformationFromHeadersExtractor> transactionInformationFromHeaderExtractors;
 
-        public TransactionInformationBeforeThePhysicalOutboxBehavior(IEnumerable<IExtractTransactionInformationFromHeaders> extractTransactionInformationFromHeaders) =>
-            this.extractTransactionInformationFromHeaders = extractTransactionInformationFromHeaders;
+        public TransactionInformationBeforeThePhysicalOutboxBehavior(IEnumerable<ITransactionInformationFromHeadersExtractor> transactionInformationFromHeaderExtractors) =>
+            this.transactionInformationFromHeaderExtractors = transactionInformationFromHeaderExtractors;
 
         public Task Invoke(ITransportReceiveContext context, Func<ITransportReceiveContext, Task> next)
         {
-            foreach (var extractTransactionInformationFromHeader in extractTransactionInformationFromHeaders)
+            foreach (var extractor in transactionInformationFromHeaderExtractors)
             {
-                if (extractTransactionInformationFromHeader.TryExtract(context.Message.Headers, out var partitionKey,
+                if (extractor.TryExtract(context.Message.Headers, out var partitionKey,
                         out var containerInformation))
                 {
                     // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
@@ -41,12 +41,12 @@
         public class RegisterStep : Pipeline.RegisterStep
         {
             public RegisterStep(
-                IEnumerable<IExtractTransactionInformationFromHeaders> extractTransactionInformationFromHeaders) :
+                IEnumerable<ITransactionInformationFromHeadersExtractor> extractTransactionInformationFromHeaders) :
                 base(nameof(TransactionInformationBeforeThePhysicalOutboxBehavior),
                 typeof(TransactionInformationBeforeThePhysicalOutboxBehavior),
                 "Populates the transaction information before the physical outbox.",
                 b => new TransactionInformationBeforeThePhysicalOutboxBehavior(
-                    extractTransactionInformationFromHeaders.Union(b.GetServices<IExtractTransactionInformationFromHeaders>())))
+                    extractTransactionInformationFromHeaders.Union(b.GetServices<ITransactionInformationFromHeadersExtractor>())))
             {
             }
         }

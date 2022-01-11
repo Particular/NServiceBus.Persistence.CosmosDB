@@ -26,7 +26,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
             // This populates the partition key at the physical stage to test the conventional outbox use-case
-            configuration.RegisterComponents(services => services.AddSingleton<IExtractTransactionInformationFromHeaders, PartitionKeyProvider>());
+            configuration.RegisterComponents(services => services.AddSingleton<ITransactionInformationFromHeadersExtractor, PartitionKeyProvider>());
         }
 
         return Task.FromResult(0);
@@ -37,7 +37,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    class PartitionKeyProvider : IExtractTransactionInformationFromHeaders
+    class PartitionKeyProvider : ITransactionInformationFromHeadersExtractor
     {
         ScenarioContext scenarioContext;
 

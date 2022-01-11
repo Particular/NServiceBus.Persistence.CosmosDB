@@ -100,13 +100,13 @@
         /// <param name="extractor"></param>
         /// <returns></returns>
         // TODO: Better name? Nesting on some type?
-        public static PersistenceExtensions<CosmosPersistence> ExtractFromHeaders(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, IExtractTransactionInformationFromHeaders extractor)
+        public static PersistenceExtensions<CosmosPersistence> ExtractFromHeaders(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, ITransactionInformationFromHeadersExtractor extractor)
         {
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(extractor), extractor);
 
             var settings = persistenceExtensions.GetSettings();
-            settings.GetOrCreate<List<IExtractTransactionInformationFromHeaders>>().Add(extractor);
+            settings.GetOrCreate<List<ITransactionInformationFromHeadersExtractor>>().Add(extractor);
             return persistenceExtensions;
         }
 
@@ -117,13 +117,13 @@
         /// <param name="extractor"></param>
         /// <returns></returns>
         // TODO: Better name? Nesting on some type?
-        public static PersistenceExtensions<CosmosPersistence> ExtractFromMessages(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, IExtractTransactionInformationFromMessages extractor)
+        public static PersistenceExtensions<CosmosPersistence> ExtractFromMessages(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, ITransactionInformationFromMessagesExtractor extractor)
         {
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
             Guard.AgainstNull(nameof(extractor), extractor);
 
             var settings = persistenceExtensions.GetSettings();
-            settings.GetOrCreate<List<IExtractTransactionInformationFromMessages>>().Add(extractor);
+            settings.GetOrCreate<List<ITransactionInformationFromMessagesExtractor>>().Add(extractor);
             return persistenceExtensions;
         }
     }

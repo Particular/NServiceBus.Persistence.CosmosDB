@@ -7,20 +7,20 @@ namespace NServiceBus.Persistence.CosmosDB
     /// <summary>
     /// 
     /// </summary>
-    public class TransactionInformationExtractor : IExtractTransactionInformationFromHeaders, IExtractTransactionInformationFromMessages
+    public class TransactionInformationExtractor : ITransactionInformationFromHeadersExtractor, ITransactionInformationFromMessagesExtractor
     {
         readonly HashSet<Type> extractTransactionInformationFromMessagesTypes = new HashSet<Type>();
 
-        readonly List<IExtractTransactionInformationFromMessages> extractTransactionInformationFromMessages =
-            new List<IExtractTransactionInformationFromMessages>();
+        readonly List<ITransactionInformationFromMessagesExtractor> extractTransactionInformationFromMessages =
+            new List<ITransactionInformationFromMessagesExtractor>();
 
         readonly HashSet<string> extractTransactionInformationFromHeadersHeaderKeys = new HashSet<string>();
 
-        readonly List<IExtractTransactionInformationFromHeaders> extractTransactionInformationFromHeaders =
-            new List<IExtractTransactionInformationFromHeaders>();
+        readonly List<ITransactionInformationFromHeadersExtractor> extractTransactionInformationFromHeaders =
+            new List<ITransactionInformationFromHeadersExtractor>();
 
         /// <inheritdoc />
-        bool IExtractTransactionInformationFromMessages.TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        bool ITransactionInformationFromMessagesExtractor.TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {
             // deliberate use of a for loop
             for (var index = 0; index < extractTransactionInformationFromMessages.Count; index++)
@@ -60,18 +60,18 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             if (extractTransactionInformationFromMessagesTypes.Add(typeof(TMessage)))
             {
-                extractTransactionInformationFromMessages.Add(new ExtractPartitionKeyFromMessage<TMessage, TArg>(extractor, containerInformation, extractorArgument));
+                extractTransactionInformationFromMessages.Add(new PartitionKeyFromMessageExtractor<TMessage, TArg>(extractor, containerInformation, extractorArgument));
             }
             // TODO: Decide what to do in the else case
         }
 
-        sealed class ExtractPartitionKeyFromMessage<TMessage, TArg> : IExtractTransactionInformationFromMessages
+        sealed class PartitionKeyFromMessageExtractor<TMessage, TArg> : ITransactionInformationFromMessagesExtractor
         {
             readonly Func<TMessage, TArg, PartitionKey> extractor;
             readonly ContainerInformation? container;
             readonly TArg argument;
 
-            public ExtractPartitionKeyFromMessage(Func<TMessage, TArg, PartitionKey> extractor, ContainerInformation? container,
+            public PartitionKeyFromMessageExtractor(Func<TMessage, TArg, PartitionKey> extractor, ContainerInformation? container,
                 TArg argument = default)
             {
                 this.argument = argument;
@@ -94,7 +94,7 @@ namespace NServiceBus.Persistence.CosmosDB
         }
 
         /// <inheritdoc />
-        bool IExtractTransactionInformationFromHeaders.TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        bool ITransactionInformationFromHeadersExtractor.TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
         {
             // deliberate use of a for loop
             for (var index = 0; index < extractTransactionInformationFromHeaders.Count; index++)
@@ -135,7 +135,7 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             if (extractTransactionInformationFromHeadersHeaderKeys.Add(headerKey))
             {
-                extractTransactionInformationFromHeaders.Add(new ExtractPartitionKeyFromFromHeader<TArg>(headerKey, converter, containerInformation, converterArgument));
+                extractTransactionInformationFromHeaders.Add(new PartitionKeyFromFromHeaderExtractor<TArg>(headerKey, converter, containerInformation, converterArgument));
             }
             // TODO: Decide what to do in the else case
         }
@@ -149,14 +149,14 @@ namespace NServiceBus.Persistence.CosmosDB
             // TODO: When moving to CSharp 9 these can be static lambdas
             ExtractFromHeader<object>(headerKey, (headerValue, _) => headerValue, null, containerInformation);
 
-        sealed class ExtractPartitionKeyFromFromHeader<TArg> : IExtractTransactionInformationFromHeaders
+        sealed class PartitionKeyFromFromHeaderExtractor<TArg> : ITransactionInformationFromHeadersExtractor
         {
             readonly Func<string, TArg, string> converter;
             readonly ContainerInformation? container;
             readonly TArg _converterArgument;
             readonly string headerName;
 
-            public ExtractPartitionKeyFromFromHeader(string headerName, Func<string, TArg, string> converter, ContainerInformation? container, TArg converterArgument = default)
+            public PartitionKeyFromFromHeaderExtractor(string headerName, Func<string, TArg, string> converter, ContainerInformation? container, TArg converterArgument = default)
             {
                 this.headerName = headerName;
                 this._converterArgument = converterArgument;

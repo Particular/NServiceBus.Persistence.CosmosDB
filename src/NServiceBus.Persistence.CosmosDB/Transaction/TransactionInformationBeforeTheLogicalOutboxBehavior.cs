@@ -9,16 +9,16 @@
 
     class TransactionInformationBeforeTheLogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        IEnumerable<IExtractTransactionInformationFromMessages> extractTransactionInformationFromMessages;
+        IEnumerable<ITransactionInformationFromMessagesExtractor> transactionInformationFromMessageExtractors;
 
-        public TransactionInformationBeforeTheLogicalOutboxBehavior(IEnumerable<IExtractTransactionInformationFromMessages> extractTransactionInformationFromMessages) =>
-            this.extractTransactionInformationFromMessages = extractTransactionInformationFromMessages;
+        public TransactionInformationBeforeTheLogicalOutboxBehavior(IEnumerable<ITransactionInformationFromMessagesExtractor> transactionInformationFromMessageExtractors) =>
+            this.transactionInformationFromMessageExtractors = transactionInformationFromMessageExtractors;
 
         public Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
         {
-            foreach (var extractTransactionInformationFromMessage in extractTransactionInformationFromMessages)
+            foreach (var extractor in transactionInformationFromMessageExtractors)
             {
-                if (extractTransactionInformationFromMessage.TryExtract(context.Message.Instance, out var partitionKey,
+                if (extractor.TryExtract(context.Message.Instance, out var partitionKey,
                         out var containerInformation))
                 {
                     // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
@@ -40,11 +40,11 @@
 
         public class RegisterStep : Pipeline.RegisterStep
         {
-            public RegisterStep(IEnumerable<IExtractTransactionInformationFromMessages> extractTransactionInformationFromMessages) :
+            public RegisterStep(IEnumerable<ITransactionInformationFromMessagesExtractor> extractTransactionInformationFromMessages) :
                 base(nameof(TransactionInformationBeforeTheLogicalOutboxBehavior),
                 typeof(TransactionInformationBeforeTheLogicalOutboxBehavior),
                 "Populates the transaction information before the logical outbox.",
-                b => new TransactionInformationBeforeTheLogicalOutboxBehavior(extractTransactionInformationFromMessages.Union(b.GetServices<IExtractTransactionInformationFromMessages>()))) =>
+                b => new TransactionInformationBeforeTheLogicalOutboxBehavior(extractTransactionInformationFromMessages.Union(b.GetServices<ITransactionInformationFromMessagesExtractor>()))) =>
                 InsertBeforeIfExists(nameof(LogicalOutboxBehavior));
         }
     }

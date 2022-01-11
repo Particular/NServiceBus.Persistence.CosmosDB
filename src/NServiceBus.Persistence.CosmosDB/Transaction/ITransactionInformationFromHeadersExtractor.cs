@@ -6,7 +6,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public interface IExtractTransactionInformationFromHeaders
+    public interface ITransactionInformationFromHeadersExtractor
     {
         /// <summary>
         /// 

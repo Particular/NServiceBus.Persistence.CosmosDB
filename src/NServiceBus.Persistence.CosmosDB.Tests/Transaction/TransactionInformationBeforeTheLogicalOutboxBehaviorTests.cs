@@ -138,7 +138,7 @@
         delegate bool TryExtract(object message, out PartitionKey? partitionKey,
             out ContainerInformation? containerInformation);
 
-        class Extractor : IExtractTransactionInformationFromMessages
+        class Extractor : ITransactionInformationFromMessagesExtractor
         {
             readonly TryExtract tryExtract;
 
