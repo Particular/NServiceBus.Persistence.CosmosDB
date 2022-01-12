@@ -44,7 +44,7 @@
             var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
                 new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
 
-            var behavior = new LogicalOutboxBehavior(containerHolderHolderResolver, new JsonSerializer());
+            var behavior = new OutboxBehavior(containerHolderHolderResolver, new JsonSerializer());
 
             var testableContext = new TestableIncomingLogicalMessageContext();
 

@@ -74,5 +74,15 @@
         /// </summary>
         public static SagaPersistenceConfiguration Sagas(this PersistenceExtensions<CosmosPersistence> persistenceExtensions) =>
             persistenceExtensions.GetSettings().GetOrCreate<SagaPersistenceConfiguration>();
+
+        /// <summary>
+        /// Obtains the transaction information configuration options.
+        /// </summary>
+        public static TransactionInformationConfiguration TransactionInformation(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
+        {
+            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+
+            return persistenceExtensions.GetSettings().GetOrCreate<TransactionInformationConfiguration>();
+        }
     }
 }
