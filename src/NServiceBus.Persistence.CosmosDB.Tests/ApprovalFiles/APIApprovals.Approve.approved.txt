@@ -74,10 +74,10 @@ namespace NServiceBus.Persistence.CosmosDB
     public class PessimisticLockingConfiguration
     {
         public PessimisticLockingConfiguration() { }
-        public void SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(System.TimeSpan value) { }
-        public void SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(System.TimeSpan value) { }
-        public void SetPessimisticLeaseLockAcquisitionTimeout(System.TimeSpan value) { }
-        public void SetPessimisticLeaseLockTime(System.TimeSpan value) { }
+        public void SetLeaseLockAcquisitionMaximumRefreshDelay(System.TimeSpan value) { }
+        public void SetLeaseLockAcquisitionMinimumRefreshDelay(System.TimeSpan value) { }
+        public void SetLeaseLockAcquisitionTimeout(System.TimeSpan value) { }
+        public void SetLeaseLockTime(System.TimeSpan value) { }
     }
     public class SagaPersistenceConfiguration
     {

@@ -11,7 +11,8 @@
         /// Set saga persistence pessimistic lease lock duration. Default is 60 seconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock duration.</param>
-        public void SetPessimisticLeaseLockTime(TimeSpan value)
+        /// <exception cref="ArgumentOutOfRangeException">When the provided value is smaller or equal to <see cref="TimeSpan.Zero"/>.</exception>
+        public void SetLeaseLockTime(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {
@@ -25,7 +26,8 @@
         /// Set saga persistence pessimistic lease lock acquisition timeout. Default is 60 seconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition duration.</param>
-        public void SetPessimisticLeaseLockAcquisitionTimeout(TimeSpan value)
+        /// <exception cref="ArgumentOutOfRangeException">When the provided value is smaller or equal to <see cref="TimeSpan.Zero"/>.</exception>
+        public void SetLeaseLockAcquisitionTimeout(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {
@@ -39,16 +41,12 @@
         /// Set maximum saga persistence lease lock acquisition refresh delay. Default is 1000 milliseconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition maximum refresh duration.</param>
-        public void SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan value)
+        /// <exception cref="ArgumentOutOfRangeException">When the provided value is smaller or equal to <see cref="TimeSpan.Zero"/> or smaller than <see cref="LeaseLockAcquisitionMinimumRefreshDelay"/>.</exception>
+        public void SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition maximum refresh delay must be equal or larger than zero.");
-            }
-
-            if (value < LeaseLockAcquisitionMinimumRefreshDelay)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, $"Lease lock acquisition maximum refresh delay must be equal or larger than the minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}').");
             }
 
             LeaseLockAcquisitionMaximumRefreshDelay = value;
@@ -58,26 +56,35 @@
         /// Set minimum saga persistence lease lock acquisition refresh delay. Default is 500 milliseconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition minimum refresh duration.</param>
-        public void SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan value)
+        /// <exception cref="ArgumentOutOfRangeException">When the provided value is smaller or equal to <see cref="TimeSpan.Zero"/> or bigger than <see cref="LeaseLockAcquisitionMaximumRefreshDelay"/>.</exception>
+        public void SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition minimum refresh delay must be equal or larger than zero.");
             }
 
-            if (value > LeaseLockAcquisitionMaximumRefreshDelay)
+            LeaseLockAcquisitionMinimumRefreshDelay = value;
+        }
+
+        // To avoid ending up with weird ordering scenarios between SetLeaseLockAcquisitionMinimumRefreshDelay and SetLeaseLockAcquisitionMaximumRefreshDelay we are validating those settings a bit later in the CosmosDbSagaPersistence feature
+        internal void ValidateRefreshDelays()
+        {
+            if (LeaseLockAcquisitionMaximumRefreshDelay < LeaseLockAcquisitionMinimumRefreshDelay)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), value, $"Lease lock acquisition minimum refresh delay must be equal or smaller than the maximum refresh delay ('{LeaseLockAcquisitionMaximumRefreshDelay}').");
+                throw new ArgumentOutOfRangeException(nameof(LeaseLockAcquisitionMaximumRefreshDelay), LeaseLockAcquisitionMaximumRefreshDelay, $"Lease lock acquisition maximum refresh delay ('{LeaseLockAcquisitionMaximumRefreshDelay}') must be equal or larger than the minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}').");
             }
 
-            LeaseLockAcquisitionMinimumRefreshDelay = value;
+            if (LeaseLockAcquisitionMinimumRefreshDelay > LeaseLockAcquisitionMaximumRefreshDelay)
+            {
+                throw new ArgumentOutOfRangeException(nameof(LeaseLockAcquisitionMinimumRefreshDelay), LeaseLockAcquisitionMinimumRefreshDelay, $"Lease lock acquisition minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}') must be equal or smaller than the maximum refresh delay ('{LeaseLockAcquisitionMaximumRefreshDelay}').");
+            }
         }
 
         internal TimeSpan LeaseLockAcquisitionTimeout { get; private set; } = TimeSpan.FromSeconds(60);
         internal TimeSpan LeaseLockTime { get; private set; } = TimeSpan.FromSeconds(60);
         internal TimeSpan LeaseLockAcquisitionMaximumRefreshDelay { get; private set; } = TimeSpan.FromMilliseconds(1000);
         internal TimeSpan LeaseLockAcquisitionMinimumRefreshDelay { get; private set; } = TimeSpan.FromMilliseconds(500);
-
         internal bool PessimisticLockingEnabled { get; set; }
     }
 }

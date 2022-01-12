@@ -77,7 +77,7 @@
                 var pessimisticLockingConfiguration = sagaPersistenceConfiguration.UsePessimisticLocking();
                 if (SessionTimeout.HasValue)
                 {
-                    pessimisticLockingConfiguration.SetPessimisticLeaseLockAcquisitionTimeout(SessionTimeout.Value);
+                    pessimisticLockingConfiguration.SetLeaseLockAcquisitionTimeout(SessionTimeout.Value);
                 }
                 SupportsPessimisticConcurrency = true;
             }
