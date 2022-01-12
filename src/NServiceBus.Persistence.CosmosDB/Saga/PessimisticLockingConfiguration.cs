@@ -72,12 +72,12 @@
         {
             if (LeaseLockAcquisitionMaximumRefreshDelay < LeaseLockAcquisitionMinimumRefreshDelay)
             {
-                throw new ArgumentOutOfRangeException(nameof(LeaseLockAcquisitionMaximumRefreshDelay), LeaseLockAcquisitionMaximumRefreshDelay, $"Lease lock acquisition maximum refresh delay must be equal or larger than the minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}').");
+                throw new ArgumentOutOfRangeException(nameof(LeaseLockAcquisitionMaximumRefreshDelay), LeaseLockAcquisitionMaximumRefreshDelay, $"Lease lock acquisition maximum refresh delay ('{LeaseLockAcquisitionMaximumRefreshDelay}') must be equal or larger than the minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}').");
             }
 
             if (LeaseLockAcquisitionMinimumRefreshDelay > LeaseLockAcquisitionMaximumRefreshDelay)
             {
-                throw new ArgumentOutOfRangeException(nameof(LeaseLockAcquisitionMinimumRefreshDelay), LeaseLockAcquisitionMinimumRefreshDelay, $"Lease lock acquisition minimum refresh delay must be equal or smaller than the maximum refresh delay ('{LeaseLockAcquisitionMaximumRefreshDelay}').");
+                throw new ArgumentOutOfRangeException(nameof(LeaseLockAcquisitionMinimumRefreshDelay), LeaseLockAcquisitionMinimumRefreshDelay, $"Lease lock acquisition minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}') must be equal or smaller than the maximum refresh delay ('{LeaseLockAcquisitionMaximumRefreshDelay}').");
             }
         }
 
