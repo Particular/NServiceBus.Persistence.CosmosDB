@@ -6,7 +6,6 @@
     using EndpointTemplates;
     using NServiceBus.Pipeline;
     using NUnit.Framework;
-    using Persistence.CosmosDB;
 
     public class When_regular_handler_with_no_container_information : NServiceBusAcceptanceTest
     {
@@ -49,10 +48,8 @@
                     public Registration() : base(nameof(ContainerInformationRemoverBehavior),
                         typeof(ContainerInformationRemoverBehavior),
                         "Removes the container information if present",
-                        b => new ContainerInformationRemoverBehavior())
-                    {
-                        InsertBeforeIfExists(nameof(LogicalOutboxBehavior));
-                    }
+                        b => new ContainerInformationRemoverBehavior()) =>
+                        InsertBeforeIfExists("LogicalOutboxBehavior");
                 }
             }
 

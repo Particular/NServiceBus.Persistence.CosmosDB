@@ -27,6 +27,7 @@ namespace NServiceBus
             " 3.0.0.", true)]
         public static void EnableMigrationMode(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
         public static NServiceBus.Persistence.CosmosDB.SagaPersistenceConfiguration Sagas(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
+        public static NServiceBus.Persistence.CosmosDB.TransactionInformationConfiguration TransactionInformation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
     }
     public interface ICosmosStorageSession
     {
@@ -57,6 +58,15 @@ namespace NServiceBus.Persistence.CosmosDB
     {
         Microsoft.Azure.Cosmos.CosmosClient Client { get; }
     }
+    public interface ITransactionInformationFromHeadersExtractor
+    {
+        bool TryExtract(System.Collections.Generic.IReadOnlyDictionary<string, string> headers, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey, out NServiceBus.ContainerInformation? containerInformation);
+    }
+    public interface ITransactionInformationFromMessagesExtractor
+    {
+        bool TryExtract(object message, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey, out NServiceBus.ContainerInformation? containerInformation);
+    }
+    [System.Obsolete(@"This class was only ever used as a constant to place custom behaviors in the right part of the pipeline. It is no longer necessary to have a custom behavior to extract the transaction information. Use `persistence.TransactionInformation()` to conveniently map headers or message content to partition keys. Will be removed in version 3.0.0.", true)]
     public sealed class LogicalOutboxBehavior : NServiceBus.Pipeline.IBehavior, NServiceBus.Pipeline.IBehavior<NServiceBus.Pipeline.IIncomingLogicalMessageContext, NServiceBus.Pipeline.IIncomingLogicalMessageContext>
     {
         public System.Threading.Tasks.Task Invoke(NServiceBus.Pipeline.IIncomingLogicalMessageContext context, System.Func<NServiceBus.Pipeline.IIncomingLogicalMessageContext, System.Threading.Tasks.Task> next) { }
@@ -74,6 +84,17 @@ namespace NServiceBus.Persistence.CosmosDB
         public SagaPersistenceConfiguration() { }
         public void EnableMigrationMode() { }
         public NServiceBus.Persistence.CosmosDB.PessimisticLockingConfiguration UsePessimisticLocking() { }
+    }
+    public class TransactionInformationConfiguration
+    {
+        public TransactionInformationConfiguration() { }
+        public void ExtractFromHeader(string headerKey, NServiceBus.ContainerInformation? containerInformation = default) { }
+        public void ExtractFromHeader(string headerKey, System.Func<string, string> converter, NServiceBus.ContainerInformation? containerInformation = default) { }
+        public void ExtractFromHeader<TArg>(string headerKey, System.Func<string, TArg, string> converter, TArg converterArgument, NServiceBus.ContainerInformation? containerInformation = default) { }
+        public void ExtractFromHeaders(NServiceBus.Persistence.CosmosDB.ITransactionInformationFromHeadersExtractor extractor) { }
+        public void ExtractFromMessage<TMessage>(System.Func<TMessage, Microsoft.Azure.Cosmos.PartitionKey> extractor, NServiceBus.ContainerInformation? containerInformation = default) { }
+        public void ExtractFromMessage<TMessage, TArg>(System.Func<TMessage, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument, NServiceBus.ContainerInformation? containerInformation = default) { }
+        public void ExtractFromMessages(NServiceBus.Persistence.CosmosDB.ITransactionInformationFromMessagesExtractor extractor) { }
     }
     public sealed class TransactionalBatchOperationException : System.Exception
     {

@@ -16,6 +16,7 @@
                 s.SetDefault(SettingsKeys.DatabaseName, "NServiceBus");
                 s.SetDefault<IProvideCosmosClient>(new ThrowIfNoCosmosClientIsProvided());
                 s.EnableFeatureByDefault<InstallerFeature>();
+                s.EnableFeatureByDefault<Transaction>();
             });
 
             Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<CosmosDbSagaPersistence>());
