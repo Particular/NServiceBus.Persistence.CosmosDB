@@ -70,8 +70,9 @@
         public void Should_throw_bigger_value_than_maximum_refresh_delay_default_for_minimum_refresh_delay([Random(1001, 1100, 5, Distinct = true)] double millisecondsBiggerThanMaximumRefreshDelayDefaultValue)
         {
             var configuration = new PessimisticLockingConfiguration();
+            configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsBiggerThanMaximumRefreshDelayDefaultValue));
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsBiggerThanMaximumRefreshDelayDefaultValue)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.ValidateRefreshDelays());
         }
 
         [Test]
@@ -79,8 +80,9 @@
         {
             var configuration = new PessimisticLockingConfiguration();
             configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(700));
+            configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsBiggerThanMaximumRefreshDelayValue));
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsBiggerThanMaximumRefreshDelayValue)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.ValidateRefreshDelays());
         }
 
         [Test]
@@ -91,6 +93,7 @@
             var fromMilliseconds = TimeSpan.FromMilliseconds(millisecondsSmallerThanMaximumRefreshDelayDefaultValue);
 
             configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(fromMilliseconds);
+            configuration.ValidateRefreshDelays();
 
             Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMinimumRefreshDelay);
         }
@@ -104,6 +107,7 @@
             var fromMilliseconds = TimeSpan.FromMilliseconds(millisecondsSmallerThanMaximumRefreshDelayValue);
 
             configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(fromMilliseconds);
+            configuration.ValidateRefreshDelays();
 
             Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMinimumRefreshDelay);
         }
@@ -120,8 +124,9 @@
         public void Should_throw_smaller_value_than_minimum_refresh_delay_default_for_maximum_refresh_delay([Random(1, 499, 5, Distinct = true)] double millisecondsSmallerThanMinimumRefreshDelayDefaultValue)
         {
             var configuration = new PessimisticLockingConfiguration();
+            configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsSmallerThanMinimumRefreshDelayDefaultValue));
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsSmallerThanMinimumRefreshDelayDefaultValue)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.ValidateRefreshDelays());
         }
 
         [Test]
@@ -129,8 +134,9 @@
         {
             var configuration = new PessimisticLockingConfiguration();
             configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(250));
+            configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsSmallerThanMinimumRefreshDelayValue));
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsSmallerThanMinimumRefreshDelayValue)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.ValidateRefreshDelays());
         }
 
         [Test]
@@ -141,6 +147,7 @@
             var fromMilliseconds = TimeSpan.FromMilliseconds(millisecondsBiggerThanMinimumRefreshDelayDefaultValue);
 
             configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(fromMilliseconds);
+            configuration.ValidateRefreshDelays();
 
             Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMaximumRefreshDelay);
         }
@@ -154,6 +161,7 @@
             var fromMilliseconds = TimeSpan.FromMilliseconds(millisecondsBiggerThanMinimumRefreshDelayValue);
 
             configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(fromMilliseconds);
+            configuration.ValidateRefreshDelays();
 
             Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMaximumRefreshDelay);
         }

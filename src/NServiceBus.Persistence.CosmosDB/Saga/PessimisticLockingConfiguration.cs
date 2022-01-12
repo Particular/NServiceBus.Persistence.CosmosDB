@@ -49,11 +49,6 @@
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition maximum refresh delay must be equal or larger than zero.");
             }
 
-            if (value < LeaseLockAcquisitionMinimumRefreshDelay)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, $"Lease lock acquisition maximum refresh delay must be equal or larger than the minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}').");
-            }
-
             LeaseLockAcquisitionMaximumRefreshDelay = value;
         }
 
@@ -69,12 +64,21 @@
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Lease lock acquisition minimum refresh delay must be equal or larger than zero.");
             }
 
-            if (value > LeaseLockAcquisitionMaximumRefreshDelay)
+            LeaseLockAcquisitionMinimumRefreshDelay = value;
+        }
+
+        // To avoid ending up with weird ordering scenarios between SetLeaseLockAcquisitionMinimumRefreshDelay and SetLeaseLockAcquisitionMaximumRefreshDelay we are validating those settings a bit later in the CosmosDbSagaPersistence feature
+        internal void ValidateRefreshDelays()
+        {
+            if (LeaseLockAcquisitionMaximumRefreshDelay < LeaseLockAcquisitionMinimumRefreshDelay)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), value, $"Lease lock acquisition minimum refresh delay must be equal or smaller than the maximum refresh delay ('{LeaseLockAcquisitionMaximumRefreshDelay}').");
+                throw new ArgumentOutOfRangeException(nameof(LeaseLockAcquisitionMaximumRefreshDelay), LeaseLockAcquisitionMaximumRefreshDelay, $"Lease lock acquisition maximum refresh delay must be equal or larger than the minimum refresh delay ('{LeaseLockAcquisitionMinimumRefreshDelay}').");
             }
 
-            LeaseLockAcquisitionMinimumRefreshDelay = value;
+            if (LeaseLockAcquisitionMinimumRefreshDelay > LeaseLockAcquisitionMaximumRefreshDelay)
+            {
+                throw new ArgumentOutOfRangeException(nameof(LeaseLockAcquisitionMinimumRefreshDelay), LeaseLockAcquisitionMinimumRefreshDelay, $"Lease lock acquisition minimum refresh delay must be equal or smaller than the maximum refresh delay ('{LeaseLockAcquisitionMaximumRefreshDelay}').");
+            }
         }
 
         internal TimeSpan LeaseLockAcquisitionTimeout { get; private set; } = TimeSpan.FromSeconds(60);

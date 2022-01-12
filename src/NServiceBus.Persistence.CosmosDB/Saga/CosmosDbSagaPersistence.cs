@@ -22,11 +22,16 @@
         {
             NonNativePubSubCheck.ThrowIfMessageDrivenPubSubInUse(context);
 
+            var sagaConfiguration = context.Settings.GetOrDefault<SagaPersistenceConfiguration>() ?? new SagaPersistenceConfiguration();
+            var pessimisticLockingConfiguration = sagaConfiguration.PessimisticLockingConfiguration;
+            if (pessimisticLockingConfiguration.PessimisticLockingEnabled)
+            {
+                pessimisticLockingConfiguration.ValidateRefreshDelays();
+            }
+
             var serializer = new JsonSerializer { ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver() };
 
-            var options = context.Settings.GetOrDefault<SagaPersistenceConfiguration>() ?? new SagaPersistenceConfiguration();
-
-            context.Services.AddSingleton<ISagaPersister>(builder => new SagaPersister(serializer, options));
+            context.Services.AddSingleton<ISagaPersister>(builder => new SagaPersister(serializer, sagaConfiguration));
         }
     }
 }
