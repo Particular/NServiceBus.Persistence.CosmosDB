@@ -75,11 +75,33 @@
         }
 
         [Test]
+        public void Should_throw_bigger_value_than_maximum_refresh_delay_for_minimum_refresh_delay([Random(700, 1100, 5, Distinct = true)] double millisecondsBiggerThanMaximumRefreshDelayValue)
+        {
+            var configuration = new PessimisticLockingConfiguration();
+            configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(700));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsBiggerThanMaximumRefreshDelayValue)));
+        }
+
+        [Test]
         public void Should_set_minimum_refresh_delay_when_below_default_maximum_refresh_delay([Random(1, 1000, 5, Distinct = true)] double millisecondsSmallerThanMaximumRefreshDelayDefaultValue)
         {
             var configuration = new PessimisticLockingConfiguration();
 
             var fromMilliseconds = TimeSpan.FromMilliseconds(millisecondsSmallerThanMaximumRefreshDelayDefaultValue);
+
+            configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(fromMilliseconds);
+
+            Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMinimumRefreshDelay);
+        }
+
+        [Test]
+        public void Should_set_minimum_refresh_delay_when_below_maximum_refresh_delay([Random(1, 700, 5, Distinct = true)] double millisecondsSmallerThanMaximumRefreshDelayValue)
+        {
+            var configuration = new PessimisticLockingConfiguration();
+            configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(700));
+
+            var fromMilliseconds = TimeSpan.FromMilliseconds(millisecondsSmallerThanMaximumRefreshDelayValue);
 
             configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(fromMilliseconds);
 
@@ -103,11 +125,33 @@
         }
 
         [Test]
+        public void Should_throw_smaller_value_than_minimum_refresh_delay_for_maximum_refresh_delay([Random(1, 249, 5, Distinct = true)] double millisecondsSmallerThanMinimumRefreshDelayValue)
+        {
+            var configuration = new PessimisticLockingConfiguration();
+            configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(250));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(millisecondsSmallerThanMinimumRefreshDelayValue)));
+        }
+
+        [Test]
         public void Should_set_maximum_refresh_delay_when_above_default_minimum_refresh_delay([Random(500, 1500, 5, Distinct = true)] double millisecondsBiggerThanMinimumRefreshDelayDefaultValue)
         {
             var configuration = new PessimisticLockingConfiguration();
 
             var fromMilliseconds = TimeSpan.FromMilliseconds(millisecondsBiggerThanMinimumRefreshDelayDefaultValue);
+
+            configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(fromMilliseconds);
+
+            Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMaximumRefreshDelay);
+        }
+
+        [Test]
+        public void Should_set_maximum_refresh_delay_when_above_minimum_refresh_delay([Random(250, 1500, 5, Distinct = true)] double millisecondsBiggerThanMinimumRefreshDelayValue)
+        {
+            var configuration = new PessimisticLockingConfiguration();
+            configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(250));
+
+            var fromMilliseconds = TimeSpan.FromMilliseconds(millisecondsBiggerThanMinimumRefreshDelayValue);
 
             configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(fromMilliseconds);
 
