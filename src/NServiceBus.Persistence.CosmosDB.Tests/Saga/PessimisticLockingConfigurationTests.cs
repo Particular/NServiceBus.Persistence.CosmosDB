@@ -67,7 +67,7 @@
         }
 
         [Test]
-        public void Should_throw_bigger_value_than_maximum_refresh_delay_for_minimum_refresh_delay([Random(1001, 1100, 5, Distinct = true)] double millisecondsBiggerThanMaximumRefreshDelayDefaultValue)
+        public void Should_throw_bigger_value_than_maximum_refresh_delay_default_for_minimum_refresh_delay([Random(1001, 1100, 5, Distinct = true)] double millisecondsBiggerThanMaximumRefreshDelayDefaultValue)
         {
             var configuration = new PessimisticLockingConfiguration();
 
@@ -75,7 +75,7 @@
         }
 
         [Test]
-        public void Should_set_minimum_refresh_delay([Random(1, 1000, 5, Distinct = true)] double millisecondsSmallerThanMaximumRefreshDelayDefaultValue)
+        public void Should_set_minimum_refresh_delay_when_below_default_maximum_refresh_delay([Random(1, 1000, 5, Distinct = true)] double millisecondsSmallerThanMaximumRefreshDelayDefaultValue)
         {
             var configuration = new PessimisticLockingConfiguration();
 
@@ -95,7 +95,7 @@
         }
 
         [Test]
-        public void Should_throw_smaller_value_than_minimum_refresh_delay_for_maximum_refresh_delay([Random(1, 499, 5, Distinct = true)] double millisecondsSmallerThanMinimumRefreshDelayDefaultValue)
+        public void Should_throw_smaller_value_than_minimum_refresh_delay_default_for_maximum_refresh_delay([Random(1, 499, 5, Distinct = true)] double millisecondsSmallerThanMinimumRefreshDelayDefaultValue)
         {
             var configuration = new PessimisticLockingConfiguration();
 
@@ -103,7 +103,7 @@
         }
 
         [Test]
-        public void Should_set_maximum_refresh_delay([Random(500, 1500, 5, Distinct = true)] double millisecondsBiggerThanMinimumRefreshDelayDefaultValue)
+        public void Should_set_maximum_refresh_delay_when_above_default_minimum_refresh_delay([Random(500, 1500, 5, Distinct = true)] double millisecondsBiggerThanMinimumRefreshDelayDefaultValue)
         {
             var configuration = new PessimisticLockingConfiguration();
 
