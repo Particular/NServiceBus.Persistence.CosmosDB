@@ -19,7 +19,7 @@
                 s.EnableFeatureByDefault<Transaction>();
             });
 
-            Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<CosmosDbSagaPersistence>());
+            Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<SagaStorage>());
             Supports<StorageType.Outbox>(s => s.EnableFeatureByDefault<OutboxStorage>());
         }
     }
