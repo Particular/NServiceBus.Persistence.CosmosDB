@@ -11,6 +11,7 @@
         /// Set saga persistence pessimistic lease lock duration. Default is 60 seconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock duration.</param>
+        /// <exception cref="ArgumentOutOfRangeException">When the provided value is smaller or equal to <see cref="TimeSpan.Zero"/>.</exception>
         public void SetLeaseLockTime(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
@@ -25,6 +26,7 @@
         /// Set saga persistence pessimistic lease lock acquisition timeout. Default is 60 seconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition duration.</param>
+        /// <exception cref="ArgumentOutOfRangeException">When the provided value is smaller or equal to <see cref="TimeSpan.Zero"/>.</exception>
         public void SetLeaseLockAcquisitionTimeout(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
@@ -39,6 +41,7 @@
         /// Set maximum saga persistence lease lock acquisition refresh delay. Default is 1000 milliseconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition maximum refresh duration.</param>
+        /// <exception cref="ArgumentOutOfRangeException">When the provided value is smaller or equal to <see cref="TimeSpan.Zero"/> or smaller than <see cref="LeaseLockAcquisitionMinimumRefreshDelay"/>.</exception>
         public void SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
@@ -58,6 +61,7 @@
         /// Set minimum saga persistence lease lock acquisition refresh delay. Default is 500 milliseconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition minimum refresh duration.</param>
+        /// <exception cref="ArgumentOutOfRangeException">When the provided value is smaller or equal to <see cref="TimeSpan.Zero"/> or bigger than <see cref="LeaseLockAcquisitionMaximumRefreshDelay"/>.</exception>
         public void SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
