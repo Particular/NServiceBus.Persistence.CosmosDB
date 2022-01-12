@@ -11,7 +11,7 @@
         /// Set saga persistence pessimistic lease lock duration. Default is 60 seconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock duration.</param>
-        public void SetPessimisticLeaseLockTime(TimeSpan value)
+        public void SetLeaseLockTime(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {
@@ -25,7 +25,7 @@
         /// Set saga persistence pessimistic lease lock acquisition timeout. Default is 60 seconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition duration.</param>
-        public void SetPessimisticLeaseLockAcquisitionTimeout(TimeSpan value)
+        public void SetLeaseLockAcquisitionTimeout(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {
@@ -39,7 +39,7 @@
         /// Set maximum saga persistence lease lock acquisition refresh delay. Default is 1000 milliseconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition maximum refresh duration.</param>
-        public void SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan value)
+        public void SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {
@@ -58,7 +58,7 @@
         /// Set minimum saga persistence lease lock acquisition refresh delay. Default is 500 milliseconds.
         /// </summary>
         /// <param name="value">Pessimistic lease lock acquisition minimum refresh duration.</param>
-        public void SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan value)
+        public void SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {

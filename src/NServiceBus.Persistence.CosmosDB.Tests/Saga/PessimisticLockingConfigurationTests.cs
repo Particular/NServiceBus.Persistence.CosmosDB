@@ -23,7 +23,7 @@
         {
             var configuration = new PessimisticLockingConfiguration();
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetPessimisticLeaseLockTime(TimeSpan.Zero));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockTime(TimeSpan.Zero));
         }
 
         [Test]
@@ -33,7 +33,7 @@
 
             var fromMinutes = TimeSpan.FromMinutes(minutes);
 
-            configuration.SetPessimisticLeaseLockTime(fromMinutes);
+            configuration.SetLeaseLockTime(fromMinutes);
 
             Assert.AreEqual(fromMinutes, configuration.LeaseLockTime);
         }
@@ -43,7 +43,7 @@
         {
             var configuration = new PessimisticLockingConfiguration();
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetPessimisticLeaseLockAcquisitionTimeout(TimeSpan.Zero));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionTimeout(TimeSpan.Zero));
         }
 
         [Test]
@@ -53,7 +53,7 @@
 
             var fromMinutes = TimeSpan.FromMilliseconds(minutes);
 
-            configuration.SetPessimisticLeaseLockTime(fromMinutes);
+            configuration.SetLeaseLockTime(fromMinutes);
 
             Assert.AreEqual(fromMinutes, configuration.LeaseLockTime);
         }
@@ -63,7 +63,7 @@
         {
             var configuration = new PessimisticLockingConfiguration();
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.Zero));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.Zero));
         }
 
         [Test]
@@ -71,7 +71,7 @@
         {
             var configuration = new PessimisticLockingConfiguration();
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(milliseconds)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(TimeSpan.FromMilliseconds(milliseconds)));
         }
 
         [Test]
@@ -81,7 +81,7 @@
 
             var fromMilliseconds = TimeSpan.FromMilliseconds(milliseconds);
 
-            configuration.SetPessimisticLeaseLockAcquisitionMinimumRefreshDelay(fromMilliseconds);
+            configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(fromMilliseconds);
 
             Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMinimumRefreshDelay);
         }
@@ -91,7 +91,7 @@
         {
             var configuration = new PessimisticLockingConfiguration();
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.Zero));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.Zero));
         }
 
         [Test]
@@ -99,7 +99,7 @@
         {
             var configuration = new PessimisticLockingConfiguration();
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(milliseconds)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(milliseconds)));
         }
 
         [Test]
@@ -109,7 +109,7 @@
 
             var fromMilliseconds = TimeSpan.FromMilliseconds(milliseconds);
 
-            configuration.SetPessimisticLeaseLockAcquisitionMaximumRefreshDelay(fromMilliseconds);
+            configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(fromMilliseconds);
 
             Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMaximumRefreshDelay);
         }
