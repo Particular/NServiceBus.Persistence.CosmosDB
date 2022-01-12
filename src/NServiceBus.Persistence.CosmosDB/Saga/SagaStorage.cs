@@ -5,9 +5,9 @@
     using Newtonsoft.Json;
     using Sagas;
 
-    class CosmosDbSagaPersistence : Feature
+    class SagaStorage : Feature
     {
-        internal CosmosDbSagaPersistence()
+        internal SagaStorage()
         {
             Defaults(s =>
             {
