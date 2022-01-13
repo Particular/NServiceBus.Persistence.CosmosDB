@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -85,6 +86,15 @@
             Guard.AgainstNullAndEmpty(nameof(id), id);
 
             operationsHolder.AddOperation(new DeleteItemOperation(id, requestOptions, PartitionKey));
+            return this;
+        }
+
+        public override TransactionalBatch PatchItem(string id, IReadOnlyList<PatchOperation> patchOperations, TransactionalBatchPatchItemRequestOptions requestOptions = null)
+        {
+            Guard.AgainstNullAndEmpty(nameof(id), id);
+            Guard.AgainstNull(nameof(patchOperations), patchOperations);
+
+            operationsHolder.AddOperation(new PatchItemOperation(id, patchOperations, requestOptions, PartitionKey));
             return this;
         }
 

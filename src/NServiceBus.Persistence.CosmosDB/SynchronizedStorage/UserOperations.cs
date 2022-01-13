@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System.Collections.Generic;
     using System.IO;
     using Microsoft.Azure.Cosmos;
 
@@ -138,6 +139,23 @@
         public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
         {
             transactionalBatch.DeleteItem(id, options);
+        }
+    }
+
+    sealed class PatchItemOperation : UserOperation
+    {
+        readonly string id;
+        readonly IReadOnlyList<PatchOperation> patchOperations;
+
+        public PatchItemOperation(string id, IReadOnlyList<PatchOperation> patchOperations, TransactionalBatchPatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey)
+        {
+            this.id = id;
+            this.patchOperations = patchOperations;
+        }
+
+        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
+        {
+            transactionalBatch.PatchItem(id, patchOperations, (TransactionalBatchPatchItemRequestOptions)options);
         }
     }
 }
