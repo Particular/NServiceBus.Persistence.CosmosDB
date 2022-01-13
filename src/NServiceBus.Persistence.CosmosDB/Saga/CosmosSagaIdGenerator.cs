@@ -25,17 +25,15 @@
             var buffer = ArrayPool<byte>.Shared.Rent(byteCount);
             try
             {
-                var numberOfBytes = Encoding.UTF8.GetBytes(src.AsSpan(), buffer);
+                var numberOfBytesWritten = Encoding.UTF8.GetBytes(src.AsSpan(), buffer);
 
-                using (var sha1CryptoServiceProvider = SHA1.Create())
+                using var sha1CryptoServiceProvider = SHA1.Create();
+                var guidBytes = sha1CryptoServiceProvider.ComputeHash(buffer, 0, numberOfBytesWritten).AsSpan().Slice(0, 16);
+                if (!MemoryMarshal.TryRead<Guid>(guidBytes, out var deterministicGuid))
                 {
-                    var guidBytes = sha1CryptoServiceProvider.ComputeHash(buffer, 0, numberOfBytes).AsSpan().Slice(0, 16);
-                    if (!MemoryMarshal.TryRead<Guid>(guidBytes, out var deterministicGuid))
-                    {
-                        deterministicGuid = new Guid(guidBytes.ToArray());
-                    }
-                    return deterministicGuid;
+                    deterministicGuid = new Guid(guidBytes.ToArray());
                 }
+                return deterministicGuid;
             }
             finally
             {
