@@ -25,34 +25,26 @@
         {
             var messageId = Guid.NewGuid().ToString();
 
-            var fakeCosmosClient = new FakeCosmosClient
+            var fakeCosmosClient = new FakeCosmosClient(new FakeContainer
             {
-                Container =
+                ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord
                 {
-                    ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord
+                    Dispatched = false,
+                    Id = messageId,
+                    TransportOperations = new[]
                     {
-                        Dispatched = false,
-                        Id = messageId,
-                        TransportOperations = new[]
-                        {
-                            new TransportOperation("42", new Dictionary<string, string>
-                            {
-                                {"Destination", "somewhere"}
-                            }, Array.Empty<byte>(), new Dictionary<string, string>()),
-                        }
+                         new TransportOperation("42", new Dictionary<string, string>
+                         {
+                             {"Destination", "somewhere"}
+                         }, Array.Empty<byte>(), new Dictionary<string, string>()),
                     }
                 }
-            };
+            });
 
-            var containerHolderHolderResolver = new ContainerHolderResolver(new Provider()
-            {
-                Client = fakeCosmosClient
-            },
-                new ContainerInformation("fakeContainer",
-                    new PartitionKeyPath("")),
-                "fakeDatabase");
+            var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
+                new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
 
-            var behavior = new LogicalOutboxBehavior(containerHolderHolderResolver, new JsonSerializer());
+            var behavior = new OutboxBehavior(containerHolderHolderResolver, new JsonSerializer());
 
             var testableContext = new TestableIncomingLogicalMessageContext();
 
@@ -72,23 +64,14 @@
         }
     }
 
-    class Provider : IProvideCosmosClient
-    {
-        public CosmosClient Client { get; set; }
-    }
-
-    class FakeCosmosClient : CosmosClient
-    {
-        public FakeContainer Container { get; set; } = new FakeContainer();
-
-        public override Container GetContainer(string databaseId, string containerId) => Container;
-    }
-
     class FakeContainer : Container
     {
         public override string Id { get; }
+
         public override Database Database { get; }
+
         public override Conflicts Conflicts { get; }
+
         public override Scripts Scripts { get; }
 
         public override Task<ContainerResponse> ReadContainerAsync(ContainerRequestOptions requestOptions = null, CancellationToken cancellationToken = new CancellationToken()) => throw new NotImplementedException();
@@ -154,6 +137,8 @@
 
         public override ChangeFeedProcessorBuilder GetChangeFeedProcessorBuilder<T>(string processorName, ChangesHandler<T> onChangesDelegate) => throw new NotImplementedException();
 
+        public override Task<ResponseMessage> PatchItemStreamAsync(string id, PartitionKey partitionKey, IReadOnlyList<PatchOperation> patchOperations, PatchItemRequestOptions requestOptions = null, CancellationToken cancellationToken = new CancellationToken()) => throw new NotImplementedException();
+
         public override ChangeFeedProcessorBuilder GetChangeFeedEstimatorBuilder(string processorName, ChangesEstimationHandler estimationDelegate, TimeSpan? estimationPeriod = null) => throw new NotImplementedException();
 
         public override ChangeFeedEstimator GetChangeFeedEstimator(string processorName, Container leaseContainer) => throw new NotImplementedException();
@@ -162,10 +147,26 @@
 
         public override FeedIterator<T> GetChangeFeedIterator<T>(ChangeFeedStartFrom changeFeedStartFrom, ChangeFeedMode changeFeedMode, ChangeFeedRequestOptions changeFeedRequestOptions = null) => throw new NotImplementedException();
 
+        public override ChangeFeedProcessorBuilder GetChangeFeedProcessorBuilder<T>(string processorName, ChangeFeedHandler<T> onChangesDelegate) => throw new NotImplementedException();
+
+        public override ChangeFeedProcessorBuilder GetChangeFeedProcessorBuilderWithManualCheckpoint<T>(string processorName,
+            ChangeFeedHandlerWithManualCheckpoint<T> onChangesDelegate) =>
+            throw new NotImplementedException();
+
+        public override ChangeFeedProcessorBuilder GetChangeFeedProcessorBuilder(string processorName,
+            ChangeFeedStreamHandler onChangesDelegate) =>
+            throw new NotImplementedException();
+
+        public override ChangeFeedProcessorBuilder GetChangeFeedProcessorBuilderWithManualCheckpoint(string processorName,
+            ChangeFeedStreamHandlerWithManualCheckpoint onChangesDelegate) =>
+            throw new NotImplementedException();
+
         public override FeedIterator GetChangeFeedStreamIterator(ChangeFeedStartFrom changeFeedStartFrom, ChangeFeedMode changeFeedMode, ChangeFeedRequestOptions changeFeedRequestOptions = null) => throw new NotImplementedException();
 
         public override Task<IReadOnlyList<FeedRange>> GetFeedRangesAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
         public Func<string, PartitionKey, OutboxRecord> ReadItemStreamOutboxRecord = (id, key) => new OutboxRecord();
+
+        public override Task<ItemResponse<T>> PatchItemAsync<T>(string id, PartitionKey partitionKey, IReadOnlyList<PatchOperation> patchOperations, PatchItemRequestOptions requestOptions = null, CancellationToken cancellationToken = new CancellationToken()) => throw new NotImplementedException();
     }
 }

@@ -1,0 +1,62 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\Test.snk</AssemblyOriginatorKeyFile>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.23.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+    <PackageReference Include="NServiceBus.Testing" Version="7.3.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.0" />
+    <PackageReference Include="Nunit" Version="3.13.2" />
+    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="7.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests\When_handling_migrated_saga.cs">
+      <Link>When_handling_migrated_saga.cs</Link>
+    </Compile>
+    <Compile Include="..\SharedAcceptanceTests.All\*.cs" />
+    <None Include="..\SharedAcceptanceTests.All\*.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="\**\ConfigureEndpointInMemoryPersistence.cs" />
+    <Compile Remove="\**\ConfigureEndpointLearningPersistence.cs" />
+    <Compile Remove="\**\ConventionEnforcementTests.cs" />
+    <Compile Remove="\**\DeterministicGuid.cs" />
+    <Compile Remove="\**\Audit\*.*" />
+    <Compile Remove="\**\Correlation\*.*" />
+    <Compile Remove="\**\DataBus\*.*" />
+    <Compile Remove="\**\DelayedDelivery\*.*" />
+    <Compile Remove="\**\Forwarding\*.*" />
+    <Compile Remove="\**\Feature\*.*" />
+    <Compile Remove="\**\MessageId\*.*" />
+    <Compile Remove="\**\Pipeline\*.*" />
+    <Compile Remove="\**\Recoverability\*.*" />
+    <Compile Remove="\**\Routing\**\*.*" />
+    <Compile Remove="\**\Satellites\*.*" />
+    <Compile Remove="\**\Scheduling\*.*" />
+    <Compile Remove="\**\SelfVerification\*.*" />
+    <Compile Remove="\**\Serialization\*.*" />
+    <Compile Remove="\**\Timeout\*.*" />
+    <Compile Remove="\**\TimeToBeReceived\*.*" />
+    <Compile Remove="\**\Tx\**\*.*" />
+    <Compile Remove="\**\Versioning\*.*" />
+    <Compile Remove="\**\Outbox\*.*" />
+  </ItemGroup>
+
+</Project>

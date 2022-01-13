@@ -6,7 +6,7 @@
     // Required for testing
     interface IWorkWithSharedTransactionalBatch
     {
-        void AddOperation(Operation operation);
+        void AddOperation(IOperation operation);
         ContextBag CurrentContextBag { get; set; }
         Container Container { get; }
         PartitionKeyPath PartitionKeyPath { get; }

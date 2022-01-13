@@ -61,11 +61,28 @@
         /// <summary>
         /// Enable support for sagas migrated from other persistence technologies by querying the saga from storage using a migrated saga id.
         /// </summary>
+        [ObsoleteEx(Message = "Use persistence.Sagas().EnableMigrationMode() instead.", TreatAsErrorFromVersion = "2", RemoveInVersion = "3")]
         public static void EnableMigrationMode(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
         {
             Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
 
-            persistenceExtensions.GetSettings().Set(SettingsKeys.EnableMigrationMode, true);
+            persistenceExtensions.GetSettings().GetOrCreate<SagaPersistenceConfiguration>().EnableMigrationMode();
+        }
+
+        /// <summary>
+        /// Obtains the saga persistence configuration options.
+        /// </summary>
+        public static SagaPersistenceConfiguration Sagas(this PersistenceExtensions<CosmosPersistence> persistenceExtensions) =>
+            persistenceExtensions.GetSettings().GetOrCreate<SagaPersistenceConfiguration>();
+
+        /// <summary>
+        /// Obtains the transaction information configuration options.
+        /// </summary>
+        public static TransactionInformationConfiguration TransactionInformation(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
+        {
+            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+
+            return persistenceExtensions.GetSettings().GetOrCreate<TransactionInformationConfiguration>();
         }
     }
 }

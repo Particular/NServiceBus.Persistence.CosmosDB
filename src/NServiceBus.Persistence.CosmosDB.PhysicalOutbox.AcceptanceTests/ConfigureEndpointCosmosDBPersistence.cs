@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using NServiceBus;
@@ -6,7 +6,7 @@ using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
-using NServiceBus.Pipeline;
+using NServiceBus.Persistence.CosmosDB;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
 {
@@ -22,8 +22,11 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        // This populates the partition key at the physical stage to test the conventional outbox use-case
-        configuration.Pipeline.Register(typeof(PartitionKeyProviderBehavior), "Populates the partition key");
+        if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
+        {
+            // This populates the partition key at the physical stage to test the conventional outbox use-case
+            configuration.RegisterComponents(services => services.ConfigureComponent<PartitionKeyProvider>(DependencyLifecycle.SingleInstance));
+        }
 
         return Task.FromResult(0);
     }
@@ -33,20 +36,18 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    class PartitionKeyProviderBehavior : Behavior<ITransportReceiveContext>
+    class PartitionKeyProvider : ITransactionInformationFromHeadersExtractor
     {
         ScenarioContext scenarioContext;
 
-        public PartitionKeyProviderBehavior(ScenarioContext scenarioContext)
-        {
-            this.scenarioContext = scenarioContext;
-        }
+        public PartitionKeyProvider(ScenarioContext scenarioContext) => this.scenarioContext = scenarioContext;
 
-        public override Task Invoke(ITransportReceiveContext context, Func<Task> next)
+        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey,
+            out ContainerInformation? containerInformation)
         {
-            context.Extensions.Set(new PartitionKey(scenarioContext.TestRunId.ToString()));
-            context.Extensions.Set(new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
-            return next();
+            partitionKey = new PartitionKey(scenarioContext.TestRunId.ToString());
+            containerInformation = new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
+            return true;
         }
     }
 }

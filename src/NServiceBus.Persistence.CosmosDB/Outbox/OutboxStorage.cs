@@ -26,7 +26,7 @@
             var ttlInSeconds = context.Settings.Get<int>(SettingsKeys.OutboxTimeToLiveInSeconds);
 
             context.Container.ConfigureComponent(builder => new OutboxPersister(builder.Build<ContainerHolderResolver>(), serializer, ttlInSeconds), DependencyLifecycle.SingleInstance);
-            context.Pipeline.Register(builder => new LogicalOutboxBehavior(builder.Build<ContainerHolderResolver>(), serializer), "Behavior that mimics the outbox as part of the logical stage.");
+            context.Pipeline.Register("LogicalOutboxBehavior", builder => new OutboxBehavior(builder.Build<ContainerHolderResolver>(), serializer), "Behavior that mimics the outbox as part of the logical stage.");
         }
     }
 }
