@@ -1,6 +1,8 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
+    using System.Buffers;
+    using System.Runtime.InteropServices;
     using System.Security.Cryptography;
     using System.Text;
     using Newtonsoft.Json;
@@ -19,14 +21,45 @@
 
         static Guid DeterministicGuid(string src)
         {
-            var stringBytes = Encoding.UTF8.GetBytes(src);
-
-            using (var sha1CryptoServiceProvider = new SHA1CryptoServiceProvider())
+            var byteCount = Encoding.UTF8.GetByteCount(src);
+            var buffer = ArrayPool<byte>.Shared.Rent(byteCount);
+            try
             {
-                var hashedBytes = sha1CryptoServiceProvider.ComputeHash(stringBytes);
-                Array.Resize(ref hashedBytes, 16);
-                return new Guid(hashedBytes);
+                var numberOfBytes = Encoding.UTF8.GetBytes(src.AsSpan(), buffer);
+
+                using (var sha1CryptoServiceProvider = SHA1.Create())
+                {
+                    var guidBytes = sha1CryptoServiceProvider.ComputeHash(buffer, 0, numberOfBytes).AsSpan().Slice(0, 16);
+                    if (!MemoryMarshal.TryRead<Guid>(guidBytes, out var deterministicGuid))
+                    {
+                        deterministicGuid = new Guid(guidBytes.ToArray());
+                    }
+                    return deterministicGuid;
+                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer, clearArray: true);
             }
         }
     }
+
+#if NETFRAMEWORK
+    static class SpanExtensions
+    {
+        public static unsafe int GetBytes(this Encoding encoding, ReadOnlySpan<char> src, Span<byte> dst)
+        {
+            if (src.IsEmpty)
+            {
+                return 0;
+            }
+
+            fixed (char* chars = &src.GetPinnableReference())
+            fixed (byte* bytes = &dst.GetPinnableReference())
+            {
+                return encoding.GetBytes(chars, src.Length, bytes, dst.Length);
+            }
+        }
+    }
+#endif
 }
