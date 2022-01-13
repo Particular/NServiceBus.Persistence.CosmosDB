@@ -19,6 +19,7 @@
             return DeterministicGuid($"{sagaEntityTypeFullName}_{correlationPropertyName}_{serializedPropertyValue}");
         }
 
+#if NETFRAMEWORK
         static Guid DeterministicGuid(string src)
         {
             var byteCount = Encoding.UTF8.GetByteCount(src);
@@ -40,6 +41,38 @@
                 ArrayPool<byte>.Shared.Return(buffer, clearArray: true);
             }
         }
+#endif
+#if NETCOREAPP
+        static Guid DeterministicGuid(string src)
+        {
+            var byteCount = Encoding.UTF8.GetByteCount(src);
+            var stringBuffer = ArrayPool<byte>.Shared.Rent(byteCount);
+            try
+            {
+                var numberOfBytesWritten = Encoding.UTF8.GetBytes(src.AsSpan(), stringBuffer);
+
+                using var sha1CryptoServiceProvider = SHA1.Create();
+                Span<byte> hashBuffer = stackalloc byte[20];
+                if (!sha1CryptoServiceProvider.TryComputeHash(stringBuffer, hashBuffer, out _))
+                {
+                    var hashBufferLocal = sha1CryptoServiceProvider.ComputeHash(stringBuffer, 0, numberOfBytesWritten);
+                    hashBufferLocal.CopyTo(hashBuffer);
+                }
+
+                var guidBytes = hashBuffer.Slice(0, 16);
+                if (!MemoryMarshal.TryRead<Guid>(guidBytes, out var deterministicGuid))
+                {
+                    deterministicGuid = new Guid(guidBytes.ToArray());
+                }
+
+                return deterministicGuid;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(stringBuffer, clearArray: true);
+            }
+        }
+#endif
     }
 
 #if NETFRAMEWORK
