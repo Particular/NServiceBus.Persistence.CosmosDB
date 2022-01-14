@@ -7,16 +7,13 @@
     using NUnit.Framework;
 
     [TestFixture]
-    public class TransactionInformationExtractorTests
+    public class PartitionKeyExtractorTests
     {
         PartitionKeyExtractor extractor;
-        ContainerInformation fakeContainerInformation;
 
         [SetUp]
         public void SetUp()
         {
-            fakeContainerInformation = new ContainerInformation("containerName", new PartitionKeyPath("/deep/down"));
-
             extractor = new PartitionKeyExtractor();
         }
 
@@ -27,11 +24,10 @@
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
             Assert.That(wasExtracted, Is.False);
             Assert.That(partitionKey, Is.Null);
-            Assert.That(containerInformation, Is.Null);
         }
 
         [Test]
@@ -46,11 +42,10 @@
                 { "HeaderKey", "HeaderValue" }
             };
 
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
-            Assert.That(containerInformation, Is.Null);
         }
 
         [Test]
@@ -60,25 +55,10 @@
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
-            Assert.That(containerInformation, Is.Null);
-        }
-
-        [Test]
-        public void Should_extract_from_header_with_key_and_container_information()
-        {
-            extractor.ExtractPartitionKeyFromHeader("HeaderKey");
-
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
-
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
-
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
         }
 
         [Test]
@@ -88,25 +68,10 @@
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
-            Assert.That(containerInformation, Is.Null);
-        }
-
-        [Test]
-        public void Should_extract_from_header_with_key_converter_and_container_information()
-        {
-            extractor.ExtractPartitionKeyFromHeader("HeaderKey", value => value.Replace("__TOBEREMOVED__", string.Empty));
-
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
-
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
-
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
         }
 
         [Test]
@@ -116,25 +81,10 @@
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
-            Assert.That(containerInformation, Is.Null);
-        }
-
-        [Test]
-        public void Should_extract_from_header_with_key_converter_argument_and_container_information()
-        {
-            extractor.ExtractPartitionKeyFromHeader("HeaderKey", (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__");
-
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
-
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
-
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
         }
 
         [Test]
@@ -155,11 +105,10 @@
 
             var message = new MyUnrelatedMessage();
 
-            var wasExtracted = extractor.TryExtract(message, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
             Assert.That(wasExtracted, Is.False);
             Assert.That(partitionKey, Is.Null);
-            Assert.That(containerInformation, Is.Null);
         }
 
         [Test]
@@ -170,11 +119,10 @@
 
             var message = new MyMessageWithInterfaces { SomeId = "SomeValue" };
 
-            var wasExtracted = extractor.TryExtract(message, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue")));
-            Assert.That(containerInformation, Is.Null);
         }
 
         [Test]
@@ -184,25 +132,10 @@
 
             var message = new MyMessage { SomeId = "SomeValue" };
 
-            var wasExtracted = extractor.TryExtract(message, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue")));
-            Assert.That(containerInformation, Is.Null);
-        }
-
-        [Test]
-        public void Should_extract_from_message_with_container_information()
-        {
-            extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId));
-
-            var message = new MyMessage { SomeId = "SomeValue" };
-
-            var wasExtracted = extractor.TryExtract(message, out var partitionKey, out var containerInformation);
-
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue")));
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
         }
 
         [Test]
@@ -212,25 +145,10 @@
 
             var message = new MyMessage { SomeId = "SomeValue" };
 
-            var wasExtracted = extractor.TryExtract(message, out var partitionKey, out var containerInformation);
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE")));
-            Assert.That(containerInformation, Is.Null);
-        }
-
-        [Test]
-        public void Should_extract_from_message_with_argument_and_container_information()
-        {
-            extractor.ExtractPartitionKeyFromMessage<MyMessage, ArgumentHelper>((m, helper) => new PartitionKey(helper.Upper(m.SomeId)), new ArgumentHelper());
-
-            var message = new MyMessage { SomeId = "SomeValue" };
-
-            var wasExtracted = extractor.TryExtract(message, out var partitionKey, out var containerInformation);
-
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE")));
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
         }
 
         [Test]
@@ -240,8 +158,10 @@
 
             var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId)));
 
-            Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.TransactionInformationExtractorTests+MyMessage' is already being handled by a message extractor and cannot be processed by another one."));
+            Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.PartitionKeyExtractorTests+MyMessage' is already being handled by a message extractor and cannot be processed by another one. "));
         }
+
+        // TODO: Add more tests that verify header passing
 
         class MyMessage
         {
