@@ -41,6 +41,7 @@
         public void ExtractPartitionKeyFromMessage<TMessage, TArg>(Func<TMessage, TArg, PartitionKey> extractor, TArg extractorArgument) =>
             PartitionKeyExtractor.ExtractPartitionKeyFromMessage(extractor, extractorArgument);
 
+        // TODO BOB: Add the header overloads
 
         /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
@@ -50,7 +51,6 @@
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, string> converter) =>
             PartitionKeyExtractor.ExtractPartitionKeyFromHeader(headerKey, converter);
-
 
         /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
