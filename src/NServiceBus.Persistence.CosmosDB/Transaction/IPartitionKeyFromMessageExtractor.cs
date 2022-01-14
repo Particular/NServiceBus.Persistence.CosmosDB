@@ -9,7 +9,7 @@
     /// The outbox mechanism might already have started and thus providing the <see cref="PartitionKey"/> at this stage corresponds to the logical outbox phase.
     /// In cases when only headers are required use <see cref="IPartitionKeyFromHeadersExtractor"/> instead.
     /// </summary>
-    public interface IPartitionKeyFromMessagesExtractor
+    public interface IPartitionKeyFromMessageExtractor
     {
         /// <summary>
         /// Tries to extract a <see cref="PartitionKey"/> from a message instance.

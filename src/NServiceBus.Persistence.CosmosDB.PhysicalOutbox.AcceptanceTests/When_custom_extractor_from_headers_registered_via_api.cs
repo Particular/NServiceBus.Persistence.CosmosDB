@@ -70,16 +70,14 @@
                 readonly Context testContext;
             }
 
-            public class CustomExtractor : ITransactionInformationFromHeadersExtractor
+            public class CustomExtractor : IPartitionKeyFromHeadersExtractor
             {
                 readonly Context testContext;
                 public CustomExtractor(Context testContext) => this.testContext = testContext;
 
-                public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey,
-                    out ContainerInformation? containerInformation)
+                public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
                 {
                     partitionKey = new PartitionKey(testContext.TestRunId.ToString());
-                    containerInformation = new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
                     testContext.ExtractorWasCalled = true;
                     return true;
                 }

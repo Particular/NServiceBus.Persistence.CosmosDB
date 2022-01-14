@@ -7,10 +7,10 @@
 
     class TransactionInformationBeforeTheLogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        readonly IPartitionKeyFromMessagesExtractor partitionKeyExtractor;
+        readonly IPartitionKeyFromMessageExtractor partitionKeyExtractor;
         readonly IContainerInformationFromMessagesExtractor containerInformationExtractor;
 
-        public TransactionInformationBeforeTheLogicalOutboxBehavior(IPartitionKeyFromMessagesExtractor partitionKeyExtractor, IContainerInformationFromMessagesExtractor containerInformationExtractor)
+        public TransactionInformationBeforeTheLogicalOutboxBehavior(IPartitionKeyFromMessageExtractor partitionKeyExtractor, IContainerInformationFromMessagesExtractor containerInformationExtractor)
         {
             this.partitionKeyExtractor = partitionKeyExtractor;
             this.containerInformationExtractor = containerInformationExtractor;
@@ -46,7 +46,7 @@
                 "Populates the transaction information before the logical outbox.",
                 b =>
                 {
-                    var partitionKeyExtractors = b.GetServices<IPartitionKeyFromMessagesExtractor>();
+                    var partitionKeyExtractors = b.GetServices<IPartitionKeyFromMessageExtractor>();
                     foreach (var extractor in partitionKeyExtractors)
                     {
                         partitionKeyExtractor.ExtractPartitionKeyFromMessages(extractor);

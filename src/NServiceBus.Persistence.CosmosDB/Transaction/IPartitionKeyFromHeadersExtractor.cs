@@ -7,7 +7,7 @@
     /// Extracts the <see cref="PartitionKey"/> from the headers at the physical stage when the message has not been deserialized
     /// and the outbox mechanism hasn't started yet. This is the earliest possible point to
     /// extract the <see cref="PartitionKey"/> in cases the partition key doesn't need to be extracted from the message instance.
-    /// Otherwise consider using <see cref="IPartitionKeyFromMessagesExtractor"/> instead.
+    /// Otherwise consider using <see cref="IPartitionKeyFromMessageExtractor"/> instead.
     /// </summary>
     public interface IPartitionKeyFromHeadersExtractor
     {

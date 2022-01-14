@@ -4,12 +4,12 @@ namespace NServiceBus.Persistence.CosmosDB
     using System.Collections.Generic;
     using Microsoft.Azure.Cosmos;
 
-    class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartitionKeyFromMessagesExtractor
+    class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartitionKeyFromMessageExtractor
     {
         readonly HashSet<Type> extractPartitionKeyFromMessagesTypes = new HashSet<Type>();
 
-        readonly List<IPartitionKeyFromMessagesExtractor> extractPartitionKeyFromMessages =
-            new List<IPartitionKeyFromMessagesExtractor>();
+        readonly List<IPartitionKeyFromMessageExtractor> extractPartitionKeyFromMessages =
+            new List<IPartitionKeyFromMessageExtractor>();
 
         readonly HashSet<string> extractPartitionKeyFromHeadersHeaderKeys = new HashSet<string>();
 
@@ -61,14 +61,14 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        public void ExtractPartitionKeyFromMessages(IPartitionKeyFromMessagesExtractor extractor)
+        public void ExtractPartitionKeyFromMessages(IPartitionKeyFromMessageExtractor extractor)
         {
             Guard.AgainstNull(nameof(extractor), extractor);
 
             extractPartitionKeyFromMessages.Add(extractor);
         }
 
-        sealed class PartitionKeyFromMessageExtractor<TMessage, TArg> : IPartitionKeyFromMessagesExtractor
+        sealed class PartitionKeyFromMessageExtractor<TMessage, TArg> : IPartitionKeyFromMessageExtractor
         {
             readonly Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor;
             readonly TArg argument;

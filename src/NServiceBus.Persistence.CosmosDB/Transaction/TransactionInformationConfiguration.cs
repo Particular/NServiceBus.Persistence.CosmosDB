@@ -15,10 +15,10 @@
         public void ExtractPartitionKeyFromHeaders(IPartitionKeyFromHeadersExtractor extractor) => PartitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor);
 
         /// <summary>
-        /// Adds an instance of <see cref="IPartitionKeyFromMessagesExtractor"/> to the list of header extractors.
+        /// Adds an instance of <see cref="IPartitionKeyFromMessageExtractor"/> to the list of header extractors.
         /// </summary>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
-        public void ExtractPartitionKeyFromMessages(IPartitionKeyFromMessagesExtractor extractor) => PartitionKeyExtractor.ExtractPartitionKeyFromMessages(extractor);
+        public void ExtractPartitionKeyFromMessages(IPartitionKeyFromMessageExtractor extractor) => PartitionKeyExtractor.ExtractPartitionKeyFromMessages(extractor);
 
         /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given message type <typeparamref name="TMessage"/>

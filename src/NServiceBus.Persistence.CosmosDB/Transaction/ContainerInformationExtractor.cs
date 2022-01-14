@@ -3,8 +3,7 @@ namespace NServiceBus.Persistence.CosmosDB
     using System;
     using System.Collections.Generic;
 
-    class ContainerInformationExtractor : IContainerInformationFromHeadersExtractor,
-        IContainerInformationFromMessagesExtractor
+    class ContainerInformationExtractor : IContainerInformationFromHeadersExtractor, IContainerInformationFromMessagesExtractor
     {
         readonly HashSet<Type> extractContainerInformationFromMessagesTypes = new HashSet<Type>();
 
@@ -32,7 +31,6 @@ namespace NServiceBus.Persistence.CosmosDB
             return false;
         }
 
-        // TODO: Should we expose the default partition key path if set? What about the default container name?
         public void ExtractContainerInformationFromHeader(string headerKey, Func<string, ContainerInformation> converter) =>
             // When moving to CSharp 9 these can be static lambdas
             ExtractContainerInformationFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter);
@@ -97,7 +95,6 @@ namespace NServiceBus.Persistence.CosmosDB
             return false;
         }
 
-        // TODO: Should we expose the default partition key path if set? What about the default container name?
         public void ExtractContainerInformationFromMessage<TMessage>(Func<TMessage, ContainerInformation> extractor) =>
             // When moving to CSharp 9 these can be static lambdas
             ExtractContainerInformationFromMessage<TMessage, Func<TMessage, ContainerInformation>>((msg, _, invoker) => invoker(msg), extractor);

@@ -7,7 +7,6 @@
     using EndpointTemplates;
     using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
-    using Persistence.CosmosDB;
 
     public class When_fluent_extractor_registered_via_api : NServiceBusAcceptanceTest
     {

@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.AcceptanceTests
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Support;
@@ -69,16 +70,14 @@
                 readonly Context testContext;
             }
 
-            public class CustomExtractor : ITransactionInformationFromMessagesExtractor
+            public class CustomExtractor : IPartitionKeyFromMessageExtractor
             {
                 readonly Context testContext;
                 public CustomExtractor(Context testContext) => this.testContext = testContext;
 
-                public bool TryExtract(object message, out PartitionKey? partitionKey,
-                    out ContainerInformation? containerInformation)
+                public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
                 {
                     partitionKey = new PartitionKey(testContext.TestRunId.ToString());
-                    containerInformation = new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
                     testContext.ExtractorWasCalled = true;
                     return true;
                 }

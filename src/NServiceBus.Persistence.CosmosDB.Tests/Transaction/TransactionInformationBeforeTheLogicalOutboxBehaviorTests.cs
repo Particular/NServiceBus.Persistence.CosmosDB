@@ -152,7 +152,7 @@
 
         delegate bool TryExtractPartitionKey(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey);
 
-        class PartitionKeyExtractor : IPartitionKeyFromMessagesExtractor
+        class PartitionKeyExtractor : IPartitionKeyFromMessageExtractor
         {
             readonly TryExtractPartitionKey tryExtract;
 
