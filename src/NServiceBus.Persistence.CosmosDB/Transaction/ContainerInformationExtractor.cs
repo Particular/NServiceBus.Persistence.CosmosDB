@@ -116,7 +116,7 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             if (extractContainerInformationFromMessagesTypes.Add(typeof(TMessage)))
             {
-                ExtractContainerInformationFromMessages(new ContainerInformationFromMessageExtractor<TMessage, TArg>(extractor, extractorArgument));
+                ExtractContainerInformationFromMessage(new ContainerInformationFromMessageExtractor<TMessage, TArg>(extractor, extractorArgument));
             }
             else
             {
@@ -124,7 +124,7 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        public void ExtractContainerInformationFromMessages(IContainerInformationFromMessagesExtractor extractor)
+        public void ExtractContainerInformationFromMessage(IContainerInformationFromMessagesExtractor extractor)
         {
             Guard.AgainstNull(nameof(extractor), extractor);
 

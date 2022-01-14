@@ -3,6 +3,7 @@
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using AcceptanceTesting.Support;
     using EndpointTemplates;
     using NServiceBus.Pipeline;
     using NUnit.Framework;
@@ -12,10 +13,13 @@
         [Test]
         public async Task Should_work()
         {
+            var runSettings = new RunSettings();
+            runSettings.DoNotRegisterDefaultContainerInformationProvider();
+
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointWithRegularHandler>(b => b.When(session => session.SendLocal(new MyMessage())))
                 .Done(c => c.MessageReceived)
-                .Run();
+                .Run(runSettings);
 
             Assert.True(context.MessageReceived);
         }

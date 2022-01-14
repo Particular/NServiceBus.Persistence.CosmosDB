@@ -7,11 +7,10 @@
     using AcceptanceTesting.Support;
     using EndpointTemplates;
     using Microsoft.Azure.Cosmos;
-    using Microsoft.Extensions.DependencyInjection;
     using NUnit.Framework;
     using Persistence.CosmosDB;
 
-    public class When_custom_extractor_from_message_registered_via_container : NServiceBusAcceptanceTest
+    public class When_custom_partition_key_extractor_from_message_registered_via_api : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_be_used()
@@ -40,10 +39,11 @@
         {
             public EndpointWithCustomExtractor()
             {
-                EndpointSetup<DefaultServer>(config =>
+                EndpointSetup<DefaultServer>((config, r) =>
                 {
-                    config.RegisterComponents(c =>
-                        c.AddSingleton<IPartitionKeyFromMessageExtractor>(b => new CustomExtractor(b.GetService<Context>())));
+                    var persistence = config.UsePersistence<CosmosPersistence>();
+                    var transactionInformation = persistence.TransactionInformation();
+                    transactionInformation.ExtractPartitionKeyFromMessages(new CustomExtractor((Context)r.ScenarioContext));
                 });
             }
 

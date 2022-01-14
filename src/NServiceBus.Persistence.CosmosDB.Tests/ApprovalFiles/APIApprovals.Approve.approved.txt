@@ -96,6 +96,14 @@ namespace NServiceBus.Persistence.CosmosDB
     public class TransactionInformationConfiguration
     {
         public TransactionInformationConfiguration() { }
+        public void ExtractContainerInformationFromHeader(string headerKey, System.Func<string, NServiceBus.ContainerInformation> extractor) { }
+        public void ExtractContainerInformationFromHeader<TArg>(string headerKey, System.Func<string, TArg, NServiceBus.ContainerInformation> extractor, TArg extractorArgument) { }
+        public void ExtractContainerInformationFromHeaders(NServiceBus.Persistence.CosmosDB.IContainerInformationFromHeadersExtractor extractor) { }
+        public void ExtractContainerInformationFromMessage(NServiceBus.Persistence.CosmosDB.IContainerInformationFromMessagesExtractor extractor) { }
+        public void ExtractContainerInformationFromMessage<TMessage>(System.Func<TMessage, NServiceBus.ContainerInformation> extractor) { }
+        public void ExtractContainerInformationFromMessage<TMessage>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, NServiceBus.ContainerInformation> extractor) { }
+        public void ExtractContainerInformationFromMessage<TMessage, TArg>(System.Func<TMessage, TArg, NServiceBus.ContainerInformation> extractor, TArg extractorArgument) { }
+        public void ExtractContainerInformationFromMessage<TMessage, TArg>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, TArg, NServiceBus.ContainerInformation> extractor, TArg extractorArgument) { }
         public void ExtractPartitionKeyFromHeader(string headerKey) { }
         public void ExtractPartitionKeyFromHeader(string headerKey, System.Func<string, string> converter) { }
         public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, System.Func<string, TArg, string> converter, TArg converterArgument) { }

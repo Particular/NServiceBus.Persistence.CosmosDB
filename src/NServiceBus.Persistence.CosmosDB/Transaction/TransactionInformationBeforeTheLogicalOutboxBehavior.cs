@@ -55,7 +55,7 @@
                     var containerInformationFromMessagesExtractors = b.GetServices<IContainerInformationFromMessagesExtractor>();
                     foreach (var extractor in containerInformationFromMessagesExtractors)
                     {
-                        containerInformationExtractor.ExtractContainerInformationFromMessages(extractor);
+                        containerInformationExtractor.ExtractContainerInformationFromMessage(extractor);
                     }
                     return new TransactionInformationBeforeTheLogicalOutboxBehavior(partitionKeyExtractor, containerInformationExtractor);
                 }) =>
