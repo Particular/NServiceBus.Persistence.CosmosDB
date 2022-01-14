@@ -44,11 +44,7 @@
                 {
                     var persistence = config.UsePersistence<CosmosPersistence>();
                     var transactionInformation = persistence.TransactionInformation();
-                    transactionInformation.ExtractFromHeader("PartitionKeyHeader", (value, state) =>
-                    {
-                        state.HeaderStateMatched = Guid.Parse(value).Equals(state.TestRunId);
-                        return value;
-                    }, (Context)r.ScenarioContext, new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
+                    transactionInformation.ExtractFromHeader("PartitionKeyHeader", (Context)r.ScenarioContext);
                 });
             }
 

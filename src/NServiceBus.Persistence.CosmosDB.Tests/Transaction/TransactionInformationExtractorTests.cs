@@ -9,7 +9,7 @@
     [TestFixture]
     public class TransactionInformationExtractorTests
     {
-        TransactionInformationExtractor extractor;
+        PartitionKeyExtractor extractor;
         ContainerInformation fakeContainerInformation;
 
         [SetUp]
@@ -17,13 +17,13 @@
         {
             fakeContainerInformation = new ContainerInformation("containerName", new PartitionKeyPath("/deep/down"));
 
-            extractor = new TransactionInformationExtractor();
+            extractor = new PartitionKeyExtractor();
         }
 
         [Test]
         public void Should_not_extract_from_header_with_no_matching_key()
         {
-            extractor.ExtractFromHeader("AnotherHeaderKey");
+            extractor.ExtractPartitionKeyFromHeader("AnotherHeaderKey");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
@@ -37,8 +37,8 @@
         [Test]
         public void Should_extract_from_header_with_first_match_winning()
         {
-            extractor.ExtractFromHeader("HeaderKey");
-            extractor.ExtractFromHeader("AnotherHeaderKey");
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey");
+            extractor.ExtractPartitionKeyFromHeader("AnotherHeaderKey");
 
             var headers = new Dictionary<string, string>
             {
@@ -56,7 +56,7 @@
         [Test]
         public void Should_extract_from_header_with_key()
         {
-            extractor.ExtractFromHeader("HeaderKey");
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
@@ -70,7 +70,7 @@
         [Test]
         public void Should_extract_from_header_with_key_and_container_information()
         {
-            extractor.ExtractFromHeader("HeaderKey");
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
@@ -112,7 +112,7 @@
         [Test]
         public void Should_extract_from_header_with_key_converter_and_argument()
         {
-            extractor.ExtractFromHeader("HeaderKey", (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__");
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey", (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
@@ -126,7 +126,7 @@
         [Test]
         public void Should_extract_from_header_with_key_converter_argument_and_container_information()
         {
-            extractor.ExtractFromHeader("HeaderKey", (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__");
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey", (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
@@ -140,9 +140,9 @@
         [Test]
         public void Should_throw_when_header_is_already_mapped()
         {
-            extractor.ExtractFromHeader("HeaderKey");
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey");
 
-            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractFromHeader("HeaderKey"));
+            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractPartitionKeyFromHeader("HeaderKey"));
 
             Assert.That(exception.Message, Contains.Substring("The header key 'HeaderKey' is already being handled by a header extractor and cannot be processed by another one."));
         }

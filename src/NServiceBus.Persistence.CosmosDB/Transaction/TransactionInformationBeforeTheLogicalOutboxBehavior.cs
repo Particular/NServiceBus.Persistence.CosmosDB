@@ -7,22 +7,28 @@
 
     class TransactionInformationBeforeTheLogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        ITransactionInformationFromMessagesExtractor extractor;
+        readonly IPartitionKeyFromMessagesExtractor partitionKeyExtractor;
+        readonly IContainerInformationFromMessagesExtractor containerInformationExtractor;
 
-        public TransactionInformationBeforeTheLogicalOutboxBehavior(ITransactionInformationFromMessagesExtractor extractor) =>
-            this.extractor = extractor;
+        public TransactionInformationBeforeTheLogicalOutboxBehavior(IPartitionKeyFromMessagesExtractor partitionKeyExtractor, IContainerInformationFromMessagesExtractor containerInformationExtractor)
+        {
+            this.partitionKeyExtractor = partitionKeyExtractor;
+            this.containerInformationExtractor = containerInformationExtractor;
+        }
 
         public Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
         {
-            if (extractor.TryExtract(context.Message.Instance, out var partitionKey,
-                    out var containerInformation))
+            if (partitionKeyExtractor.TryExtract(context.Message.Instance, context.MessageHeaders, out var partitionKey))
             {
                 // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
                 if (partitionKey.HasValue)
                 {
                     context.Extensions.Set(partitionKey.Value);
                 }
-
+            }
+            if (containerInformationExtractor.TryExtract(context.Message.Instance, context.MessageHeaders, out var containerInformation))
+            {
+                // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
                 if (containerInformation.HasValue)
                 {
                     context.Extensions.Set(containerInformation.Value);
@@ -33,18 +39,25 @@
 
         public class RegisterStep : Pipeline.RegisterStep
         {
-            public RegisterStep(TransactionInformationExtractor transactionInformationExtractor) :
+            public RegisterStep(PartitionKeyExtractor partitionKeyExtractor,
+                ContainerInformationExtractor containerInformationExtractor) :
                 base(nameof(TransactionInformationBeforeTheLogicalOutboxBehavior),
                 typeof(TransactionInformationBeforeTheLogicalOutboxBehavior),
                 "Populates the transaction information before the logical outbox.",
                 b =>
                 {
-                    var extractors = b.GetServices<ITransactionInformationFromMessagesExtractor>();
-                    foreach (var extractor in extractors)
+                    var partitionKeyExtractors = b.GetServices<IPartitionKeyFromMessagesExtractor>();
+                    foreach (var extractor in partitionKeyExtractors)
                     {
-                        transactionInformationExtractor.ExtractFromMessages(extractor);
+                        partitionKeyExtractor.ExtractPartitionKeyFromMessages(extractor);
                     }
-                    return new TransactionInformationBeforeTheLogicalOutboxBehavior(transactionInformationExtractor);
+
+                    var containerInformationFromMessagesExtractors = b.GetServices<IContainerInformationFromMessagesExtractor>();
+                    foreach (var extractor in containerInformationFromMessagesExtractors)
+                    {
+                        containerInformationExtractor.ExtractContainerInformationFromMessages(extractor);
+                    }
+                    return new TransactionInformationBeforeTheLogicalOutboxBehavior(partitionKeyExtractor, containerInformationExtractor);
                 }) =>
                 InsertBeforeIfExists(nameof(LogicalOutboxBehavior));
         }

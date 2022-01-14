@@ -8,8 +8,8 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             var configuration = context.Settings.GetOrDefault<TransactionInformationConfiguration>() ?? new TransactionInformationConfiguration();
 
-            context.Pipeline.Register(new TransactionInformationBeforeTheLogicalOutboxBehavior.RegisterStep(configuration.Extractor));
-            context.Pipeline.Register(new TransactionInformationBeforeThePhysicalOutboxBehavior.RegisterStep(configuration.Extractor));
+            context.Pipeline.Register(new TransactionInformationBeforeTheLogicalOutboxBehavior.RegisterStep(configuration.PartitionKeyExtractor, configuration.ContainerInformationExtractor));
+            context.Pipeline.Register(new TransactionInformationBeforeThePhysicalOutboxBehavior.RegisterStep(configuration.PartitionKeyExtractor, configuration.ContainerInformationExtractor));
         }
     }
 }

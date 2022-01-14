@@ -4,7 +4,7 @@ namespace NServiceBus.Persistence.CosmosDB
     using System.Collections.Generic;
     using Microsoft.Azure.Cosmos;
 
-    class TransactionInformationExtractor : IPartitionKeyFromHeadersExtractor, IPartitionKeyFromMessagesExtractor
+    class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartitionKeyFromMessagesExtractor
     {
         readonly HashSet<Type> extractPartitionKeyFromMessagesTypes = new HashSet<Type>();
 
@@ -53,7 +53,7 @@ namespace NServiceBus.Persistence.CosmosDB
         {
             if (extractPartitionKeyFromMessagesTypes.Add(typeof(TMessage)))
             {
-                ExtractFromMessages(new PartitionKeyFromMessageExtractor<TMessage, TArg>(extractor, extractorArgument));
+                ExtractPartitionKeyFromMessages(new PartitionKeyFromMessageExtractor<TMessage, TArg>(extractor, extractorArgument));
             }
             else
             {
@@ -61,7 +61,7 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        public void ExtractFromMessages(IPartitionKeyFromMessagesExtractor extractor)
+        public void ExtractPartitionKeyFromMessages(IPartitionKeyFromMessagesExtractor extractor)
         {
             Guard.AgainstNull(nameof(extractor), extractor);
 
@@ -109,14 +109,13 @@ namespace NServiceBus.Persistence.CosmosDB
 
         public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, string> converter) =>
             // When moving to CSharp 9 these can be static lambdas
-            ExtractFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter);
+            ExtractPartitionKeyFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter);
 
-        public void ExtractFromHeader<TArg>(string headerKey, Func<string, TArg, string> converter,
-            TArg converterArgument)
+        public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, Func<string, TArg, string> converter, TArg converterArgument)
         {
             if (extractPartitionKeyFromHeadersHeaderKeys.Add(headerKey))
             {
-                ExtractFromHeaders(new PartitionKeyFromFromHeaderExtractor<TArg>(headerKey, converter, converterArgument));
+                ExtractPartitionKeyFromHeaders(new PartitionKeyFromFromHeaderExtractor<TArg>(headerKey, converter, converterArgument));
             }
             else
             {
@@ -124,11 +123,11 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        public void ExtractFromHeader(string headerKey) =>
+        public void ExtractPartitionKeyFromHeader(string headerKey) =>
             // When moving to CSharp 9 these can be static lambdas
-            ExtractFromHeader<object>(headerKey, (headerValue, _) => headerValue, null);
+            ExtractPartitionKeyFromHeader<object>(headerKey, (headerValue, _) => headerValue, null);
 
-        public void ExtractFromHeaders(IPartitionKeyFromHeadersExtractor extractor)
+        public void ExtractPartitionKeyFromHeaders(IPartitionKeyFromHeadersExtractor extractor)
         {
             Guard.AgainstNull(nameof(extractor), extractor);
 

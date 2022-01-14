@@ -40,11 +40,11 @@
                 {
                     var persistence = config.UsePersistence<CosmosPersistence>();
                     var transactionInformation = persistence.TransactionInformation();
-                    transactionInformation.ExtractFromMessage<StartSaga1, Context>((startSaga, state) =>
+                    transactionInformation.ExtractPartitionKeyFromMessage<StartSaga1, Context>((startSaga, state) =>
                     {
                         state.StateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
                         return new PartitionKey(startSaga.PartitionKey.ToString());
-                    }, (Context)r.ScenarioContext, new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
+                    }, (Context)r.ScenarioContext);
                 });
             }
 

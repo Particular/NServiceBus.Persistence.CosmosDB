@@ -42,7 +42,7 @@
                 {
                     var persistence = config.UsePersistence<CosmosPersistence>();
                     var transactionInformation = persistence.TransactionInformation();
-                    transactionInformation.ExtractFromMessages(new CustomExtractor((Context)r.ScenarioContext));
+                    transactionInformation.ExtractPartitionKeyFromMessages(new CustomExtractor((Context)r.ScenarioContext));
                 });
             }
 
