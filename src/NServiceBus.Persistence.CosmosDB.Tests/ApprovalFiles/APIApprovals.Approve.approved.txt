@@ -109,7 +109,9 @@ namespace NServiceBus.Persistence.CosmosDB
         public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, System.Func<string, TArg, string> converter, TArg converterArgument) { }
         public void ExtractPartitionKeyFromHeaders(NServiceBus.Persistence.CosmosDB.IPartitionKeyFromHeadersExtractor extractor) { }
         public void ExtractPartitionKeyFromMessage<TMessage>(System.Func<TMessage, Microsoft.Azure.Cosmos.PartitionKey> extractor) { }
+        public void ExtractPartitionKeyFromMessage<TMessage>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, Microsoft.Azure.Cosmos.PartitionKey> extractor) { }
         public void ExtractPartitionKeyFromMessage<TMessage, TArg>(System.Func<TMessage, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument) { }
+        public void ExtractPartitionKeyFromMessage<TMessage, TArg>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument) { }
         public void ExtractPartitionKeyFromMessages(NServiceBus.Persistence.CosmosDB.IPartitionKeyFromMessageExtractor extractor) { }
     }
     public sealed class TransactionalBatchOperationException : System.Exception

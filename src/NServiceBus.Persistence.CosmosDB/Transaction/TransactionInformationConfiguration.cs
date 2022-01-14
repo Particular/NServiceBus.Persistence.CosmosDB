@@ -36,12 +36,29 @@
         /// <param name="extractor">The extraction function.</param>
         /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
         /// <typeparam name="TMessage">The message type to match against.</typeparam>
-        /// <typeparam name="TArg">The argument type.</typeparam>
+        /// <typeparam name="TArg">The argument passed as state to the <paramref name="extractor"/></typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractPartitionKeyFromMessage<TMessage, TArg>(Func<TMessage, TArg, PartitionKey> extractor, TArg extractorArgument) =>
             PartitionKeyExtractor.ExtractPartitionKeyFromMessage(extractor, extractorArgument);
 
-        // TODO BOB: Add the header overloads
+        /// <summary>
+        /// Adds an extraction rule that extracts the partition key from a given message type <typeparamref name="TMessage"/>
+        /// </summary>
+        /// <param name="extractor">The extraction function.</param>
+        /// <typeparam name="TMessage">The message type to match against.</typeparam>
+        /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
+        public void ExtractPartitionKeyFromMessage<TMessage>(Func<TMessage, IReadOnlyDictionary<string, string>, PartitionKey> extractor) =>
+            PartitionKeyExtractor.ExtractPartitionKeyFromMessage(extractor);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="extractor">The extraction function.</param>
+        /// <typeparam name="TMessage">The message type to match against.</typeparam>
+        /// <typeparam name="TArg">The argument type.</typeparam>
+        /// <param name="extractorArgument"></param>
+        public void ExtractPartitionKeyFromMessage<TMessage, TArg>(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg extractorArgument) =>
+            PartitionKeyExtractor.ExtractPartitionKeyFromMessage(extractor, extractorArgument);
 
         /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
