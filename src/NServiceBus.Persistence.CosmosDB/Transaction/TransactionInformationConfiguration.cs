@@ -28,7 +28,7 @@
         /// <typeparam name="TMessage">The message type to match against.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractFromMessage<TMessage>(Func<TMessage, PartitionKey> extractor, ContainerInformation? containerInformation = default) =>
-            Extractor.ExtractFromMessage(extractor, containerInformation);
+            Extractor.ExtractPartitionKeyFromMessage(extractor);
 
         /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given message type <typeparamref name="TMessage"/>
@@ -40,7 +40,7 @@
         /// <typeparam name="TArg">The argument type.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractFromMessage<TMessage, TArg>(Func<TMessage, TArg, PartitionKey> extractor, TArg extractorArgument, ContainerInformation? containerInformation = default) =>
-            Extractor.ExtractFromMessage(extractor, extractorArgument, containerInformation);
+            Extractor.ExtractPartitionKeyFromMessage(extractor, extractorArgument);
 
 
         /// <summary>
@@ -52,7 +52,7 @@
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractFromHeader(string headerKey, Func<string, string> converter,
             ContainerInformation? containerInformation = default) =>
-            Extractor.ExtractFromHeader(headerKey, converter, containerInformation);
+            Extractor.ExtractPartitionKeyFromHeader(headerKey, converter);
 
 
         /// <summary>
@@ -65,7 +65,7 @@
         /// <typeparam name="TArg">The argument type.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractFromHeader<TArg>(string headerKey, Func<string, TArg, string> converter, TArg converterArgument, ContainerInformation? containerInformation = default) =>
-            Extractor.ExtractFromHeader(headerKey, converter, converterArgument, containerInformation);
+            Extractor.ExtractFromHeader(headerKey, converter, converterArgument);
 
         /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
@@ -74,7 +74,7 @@
         /// <param name="containerInformation">The optional container information to be used when this rule matches.</param>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractFromHeader(string headerKey, ContainerInformation? containerInformation = default) =>
-            Extractor.ExtractFromHeader(headerKey, containerInformation);
+            Extractor.ExtractFromHeader(headerKey);
 
         internal TransactionInformationExtractor Extractor { get; } = new TransactionInformationExtractor();
     }

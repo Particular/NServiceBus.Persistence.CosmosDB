@@ -70,7 +70,7 @@
         [Test]
         public void Should_extract_from_header_with_key_and_container_information()
         {
-            extractor.ExtractFromHeader("HeaderKey", fakeContainerInformation);
+            extractor.ExtractFromHeader("HeaderKey");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
@@ -84,7 +84,7 @@
         [Test]
         public void Should_extract_from_header_with_key_and_converter()
         {
-            extractor.ExtractFromHeader("HeaderKey", value => value.Replace("__TOBEREMOVED__", string.Empty));
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey", value => value.Replace("__TOBEREMOVED__", string.Empty));
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
@@ -98,7 +98,7 @@
         [Test]
         public void Should_extract_from_header_with_key_converter_and_container_information()
         {
-            extractor.ExtractFromHeader("HeaderKey", value => value.Replace("__TOBEREMOVED__", string.Empty), fakeContainerInformation);
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey", value => value.Replace("__TOBEREMOVED__", string.Empty));
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
@@ -126,7 +126,7 @@
         [Test]
         public void Should_extract_from_header_with_key_converter_argument_and_container_information()
         {
-            extractor.ExtractFromHeader("HeaderKey", (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__", fakeContainerInformation);
+            extractor.ExtractFromHeader("HeaderKey", (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
@@ -150,8 +150,8 @@
         [Test]
         public void Should_not_extract_from_message_with_no_match()
         {
-            extractor.ExtractFromMessage<MyMessage>(m => new PartitionKey(m.SomeId.ToString()));
-            extractor.ExtractFromMessage<MyOtherMessage>(m => new PartitionKey(m.SomeId.ToString()));
+            extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId.ToString()));
+            extractor.ExtractPartitionKeyFromMessage<MyOtherMessage>(m => new PartitionKey(m.SomeId.ToString()));
 
             var message = new MyUnrelatedMessage();
 
@@ -165,8 +165,8 @@
         [Test]
         public void Should_extract_from_message_with_first_match_winning()
         {
-            extractor.ExtractFromMessage<IProvideSomeId>(m => new PartitionKey(m.SomeId));
-            extractor.ExtractFromMessage<MyMessageWithInterfaces>(m => new PartitionKey(string.Join(";", Enumerable.Repeat(m.SomeId, 2))));
+            extractor.ExtractPartitionKeyFromMessage<IProvideSomeId>(m => new PartitionKey(m.SomeId));
+            extractor.ExtractPartitionKeyFromMessage<MyMessageWithInterfaces>(m => new PartitionKey(string.Join(";", Enumerable.Repeat(m.SomeId, 2))));
 
             var message = new MyMessageWithInterfaces { SomeId = "SomeValue" };
 
@@ -180,7 +180,7 @@
         [Test]
         public void Should_extract_from_message()
         {
-            extractor.ExtractFromMessage<MyMessage>(m => new PartitionKey(m.SomeId));
+            extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId));
 
             var message = new MyMessage { SomeId = "SomeValue" };
 
@@ -194,7 +194,7 @@
         [Test]
         public void Should_extract_from_message_with_container_information()
         {
-            extractor.ExtractFromMessage<MyMessage>(m => new PartitionKey(m.SomeId), fakeContainerInformation);
+            extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId));
 
             var message = new MyMessage { SomeId = "SomeValue" };
 
@@ -208,7 +208,7 @@
         [Test]
         public void Should_extract_from_message_with_argument()
         {
-            extractor.ExtractFromMessage<MyMessage, ArgumentHelper>((m, helper) => new PartitionKey(helper.Upper(m.SomeId)), new ArgumentHelper());
+            extractor.ExtractPartitionKeyFromMessage<MyMessage, ArgumentHelper>((m, helper) => new PartitionKey(helper.Upper(m.SomeId)), new ArgumentHelper());
 
             var message = new MyMessage { SomeId = "SomeValue" };
 
@@ -222,7 +222,7 @@
         [Test]
         public void Should_extract_from_message_with_argument_and_container_information()
         {
-            extractor.ExtractFromMessage<MyMessage, ArgumentHelper>((m, helper) => new PartitionKey(helper.Upper(m.SomeId)), new ArgumentHelper(), fakeContainerInformation);
+            extractor.ExtractPartitionKeyFromMessage<MyMessage, ArgumentHelper>((m, helper) => new PartitionKey(helper.Upper(m.SomeId)), new ArgumentHelper());
 
             var message = new MyMessage { SomeId = "SomeValue" };
 
@@ -236,9 +236,9 @@
         [Test]
         public void Should_throw_when_message_type_is_already_mapped()
         {
-            extractor.ExtractFromMessage<MyMessage>(m => new PartitionKey(m.SomeId));
+            extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId));
 
-            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractFromMessage<MyMessage>(m => new PartitionKey(m.SomeId)));
+            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId)));
 
             Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.TransactionInformationExtractorTests+MyMessage' is already being handled by a message extractor and cannot be processed by another one."));
         }

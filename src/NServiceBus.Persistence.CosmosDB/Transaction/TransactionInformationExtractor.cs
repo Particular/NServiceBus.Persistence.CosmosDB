@@ -4,49 +4,56 @@ namespace NServiceBus.Persistence.CosmosDB
     using System.Collections.Generic;
     using Microsoft.Azure.Cosmos;
 
-    class TransactionInformationExtractor : ITransactionInformationFromHeadersExtractor, ITransactionInformationFromMessagesExtractor
+    class TransactionInformationExtractor : IPartitionKeyFromHeadersExtractor, IPartitionKeyFromMessagesExtractor
     {
-        readonly HashSet<Type> extractTransactionInformationFromMessagesTypes = new HashSet<Type>();
+        readonly HashSet<Type> extractPartitionKeyFromMessagesTypes = new HashSet<Type>();
 
-        readonly List<ITransactionInformationFromMessagesExtractor> extractTransactionInformationFromMessages =
-            new List<ITransactionInformationFromMessagesExtractor>();
+        readonly List<IPartitionKeyFromMessagesExtractor> extractPartitionKeyFromMessages =
+            new List<IPartitionKeyFromMessagesExtractor>();
 
-        readonly HashSet<string> extractTransactionInformationFromHeadersHeaderKeys = new HashSet<string>();
+        readonly HashSet<string> extractPartitionKeyFromHeadersHeaderKeys = new HashSet<string>();
 
-        readonly List<ITransactionInformationFromHeadersExtractor> extractTransactionInformationFromHeaders =
-            new List<ITransactionInformationFromHeadersExtractor>();
+        readonly List<IPartitionKeyFromHeadersExtractor> extractPartitionKeyFromHeaders =
+            new List<IPartitionKeyFromHeadersExtractor>();
 
-        public IReadOnlyCollection<ITransactionInformationFromHeadersExtractor> HeaderExtractors => extractTransactionInformationFromHeaders;
-
-        public IReadOnlyCollection<ITransactionInformationFromMessagesExtractor> MessageExtractors => extractTransactionInformationFromMessages;
-
-        public bool TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
             // deliberate use of a for loop
-            for (var index = 0; index < extractTransactionInformationFromMessages.Count; index++)
+            for (var index = 0; index < extractPartitionKeyFromMessages.Count; index++)
             {
-                var extractor = extractTransactionInformationFromMessages[index];
-                if (extractor.TryExtract(message, out partitionKey, out containerInformation))
+                var extractor = extractPartitionKeyFromMessages[index];
+                if (extractor.TryExtract(message, headers, out partitionKey))
                 {
                     return true;
                 }
             }
 
             partitionKey = null;
-            containerInformation = null;
             return false;
         }
 
-        public void ExtractFromMessage<TMessage>(Func<TMessage, PartitionKey> extractor, ContainerInformation? containerInformation = default) =>
+        public void ExtractPartitionKeyFromMessage<TMessage>(Func<TMessage, PartitionKey> extractor) =>
             // When moving to CSharp 9 these can be static lambdas
-            ExtractFromMessage<TMessage, Func<TMessage, PartitionKey>>((msg, invoker) => invoker(msg), extractor, containerInformation);
+            ExtractPartitionKeyFromMessage<TMessage, Func<TMessage, PartitionKey>>((msg, _, invoker) => invoker(msg), extractor);
 
-        public void ExtractFromMessage<TMessage, TArg>(Func<TMessage, TArg, PartitionKey> extractor,
-            TArg extractorArgument, ContainerInformation? containerInformation = default)
-        {
-            if (extractTransactionInformationFromMessagesTypes.Add(typeof(TMessage)))
+        public void ExtractPartitionKeyFromMessage<TMessage, TArg>(Func<TMessage, TArg, PartitionKey> extractor, TArg extractorArgument) =>
+            // When moving to CSharp 9 these can be static lambdas
+            ExtractPartitionKeyFromMessage<TMessage, (TArg, Func<TMessage, TArg, PartitionKey>)>((msg, _, args) =>
             {
-                ExtractFromMessages(new PartitionKeyFromMessageExtractor<TMessage, TArg>(extractor, containerInformation, extractorArgument));
+                (TArg arg, Func<TMessage, TArg, PartitionKey> invoker) = args;
+                return invoker(msg, arg);
+            }, (extractorArgument, extractor));
+
+        public void ExtractPartitionKeyFromMessage<TMessage>(Func<TMessage, IReadOnlyDictionary<string, string>, PartitionKey> extractor) =>
+            // When moving to CSharp 9 these can be static lambdas
+            ExtractPartitionKeyFromMessage<TMessage, Func<TMessage, IReadOnlyDictionary<string, string>, PartitionKey>>((msg, headers, invoker) => invoker(msg, headers), extractor);
+
+        public void ExtractPartitionKeyFromMessage<TMessage, TArg>(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor,
+            TArg extractorArgument)
+        {
+            if (extractPartitionKeyFromMessagesTypes.Add(typeof(TMessage)))
+            {
+                ExtractFromMessages(new PartitionKeyFromMessageExtractor<TMessage, TArg>(extractor, extractorArgument));
             }
             else
             {
@@ -54,69 +61,62 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        public void ExtractFromMessages(ITransactionInformationFromMessagesExtractor extractor)
+        public void ExtractFromMessages(IPartitionKeyFromMessagesExtractor extractor)
         {
             Guard.AgainstNull(nameof(extractor), extractor);
 
-            extractTransactionInformationFromMessages.Add(extractor);
+            extractPartitionKeyFromMessages.Add(extractor);
         }
 
-        sealed class PartitionKeyFromMessageExtractor<TMessage, TArg> : ITransactionInformationFromMessagesExtractor
+        sealed class PartitionKeyFromMessageExtractor<TMessage, TArg> : IPartitionKeyFromMessagesExtractor
         {
-            readonly Func<TMessage, TArg, PartitionKey> extractor;
-            readonly ContainerInformation? container;
+            readonly Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor;
             readonly TArg argument;
 
-            public PartitionKeyFromMessageExtractor(Func<TMessage, TArg, PartitionKey> extractor, ContainerInformation? container,
-                TArg argument = default)
+            public PartitionKeyFromMessageExtractor(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg argument = default)
             {
                 this.argument = argument;
-                this.container = container;
                 this.extractor = extractor;
             }
 
-            public bool TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+            public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
             {
                 if (message is TMessage typedMessage)
                 {
-                    partitionKey = extractor(typedMessage, argument);
-                    containerInformation = container;
+                    partitionKey = extractor(typedMessage, headers, argument);
                     return true;
                 }
                 partitionKey = null;
-                containerInformation = null;
                 return false;
             }
         }
 
-        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
             // deliberate use of a for loop
-            for (var index = 0; index < extractTransactionInformationFromHeaders.Count; index++)
+            for (var index = 0; index < extractPartitionKeyFromHeaders.Count; index++)
             {
-                var extractor = extractTransactionInformationFromHeaders[index];
-                if (extractor.TryExtract(headers, out partitionKey, out containerInformation))
+                var extractor = extractPartitionKeyFromHeaders[index];
+                if (extractor.TryExtract(headers, out partitionKey))
                 {
                     return true;
                 }
             }
 
             partitionKey = null;
-            containerInformation = null;
             return false;
         }
 
-        public void ExtractFromHeader(string headerKey, Func<string, string> converter,
-            ContainerInformation? containerInformation = default) =>
+        public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, string> converter) =>
             // When moving to CSharp 9 these can be static lambdas
-            ExtractFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter, containerInformation);
+            ExtractFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter);
 
         public void ExtractFromHeader<TArg>(string headerKey, Func<string, TArg, string> converter,
-            TArg converterArgument, ContainerInformation? containerInformation = default)
+            TArg converterArgument)
         {
-            if (extractTransactionInformationFromHeadersHeaderKeys.Add(headerKey))
+            if (extractPartitionKeyFromHeadersHeaderKeys.Add(headerKey))
             {
-                ExtractFromHeaders(new PartitionKeyFromFromHeaderExtractor<TArg>(headerKey, converter, containerInformation, converterArgument));
+                ExtractFromHeaders(new PartitionKeyFromFromHeaderExtractor<TArg>(headerKey, converter, converterArgument));
             }
             else
             {
@@ -124,42 +124,38 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        public void ExtractFromHeader(string headerKey, ContainerInformation? containerInformation = default) =>
+        public void ExtractFromHeader(string headerKey) =>
             // When moving to CSharp 9 these can be static lambdas
-            ExtractFromHeader<object>(headerKey, (headerValue, _) => headerValue, null, containerInformation);
+            ExtractFromHeader<object>(headerKey, (headerValue, _) => headerValue, null);
 
-        public void ExtractFromHeaders(ITransactionInformationFromHeadersExtractor extractor)
+        public void ExtractFromHeaders(IPartitionKeyFromHeadersExtractor extractor)
         {
             Guard.AgainstNull(nameof(extractor), extractor);
 
-            extractTransactionInformationFromHeaders.Add(extractor);
+            extractPartitionKeyFromHeaders.Add(extractor);
         }
 
-        sealed class PartitionKeyFromFromHeaderExtractor<TArg> : ITransactionInformationFromHeadersExtractor
+        sealed class PartitionKeyFromFromHeaderExtractor<TArg> : IPartitionKeyFromHeadersExtractor
         {
             readonly Func<string, TArg, string> converter;
-            readonly ContainerInformation? container;
             readonly TArg converterArgument;
             readonly string headerName;
 
-            public PartitionKeyFromFromHeaderExtractor(string headerName, Func<string, TArg, string> converter, ContainerInformation? container, TArg converterArgument = default)
+            public PartitionKeyFromFromHeaderExtractor(string headerName, Func<string, TArg, string> converter, TArg converterArgument = default)
             {
                 this.headerName = headerName;
                 this.converterArgument = converterArgument;
-                this.container = container;
                 this.converter = converter;
             }
 
-            public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+            public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
             {
                 if (headers.TryGetValue(headerName, out var headerValue))
                 {
                     partitionKey = new PartitionKey(converter(headerValue, converterArgument));
-                    containerInformation = container;
                     return true;
                 }
                 partitionKey = null;
-                containerInformation = null;
                 return false;
             }
         }
