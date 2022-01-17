@@ -10,7 +10,7 @@
     using NUnit.Framework;
     using Persistence.CosmosDB;
 
-    public class When_custom_partition_container_information_extractor_from_message_registered_via_container : NServiceBusAcceptanceTest
+    public class When_custom_container_information_extractor_from_message_registered_via_container : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_be_used()
