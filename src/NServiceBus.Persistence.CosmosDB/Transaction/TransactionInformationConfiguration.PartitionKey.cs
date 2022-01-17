@@ -99,6 +99,14 @@
             PartitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor, extractorArgument);
 
         /// <summary>
+        /// Adds an extraction rule that extracts the partition key from headers.
+        /// </summary>
+        /// <param name="extractor">The extractor function to extract the header value.</param>
+        /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
+        public void ExtractPartitionKeyFromHeaders(Func<IReadOnlyDictionary<string, string>, PartitionKey> extractor) =>
+            PartitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor);
+
+        /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
         /// </summary>
         /// <param name="headerKey">The header key.</param>

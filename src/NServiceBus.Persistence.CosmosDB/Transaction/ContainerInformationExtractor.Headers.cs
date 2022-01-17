@@ -43,6 +43,11 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
+        public void ExtractContainerInformationFromHeaders(Func<IReadOnlyDictionary<string, string>, ContainerInformation> extractor)
+            // When moving to CSharp 9 these can be static lambdas
+            => ExtractContainerInformationFromHeaders(new ContainerInformationFromHeadersExtractor<Func<IReadOnlyDictionary<string, string>, ContainerInformation>>(
+                (headers, invoker) => invoker(headers), extractor));
+
         public void ExtractContainerInformationFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor, TArg extractorArgument)
             => ExtractContainerInformationFromHeaders(new ContainerInformationFromHeadersExtractor<TArg>(extractor, extractorArgument));
 

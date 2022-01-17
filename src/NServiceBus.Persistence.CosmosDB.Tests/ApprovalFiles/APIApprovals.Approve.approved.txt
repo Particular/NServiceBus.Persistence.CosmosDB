@@ -99,6 +99,7 @@ namespace NServiceBus.Persistence.CosmosDB
         public void ExtractContainerInformationFromHeader(string headerKey, System.Func<string, NServiceBus.ContainerInformation> extractor) { }
         public void ExtractContainerInformationFromHeader<TArg>(string headerKey, System.Func<string, TArg, NServiceBus.ContainerInformation> extractor, TArg extractorArgument) { }
         public void ExtractContainerInformationFromHeaders(NServiceBus.Persistence.CosmosDB.IContainerInformationFromHeadersExtractor extractor) { }
+        public void ExtractContainerInformationFromHeaders(System.Func<System.Collections.Generic.IReadOnlyDictionary<string, string>, NServiceBus.ContainerInformation> extractor) { }
         public void ExtractContainerInformationFromHeaders<TArg>(System.Func<System.Collections.Generic.IReadOnlyDictionary<string, string>, TArg, NServiceBus.ContainerInformation> extractor, TArg extractorArgument) { }
         public void ExtractContainerInformationFromMessage(NServiceBus.Persistence.CosmosDB.IContainerInformationFromMessagesExtractor extractor) { }
         public void ExtractContainerInformationFromMessage<TMessage>(System.Func<TMessage, NServiceBus.ContainerInformation> extractor) { }
@@ -111,6 +112,7 @@ namespace NServiceBus.Persistence.CosmosDB
         public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, System.Func<string, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument) { }
         public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, System.Func<string, TArg, string> extractor, TArg extractorArgument) { }
         public void ExtractPartitionKeyFromHeaders(NServiceBus.Persistence.CosmosDB.IPartitionKeyFromHeadersExtractor extractor) { }
+        public void ExtractPartitionKeyFromHeaders(System.Func<System.Collections.Generic.IReadOnlyDictionary<string, string>, Microsoft.Azure.Cosmos.PartitionKey> extractor) { }
         public void ExtractPartitionKeyFromHeaders<TArg>(System.Func<System.Collections.Generic.IReadOnlyDictionary<string, string>, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument) { }
         public void ExtractPartitionKeyFromMessage<TMessage>(System.Func<TMessage, Microsoft.Azure.Cosmos.PartitionKey> extractor) { }
         public void ExtractPartitionKeyFromMessage<TMessage>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, Microsoft.Azure.Cosmos.PartitionKey> extractor) { }

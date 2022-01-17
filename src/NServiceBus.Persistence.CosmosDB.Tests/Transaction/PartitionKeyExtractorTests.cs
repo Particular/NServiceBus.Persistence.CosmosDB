@@ -62,7 +62,7 @@
         }
 
         [Test]
-        public void Should_extract_from_header_with_key_and_converter()
+        public void Should_extract_from_header_with_key_and_extractor()
         {
             extractor.ExtractPartitionKeyFromHeader("HeaderKey", value => value.Replace("__TOBEREMOVED__", string.Empty));
 
@@ -75,9 +75,61 @@
         }
 
         [Test]
-        public void Should_extract_from_header_with_key_converter_and_argument()
+        public void Should_extract_from_header_with_key_and_extractor_with_partition_key()
+        {
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey", value => new PartitionKey(value.Replace("__TOBEREMOVED__", string.Empty)));
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+        }
+
+        [Test]
+        public void Should_extract_from_header_with_key_extractor_and_argument()
         {
             extractor.ExtractPartitionKeyFromHeader("HeaderKey", (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__");
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+        }
+
+        [Test]
+        public void Should_extract_from_headers_with_extractor()
+        {
+            extractor.ExtractPartitionKeyFromHeaders(hdrs => new PartitionKey(hdrs["HeaderKey"]));
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+        }
+
+        [Test]
+        public void Should_extract_from_headers_with_extractor_and_argument()
+        {
+            extractor.ExtractPartitionKeyFromHeaders((hdrs, toBeRemoved) => new PartitionKey(hdrs["HeaderKey"].Replace(toBeRemoved, string.Empty)), "__TOBEREMOVED__");
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+        }
+
+        [Test]
+        public void Should_extract_from_header_with_key_converter_partition_key_and_argument()
+        {
+            extractor.ExtractPartitionKeyFromHeader("HeaderKey", (value, toBeRemoved) => new PartitionKey(value.Replace(toBeRemoved, string.Empty)), "__TOBEREMOVED__");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
@@ -150,6 +202,37 @@
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE")));
         }
+
+        [Test]
+        public void Should_extract_from_message_with_headers()
+        {
+            extractor.ExtractPartitionKeyFromMessage<MyMessage, ArgumentHelper>((m, hdrs, helper) =>
+                new PartitionKey($"{helper.Upper(m.SomeId)}_{hdrs["HeaderKey"]}"), new ArgumentHelper());
+
+            var message = new MyMessage { SomeId = "SomeValue" };
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+
+            var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE_HeaderValue")));
+        }
+
+        [Test]
+        public void Should_extract_from_message_with_headers_and_argument()
+        {
+            extractor.ExtractPartitionKeyFromMessage<MyMessage>((m, hdrs) =>
+                new PartitionKey($"{m.SomeId}_{hdrs["HeaderKey"]}"));
+
+            var message = new MyMessage { SomeId = "SomeValue" };
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+
+            var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue_HeaderValue")));
+        }
+
 
         [Test]
         public void Should_throw_when_message_type_is_already_mapped()

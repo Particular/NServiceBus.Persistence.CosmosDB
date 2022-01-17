@@ -3,7 +3,6 @@ namespace NServiceBus.Persistence.CosmosDB
     using System;
     using System.Collections.Generic;
 
-    // TODO BOB: Unit tests
     // TODO BOB: Add acceptance test that mimics sample scenario
     partial class ContainerInformationExtractor : IContainerInformationFromHeadersExtractor, IContainerInformationFromMessagesExtractor
     {

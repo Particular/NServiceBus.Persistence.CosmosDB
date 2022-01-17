@@ -59,6 +59,11 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
+        public void ExtractPartitionKeyFromHeaders(Func<IReadOnlyDictionary<string, string>, PartitionKey> extractor)
+            // When moving to CSharp 9 these can be static lambdas
+            => ExtractPartitionKeyFromHeaders(new PartitionKeyFromFromHeadersExtractor<Func<IReadOnlyDictionary<string, string>, PartitionKey>>(
+                (headers, invoker) => invoker(headers), extractor));
+
         public void ExtractPartitionKeyFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg extractorArgument)
             => ExtractPartitionKeyFromHeaders(new PartitionKeyFromFromHeadersExtractor<TArg>(extractor, extractorArgument));
 

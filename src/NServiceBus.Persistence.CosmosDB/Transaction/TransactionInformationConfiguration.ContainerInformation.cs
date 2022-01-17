@@ -28,6 +28,13 @@
         public void ExtractContainerInformationFromHeader<TArg>(string headerKey, Func<string, TArg, ContainerInformation> extractor, TArg extractorArgument) =>
             ContainerInformationExtractor.ExtractContainerInformationFromHeader(headerKey, extractor, extractorArgument);
 
+        /// <summary>
+        /// Adds an extraction rule that extracts the container information from the message headers.
+        /// </summary>
+        /// <param name="extractor">The extraction function.</param>
+        /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
+        public void ExtractContainerInformationFromHeaders(Func<IReadOnlyDictionary<string, string>, ContainerInformation> extractor) =>
+            ContainerInformationExtractor.ExtractContainerInformationFromHeaders(extractor);
 
         /// <summary>
         /// Adds an extraction rule that extracts the container information from the message headers.
