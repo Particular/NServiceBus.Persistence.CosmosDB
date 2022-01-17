@@ -1,7 +1,6 @@
 namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
     using NUnit.Framework;
@@ -39,7 +38,9 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
                 .Distinct()
                 .ToArray();
 
-            Approver.Verify(string.Join(Environment.NewLine, methodInfos));
+            Approver.Verify(methodInfos.Length == 0 ?
+                "Represents the missing extraction methods in the TransactionInformationConfiguration object and should remain empty" :
+                string.Join(Environment.NewLine, methodInfos));
         }
     }
 }

@@ -64,21 +64,21 @@
         /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
         /// </summary>
         /// <param name="headerKey">The header key.</param>
-        /// <param name="converter">The converter function to convert the header value.</param>
+        /// <param name="extractor">The extractor function to extract the header value.</param>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
-        public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, string> converter) =>
-            PartitionKeyExtractor.ExtractPartitionKeyFromHeader(headerKey, converter);
+        public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, string> extractor) =>
+            PartitionKeyExtractor.ExtractPartitionKeyFromHeader(headerKey, extractor);
 
         /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
         /// </summary>
         /// <param name="headerKey">The header key.</param>
-        /// <param name="converter">The converter function to convert the header value.</param>
-        /// <param name="converterArgument">The argument passed as state to the <paramref name="converter"/></param>
+        /// <param name="extractor">The extractor function to extract the header value.</param>
+        /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
         /// <typeparam name="TArg">The argument type.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
-        public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, Func<string, TArg, string> converter, TArg converterArgument) =>
-            PartitionKeyExtractor.ExtractPartitionKeyFromHeader(headerKey, converter, converterArgument);
+        public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, Func<string, TArg, string> extractor, TArg extractorArgument) =>
+            PartitionKeyExtractor.ExtractPartitionKeyFromHeader(headerKey, extractor, extractorArgument);
 
         /// <summary>
         /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
@@ -87,6 +87,36 @@
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractPartitionKeyFromHeader(string headerKey) =>
             PartitionKeyExtractor.ExtractPartitionKeyFromHeader(headerKey);
+
+        /// <summary>
+        /// Adds an extraction rule that extracts the partition key from headers.
+        /// </summary>
+        /// <param name="extractor">The extractor function to extract the header value.</param>
+        /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
+        /// <typeparam name="TArg">The argument type.</typeparam>
+        /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
+        public void ExtractPartitionKeyFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg extractorArgument) =>
+            PartitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor, extractorArgument);
+
+        /// <summary>
+        /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
+        /// </summary>
+        /// <param name="headerKey">The header key.</param>
+        /// <param name="extractor">The extractor function to extract the header value.</param>
+        /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
+        public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, PartitionKey> extractor) =>
+            PartitionKeyExtractor.ExtractPartitionKeyFromHeader(headerKey, extractor);
+
+        /// <summary>
+        /// Adds an extraction rule that extracts the partition key from a given header represented by <paramref name="headerKey"/>.
+        /// </summary>
+        /// <param name="headerKey">The header key.</param>
+        /// <param name="extractor">The extractor function to extract the header value.</param>
+        /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
+        /// <typeparam name="TArg">The argument type.</typeparam>
+        /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
+        public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, Func<string, TArg, PartitionKey> extractor, TArg extractorArgument) =>
+            PartitionKeyExtractor.ExtractPartitionKeyFromHeader(headerKey, extractor, extractorArgument);
 
         internal PartitionKeyExtractor PartitionKeyExtractor { get; } = new PartitionKeyExtractor();
     }

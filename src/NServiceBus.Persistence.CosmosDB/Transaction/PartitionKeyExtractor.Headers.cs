@@ -31,9 +31,9 @@ namespace NServiceBus.Persistence.CosmosDB
             // When moving to CSharp 9 these can be static lambdas
             ExtractPartitionKeyFromHeader<object>(headerKey, (headerValue, _) => new PartitionKey(headerValue), null);
 
-        public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, string> converter) =>
+        public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, string> extractor) =>
             // When moving to CSharp 9 these can be static lambdas
-            ExtractPartitionKeyFromHeader(headerKey, (headerValue, invoker) => new PartitionKey(invoker(headerValue)), converter);
+            ExtractPartitionKeyFromHeader(headerKey, (headerValue, invoker) => new PartitionKey(invoker(headerValue)), extractor);
 
         public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, Func<string, TArg, string> extractor, TArg extractorArgument) =>
             // When moving to CSharp 9 these can be static lambdas
@@ -43,9 +43,9 @@ namespace NServiceBus.Persistence.CosmosDB
                 return new PartitionKey(invoker(headerValue, arg));
             }, (extractor, extractorArgument));
 
-        public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, PartitionKey> converter) =>
+        public void ExtractPartitionKeyFromHeader(string headerKey, Func<string, PartitionKey> extractor) =>
             // When moving to CSharp 9 these can be static lambdas
-            ExtractPartitionKeyFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter);
+            ExtractPartitionKeyFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), extractor);
 
         public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, Func<string, TArg, PartitionKey> extractor, TArg extractorArgument)
         {
@@ -71,22 +71,22 @@ namespace NServiceBus.Persistence.CosmosDB
 
         sealed class PartitionKeyFromFromHeaderExtractor<TArg> : IPartitionKeyFromHeadersExtractor
         {
-            readonly Func<string, TArg, PartitionKey> converter;
-            readonly TArg converterArgument;
+            readonly Func<string, TArg, PartitionKey> extractor;
+            readonly TArg extractorArgument;
             readonly string headerName;
 
-            public PartitionKeyFromFromHeaderExtractor(string headerName, Func<string, TArg, PartitionKey> converter, TArg converterArgument = default)
+            public PartitionKeyFromFromHeaderExtractor(string headerName, Func<string, TArg, PartitionKey> extractor, TArg extractorArgument = default)
             {
                 this.headerName = headerName;
-                this.converterArgument = converterArgument;
-                this.converter = converter;
+                this.extractorArgument = extractorArgument;
+                this.extractor = extractor;
             }
 
             public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
             {
                 if (headers.TryGetValue(headerName, out var headerValue))
                 {
-                    partitionKey = converter(headerValue, converterArgument);
+                    partitionKey = extractor(headerValue, extractorArgument);
                     return true;
                 }
                 partitionKey = null;
