@@ -15,6 +15,7 @@
         {
             var runSettings = new RunSettings();
             runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+            runSettings.DoNotRegisterDefaultContainerInformationProvider();
 
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointWithFluentExtractor>(b => b.When((session, ctx) =>
@@ -22,13 +23,15 @@
                 .Done(c => c.SagaReceivedMessage)
                 .Run(runSettings);
 
-            Assert.True(context.StateMatched);
+            Assert.True(context.PartitionStateMatched);
+            Assert.True(context.ContainerStateMatched);
         }
 
         public class Context : ScenarioContext
         {
             public bool SagaReceivedMessage { get; set; }
-            public bool StateMatched { get; set; }
+            public bool PartitionStateMatched { get; set; }
+            public bool ContainerStateMatched { get; set; }
         }
 
         public class EndpointWithFluentExtractor : EndpointConfigurationBuilder
@@ -41,8 +44,13 @@
                     var transactionInformation = persistence.TransactionInformation();
                     transactionInformation.ExtractPartitionKeyFromMessage<StartSaga1, Context>((startSaga, state) =>
                     {
-                        state.StateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
+                        state.PartitionStateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
                         return new PartitionKey(startSaga.PartitionKey.ToString());
+                    }, (Context)r.ScenarioContext);
+                    transactionInformation.ExtractContainerInformationFromMessage<StartSaga1, Context>((startSaga, state) =>
+                    {
+                        state.ContainerStateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
+                        return new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
                     }, (Context)r.ScenarioContext);
                 });
             }
