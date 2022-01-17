@@ -3,7 +3,6 @@ namespace NServiceBus.Persistence.CosmosDB
     using System;
     using System.Collections.Generic;
 
-    // TODO BOB: Unit tests
     // TODO BOB: Add acceptance test that mimics sample scenario
     partial class ContainerInformationExtractor : IContainerInformationFromHeadersExtractor, IContainerInformationFromMessagesExtractor
     {
@@ -32,11 +31,11 @@ namespace NServiceBus.Persistence.CosmosDB
             // When moving to CSharp 9 these can be static lambdas
             ExtractContainerInformationFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter);
 
-        public void ExtractContainerInformationFromHeader<TArg>(string headerKey, Func<string, TArg, ContainerInformation> extractor, TArg converterArgument)
+        public void ExtractContainerInformationFromHeader<TArg>(string headerKey, Func<string, TArg, ContainerInformation> extractor, TArg extractorArgument)
         {
             if (extractContainerInformationFromHeadersHeaderKeys.Add(headerKey))
             {
-                ExtractContainerInformationFromHeaders(new ContainerInformationFromFromHeaderExtractor<TArg>(headerKey, extractor, converterArgument));
+                ExtractContainerInformationFromHeaders(new ContainerInformationFromFromHeaderExtractor<TArg>(headerKey, extractor, extractorArgument));
             }
             else
             {
