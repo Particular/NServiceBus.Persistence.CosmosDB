@@ -39,7 +39,7 @@ namespace NServiceBus.Persistence.CosmosDB
             }
             else
             {
-                throw new ArgumentException($"The header key '{headerKey}' is already being handled by a container extractor and cannot be processed by another one.", nameof(headerKey));
+                throw new ArgumentException($"The header key '{headerKey}' is already being handled by a container header extractor and cannot be processed by another one.", nameof(headerKey));
             }
         }
 

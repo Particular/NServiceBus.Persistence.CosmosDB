@@ -233,7 +233,6 @@
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue_HeaderValue")));
         }
 
-
         [Test]
         public void Should_throw_when_message_type_is_already_mapped()
         {
@@ -243,8 +242,6 @@
 
             Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.PartitionKeyExtractorTests+MyMessage' is already being handled by a message extractor and cannot be processed by another one."));
         }
-
-        // TODO: Add more tests that verify header passing
 
         class MyMessage
         {

@@ -52,7 +52,7 @@ namespace NServiceBus.Persistence.CosmosDB
             }
             else
             {
-                throw new ArgumentException($"The message type '{typeof(TMessage).FullName}' is already being handled by a message extractor and cannot be processed by another one.", nameof(TMessage));
+                throw new ArgumentException($"The message type '{typeof(TMessage).FullName}' is already being handled by a container message extractor and cannot be processed by another one.", nameof(TMessage));
             }
         }
 

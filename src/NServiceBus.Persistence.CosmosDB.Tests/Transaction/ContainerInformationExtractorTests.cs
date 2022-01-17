@@ -1,8 +1,8 @@
-namespace NServiceBus.Persistence.CosmosDB
+namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 {
     using System;
     using System.Collections.Generic;
-    using Microsoft.Azure.Cosmos;
+    using System.Linq;
     using NUnit.Framework;
 
     [TestFixture]
@@ -51,7 +51,7 @@ namespace NServiceBus.Persistence.CosmosDB
         }
 
         [Test]
-        public void Should_extract_from_header_with_key_and_converter()
+        public void Should_extract_from_header_with_key_and_extractor()
         {
             extractor.ExtractContainerInformationFromHeader("HeaderKey",
                 value => new ContainerInformation(value.Replace("__TOBEREMOVED__", string.Empty), fakePartitionKeyPath));
@@ -65,12 +65,26 @@ namespace NServiceBus.Persistence.CosmosDB
         }
 
         [Test]
-        public void Should_extract_from_header_with_key_and_converter_and_extractor_argument()
+        public void Should_extract_from_header_with_key_and_extractor_and_extractor_argument()
         {
             extractor.ExtractContainerInformationFromHeader("HeaderKey",
                 (value, toBeRemoved) => new ContainerInformation(value.Replace(toBeRemoved, string.Empty), fakePartitionKeyPath), "__TOBEREMOVED__");
 
             var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+        }
+
+        [Test]
+        public void Should_extract_from_headers_with_extractor()
+        {
+            extractor.ExtractContainerInformationFromHeaders(
+                hdrs => new ContainerInformation(hdrs["HeaderKey"], fakePartitionKeyPath));
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
@@ -126,71 +140,131 @@ namespace NServiceBus.Persistence.CosmosDB
 
             var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractContainerInformationFromHeader("HeaderKey", value => new ContainerInformation()));
 
-            Assert.That(exception.Message, Contains.Substring("The header key 'HeaderKey' is already being handled by a container extractor and cannot be processed by another one."));
+            Assert.That(exception.Message, Contains.Substring("The header key 'HeaderKey' is already being handled by a container header extractor and cannot be processed by another one."));
         }
 
         [Test]
-        public void Should_extract_from_message_with_extractor()
-        { }
+        public void Should_not_extract_from_message_with_no_match()
+        {
+            extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+            extractor.ExtractContainerInformationFromMessage<MyOtherMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+
+            var message = new MyUnrelatedMessage();
+
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var containerInformation);
+
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(containerInformation, Is.Null);
+        }
 
         [Test]
-        public void Should_extract_from_message_with_extractor_and_extractor_argument()
-        { }
+        public void Should_extract_from_message_with_first_match_winning()
+        {
+            extractor.ExtractContainerInformationFromMessage<IProvideSomeId>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+            extractor.ExtractContainerInformationFromMessage<MyMessageWithInterfaces>(m => new ContainerInformation(string.Join(";", Enumerable.Repeat(m.SomeId, 2)), fakePartitionKeyPath));
+
+            var message = new MyMessageWithInterfaces { SomeId = "SomeValue" };
+
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+        }
 
         [Test]
-        public void Should_extract_from_message_and_headers_with_extractor()
-        { }
+        public void Should_extract_from_message()
+        {
+            extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+
+            var message = new MyMessage { SomeId = "SomeValue" };
+
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+        }
 
         [Test]
-        public void Should_extract_from_message_and_headers_with_extractor_and_extractor_argument()
-        { }
+        public void Should_extract_from_message_with_argument()
+        {
+            extractor.ExtractContainerInformationFromMessage<MyMessage, ArgumentHelper>((m, helper) => new ContainerInformation(helper.Upper(m.SomeId), fakePartitionKeyPath), new ArgumentHelper());
+
+            var message = new MyMessage { SomeId = "SomeValue" };
+
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE", fakePartitionKeyPath)));
+        }
 
         [Test]
-        public void Should_extract_from_message_with_custom_implementation()
-        { }
+        public void Should_extract_from_message_with_headers()
+        {
+            extractor.ExtractContainerInformationFromMessage<MyMessage, ArgumentHelper>((m, hdrs, helper) =>
+                new ContainerInformation($"{helper.Upper(m.SomeId)}_{hdrs["HeaderKey"]}", fakePartitionKeyPath), new ArgumentHelper());
 
-        //[Test]
-        //public void Should_extract_from_header_with_key_converter_argument_and_container_information()
-        //{
-        //    extractor.ExtractPartitionKeyFromHeader("HeaderKey",
-        //        (value, toBeRemoved) => value.Replace(toBeRemoved, string.Empty), "__TOBEREMOVED__");
+            var message = new MyMessage { SomeId = "SomeValue" };
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-        //    var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+            var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
 
-        //    var wasExtracted = extractor.TryExtract(headers, out var partitionKey, out var containerInformation);
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE_HeaderValue", fakePartitionKeyPath)));
+        }
 
-        //    Assert.That(wasExtracted, Is.True);
-        //    Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
-        //    Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
-        //}
+        [Test]
+        public void Should_extract_from_message_with_headers_and_argument()
+        {
+            extractor.ExtractContainerInformationFromMessage<MyMessage>((m, hdrs) =>
+                new ContainerInformation($"{m.SomeId}_{hdrs["HeaderKey"]}", fakePartitionKeyPath));
 
-        //[Test]
-        //public void Should_extract_from_message_with_container_information()
-        //{
-        //    extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId));
+            var message = new MyMessage { SomeId = "SomeValue" };
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-        //    var message = new MyMessage { SomeId = "SomeValue" };
+            var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
 
-        //    var wasExtracted = extractor.TryExtract(message, out var partitionKey, out var containerInformation);
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue_HeaderValue", fakePartitionKeyPath)));
+        }
 
-        //    Assert.That(wasExtracted, Is.True);
-        //    Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue")));
-        //    Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
-        //}
+        [Test]
+        public void Should_throw_when_message_type_is_already_mapped()
+        {
+            extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
 
-        //[Test]
-        //public void Should_extract_from_message_with_argument_and_container_information()
-        //{
-        //    extractor.ExtractPartitionKeyFromMessage<MyMessage, ArgumentHelper>(
-        //        (m, helper) => new PartitionKey(helper.Upper(m.SomeId)), new ArgumentHelper());
+            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath)));
 
-        //    var message = new MyMessage { SomeId = "SomeValue" };
+            Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.ContainerInformationExtractorTests+MyMessage' is already being handled by a container message extractor and cannot be processed by another one."));
+        }
 
-        //    var wasExtracted = extractor.TryExtract(message, out var partitionKey, out var containerInformation);
+        class MyMessage
+        {
+            public string SomeId { get; set; }
+        }
 
-        //    Assert.That(wasExtracted, Is.True);
-        //    Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE")));
-        //    Assert.That(containerInformation, Is.Not.Null.And.EqualTo(fakeContainerInformation));
-        //}
+        class MyOtherMessage
+        {
+            public string SomeId { get; set; }
+        }
+
+        class MyUnrelatedMessage
+        {
+            public string SomeId { get; set; }
+        }
+
+        class MyMessageWithInterfaces : IProvideSomeId
+        {
+            public string SomeId { get; set; }
+        }
+        interface IProvideSomeId
+        {
+            string SomeId { get; set; }
+        }
+
+        // Just a silly helper to show that state can be passed
+        class ArgumentHelper
+        {
+            public string Upper(string input) => input.ToUpperInvariant();
+        }
     }
 }
