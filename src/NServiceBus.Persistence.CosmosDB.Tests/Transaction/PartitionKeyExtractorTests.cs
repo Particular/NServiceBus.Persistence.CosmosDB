@@ -158,7 +158,7 @@
 
             var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractPartitionKeyFromMessage<MyMessage>(m => new PartitionKey(m.SomeId)));
 
-            Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.PartitionKeyExtractorTests+MyMessage' is already being handled by a message extractor and cannot be processed by another one. "));
+            Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.PartitionKeyExtractorTests+MyMessage' is already being handled by a message extractor and cannot be processed by another one."));
         }
 
         // TODO: Add more tests that verify header passing
