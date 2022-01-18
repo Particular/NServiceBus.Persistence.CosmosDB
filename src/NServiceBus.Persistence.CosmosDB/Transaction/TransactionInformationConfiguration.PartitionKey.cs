@@ -95,7 +95,7 @@
         /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
         /// <typeparam name="TArg">The argument type.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
-        public void ExtractPartitionKeyFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg extractorArgument) =>
+        public void ExtractPartitionKeyFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey?> extractor, TArg extractorArgument) =>
             PartitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor, extractorArgument);
 
         /// <summary>
@@ -103,7 +103,7 @@
         /// </summary>
         /// <param name="extractor">The extractor function to extract the header value.</param>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
-        public void ExtractPartitionKeyFromHeaders(Func<IReadOnlyDictionary<string, string>, PartitionKey> extractor) =>
+        public void ExtractPartitionKeyFromHeaders(Func<IReadOnlyDictionary<string, string>, PartitionKey?> extractor) =>
             PartitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor);
 
         /// <summary>

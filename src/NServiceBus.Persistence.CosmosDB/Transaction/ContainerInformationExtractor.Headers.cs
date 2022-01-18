@@ -3,7 +3,6 @@ namespace NServiceBus.Persistence.CosmosDB
     using System;
     using System.Collections.Generic;
 
-    // TODO BOB: Add acceptance test that mimics sample scenario
     partial class ContainerInformationExtractor : IContainerInformationFromHeadersExtractor, IContainerInformationFromMessagesExtractor
     {
         readonly HashSet<string> extractContainerInformationFromHeadersHeaderKeys = new HashSet<string>();
@@ -43,12 +42,12 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        public void ExtractContainerInformationFromHeaders(Func<IReadOnlyDictionary<string, string>, ContainerInformation> extractor)
+        public void ExtractContainerInformationFromHeaders(Func<IReadOnlyDictionary<string, string>, ContainerInformation?> extractor)
             // When moving to CSharp 9 these can be static lambdas
-            => ExtractContainerInformationFromHeaders(new ContainerInformationFromHeadersExtractor<Func<IReadOnlyDictionary<string, string>, ContainerInformation>>(
+            => ExtractContainerInformationFromHeaders(new ContainerInformationFromHeadersExtractor<Func<IReadOnlyDictionary<string, string>, ContainerInformation?>>(
                 (headers, invoker) => invoker(headers), extractor));
 
-        public void ExtractContainerInformationFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor, TArg extractorArgument)
+        public void ExtractContainerInformationFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation?> extractor, TArg extractorArgument)
             => ExtractContainerInformationFromHeaders(new ContainerInformationFromHeadersExtractor<TArg>(extractor, extractorArgument));
 
         public void ExtractContainerInformationFromHeaders(IContainerInformationFromHeadersExtractor extractor)
@@ -85,10 +84,10 @@ namespace NServiceBus.Persistence.CosmosDB
 
         sealed class ContainerInformationFromHeadersExtractor<TArg> : IContainerInformationFromHeadersExtractor
         {
-            readonly Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor;
+            readonly Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation?> extractor;
             readonly TArg extractorArgument;
 
-            public ContainerInformationFromHeadersExtractor(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor, TArg extractorArgument)
+            public ContainerInformationFromHeadersExtractor(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation?> extractor, TArg extractorArgument)
             {
                 this.extractor = extractor;
                 this.extractorArgument = extractorArgument;

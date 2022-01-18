@@ -33,7 +33,7 @@
         /// </summary>
         /// <param name="extractor">The extraction function.</param>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
-        public void ExtractContainerInformationFromHeaders(Func<IReadOnlyDictionary<string, string>, ContainerInformation> extractor) =>
+        public void ExtractContainerInformationFromHeaders(Func<IReadOnlyDictionary<string, string>, ContainerInformation?> extractor) =>
             ContainerInformationExtractor.ExtractContainerInformationFromHeaders(extractor);
 
         /// <summary>
@@ -43,7 +43,7 @@
         /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
         /// <typeparam name="TArg">The argument type.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
-        public void ExtractContainerInformationFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor, TArg extractorArgument) =>
+        public void ExtractContainerInformationFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation?> extractor, TArg extractorArgument) =>
             ContainerInformationExtractor.ExtractContainerInformationFromHeaders(extractor, extractorArgument);
 
         /// <summary>

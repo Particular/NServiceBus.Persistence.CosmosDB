@@ -59,12 +59,12 @@ namespace NServiceBus.Persistence.CosmosDB
             }
         }
 
-        public void ExtractPartitionKeyFromHeaders(Func<IReadOnlyDictionary<string, string>, PartitionKey> extractor)
+        public void ExtractPartitionKeyFromHeaders(Func<IReadOnlyDictionary<string, string>, PartitionKey?> extractor)
             // When moving to CSharp 9 these can be static lambdas
-            => ExtractPartitionKeyFromHeaders(new PartitionKeyFromFromHeadersExtractor<Func<IReadOnlyDictionary<string, string>, PartitionKey>>(
+            => ExtractPartitionKeyFromHeaders(new PartitionKeyFromFromHeadersExtractor<Func<IReadOnlyDictionary<string, string>, PartitionKey?>>(
                 (headers, invoker) => invoker(headers), extractor));
 
-        public void ExtractPartitionKeyFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg extractorArgument)
+        public void ExtractPartitionKeyFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey?> extractor, TArg extractorArgument)
             => ExtractPartitionKeyFromHeaders(new PartitionKeyFromFromHeadersExtractor<TArg>(extractor, extractorArgument));
 
         public void ExtractPartitionKeyFromHeaders(IPartitionKeyFromHeadersExtractor extractor)
@@ -101,10 +101,10 @@ namespace NServiceBus.Persistence.CosmosDB
 
         sealed class PartitionKeyFromFromHeadersExtractor<TArg> : IPartitionKeyFromHeadersExtractor
         {
-            readonly Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor;
+            readonly Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey?> extractor;
             readonly TArg extractorArgument;
 
-            public PartitionKeyFromFromHeadersExtractor(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg extractorArgument)
+            public PartitionKeyFromFromHeadersExtractor(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey?> extractor, TArg extractorArgument)
             {
                 this.extractor = extractor;
                 this.extractorArgument = extractorArgument;
