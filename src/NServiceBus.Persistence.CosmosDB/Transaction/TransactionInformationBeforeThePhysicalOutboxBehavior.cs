@@ -6,22 +6,28 @@
 
     class TransactionInformationBeforeThePhysicalOutboxBehavior : IBehavior<ITransportReceiveContext, ITransportReceiveContext>
     {
-        readonly ITransactionInformationFromHeadersExtractor extractor;
+        readonly IPartitionKeyFromHeadersExtractor partitionKeyExtractor;
+        readonly IContainerInformationFromHeadersExtractor containerInformationExtractor;
 
-        public TransactionInformationBeforeThePhysicalOutboxBehavior(ITransactionInformationFromHeadersExtractor extractor) =>
-            this.extractor = extractor;
+        public TransactionInformationBeforeThePhysicalOutboxBehavior(IPartitionKeyFromHeadersExtractor partitionKeyExtractor, IContainerInformationFromHeadersExtractor containerInformationExtractor)
+        {
+            this.partitionKeyExtractor = partitionKeyExtractor;
+            this.containerInformationExtractor = containerInformationExtractor;
+        }
 
         public Task Invoke(ITransportReceiveContext context, Func<ITransportReceiveContext, Task> next)
         {
-            if (extractor.TryExtract(context.Message.Headers, out var partitionKey,
-                    out var containerInformation))
+            if (partitionKeyExtractor.TryExtract(context.Message.Headers, out var partitionKey))
             {
                 // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
                 if (partitionKey.HasValue)
                 {
                     context.Extensions.Set(partitionKey.Value);
                 }
-
+            }
+            if (containerInformationExtractor.TryExtract(context.Message.Headers, out var containerInformation))
+            {
+                // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
                 if (containerInformation.HasValue)
                 {
                     context.Extensions.Set(containerInformation.Value);
@@ -33,18 +39,24 @@
         public class RegisterStep : Pipeline.RegisterStep
         {
             public RegisterStep(
-                TransactionInformationExtractor transactionInformationExtractor) :
+                PartitionKeyExtractor partitionKeyExtractor, ContainerInformationExtractor containerInformationExtractor) :
                 base(nameof(TransactionInformationBeforeThePhysicalOutboxBehavior),
                 typeof(TransactionInformationBeforeThePhysicalOutboxBehavior),
                 "Populates the transaction information before the physical outbox.",
                 b =>
                 {
-                    var extractors = b.BuildAll<ITransactionInformationFromHeadersExtractor>();
-                    foreach (var extractor in extractors)
+                    var partitionKeyFromHeadersExtractors = b.BuildAll<IPartitionKeyFromHeadersExtractor>();
+                    foreach (var extractor in partitionKeyFromHeadersExtractors)
                     {
-                        transactionInformationExtractor.ExtractFromHeaders(extractor);
+                        partitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor);
                     }
-                    return new TransactionInformationBeforeThePhysicalOutboxBehavior(transactionInformationExtractor);
+
+                    var containerInformationFromHeadersExtractors = b.BuildAll<IContainerInformationFromHeadersExtractor>();
+                    foreach (var extractor in containerInformationFromHeadersExtractors)
+                    {
+                        containerInformationExtractor.ExtractContainerInformationFromHeaders(extractor);
+                    }
+                    return new TransactionInformationBeforeThePhysicalOutboxBehavior(partitionKeyExtractor, containerInformationExtractor);
                 })
             {
             }

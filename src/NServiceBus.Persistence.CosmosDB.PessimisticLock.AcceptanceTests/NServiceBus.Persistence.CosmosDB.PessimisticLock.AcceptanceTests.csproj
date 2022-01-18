@@ -26,9 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests\When_handling_migrated_saga.cs">
-      <Link>When_handling_migrated_saga.cs</Link>
-    </Compile>
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests\When_handling_migrated_saga.cs" />
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests\When_custom_container_is_overwritten.cs" />
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests\When_custom_container_information_extractor_from_message_registered_via_*.cs" />
+    <Compile Include="..\NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests\When_custom_container_information_extractor_from_headers_registered_via_*.cs" />
     <Compile Include="..\SharedAcceptanceTests.All\*.cs" />
     <None Include="..\SharedAcceptanceTests.All\*.txt" />
   </ItemGroup>

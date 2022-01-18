@@ -1,0 +1,1 @@
+Represents the missing extraction methods in the TransactionInformationConfiguration object and should remain empty

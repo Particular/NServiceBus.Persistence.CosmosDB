@@ -1,57 +1,48 @@
 ﻿namespace NServiceBus.AcceptanceTests
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Support;
     using EndpointTemplates;
-    using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
+    using Persistence.CosmosDB;
 
-    public class When_fluent_extractor_registered_via_api : NServiceBusAcceptanceTest
+    public class When_custom_container_information_extractor_from_headers_registered_via_api : NServiceBusAcceptanceTest
     {
         [Test]
-        public async Task Should_work()
+        public async Task Should_be_used()
         {
             var runSettings = new RunSettings();
-            runSettings.DoNotRegisterDefaultPartitionKeyProvider();
             runSettings.DoNotRegisterDefaultContainerInformationProvider();
 
             var context = await Scenario.Define<Context>()
-                .WithEndpoint<EndpointWithFluentExtractor>(b => b.When((session, ctx) =>
-                    session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid(), PartitionKey = ctx.TestRunId })))
+                .WithEndpoint<EndpointWithCustomExtractor>(b => b.When(session => session.SendLocal(new StartSaga1
+                {
+                    DataId = Guid.NewGuid()
+                })))
                 .Done(c => c.SagaReceivedMessage)
                 .Run(runSettings);
 
-            Assert.True(context.PartitionStateMatched);
-            Assert.True(context.ContainerStateMatched);
+            Assert.True(context.ExtractorWasCalled);
         }
 
         public class Context : ScenarioContext
         {
             public bool SagaReceivedMessage { get; set; }
-            public bool PartitionStateMatched { get; set; }
-            public bool ContainerStateMatched { get; set; }
+            public bool ExtractorWasCalled { get; set; }
         }
 
-        public class EndpointWithFluentExtractor : EndpointConfigurationBuilder
+        public class EndpointWithCustomExtractor : EndpointConfigurationBuilder
         {
-            public EndpointWithFluentExtractor()
+            public EndpointWithCustomExtractor()
             {
                 EndpointSetup<DefaultServer>((config, r) =>
                 {
                     var persistence = config.UsePersistence<CosmosPersistence>();
                     var transactionInformation = persistence.TransactionInformation();
-                    transactionInformation.ExtractPartitionKeyFromMessage<StartSaga1, Context>((startSaga, state) =>
-                    {
-                        state.PartitionStateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
-                        return new PartitionKey(startSaga.PartitionKey.ToString());
-                    }, (Context)r.ScenarioContext);
-                    transactionInformation.ExtractContainerInformationFromMessage<StartSaga1, Context>((startSaga, state) =>
-                    {
-                        state.ContainerStateMatched = startSaga.PartitionKey.Equals(state.TestRunId);
-                        return new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
-                    }, (Context)r.ScenarioContext);
+                    transactionInformation.ExtractContainerInformationFromHeaders(new CustomExtractor((Context)r.ScenarioContext));
                 });
             }
 
@@ -78,6 +69,19 @@
                 readonly Context testContext;
             }
 
+            public class CustomExtractor : IContainerInformationFromHeadersExtractor
+            {
+                readonly Context testContext;
+                public CustomExtractor(Context testContext) => this.testContext = testContext;
+
+                public bool TryExtract(IReadOnlyDictionary<string, string> headers, out ContainerInformation? containerInformation)
+                {
+                    containerInformation = new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
+                    testContext.ExtractorWasCalled = true;
+                    return true;
+                }
+            }
+
             public class JustASagaData : ContainSagaData
             {
                 public virtual Guid DataId { get; set; }
@@ -87,7 +91,6 @@
         public class StartSaga1 : ICommand
         {
             public Guid DataId { get; set; }
-            public Guid PartitionKey { get; set; }
         }
     }
 }

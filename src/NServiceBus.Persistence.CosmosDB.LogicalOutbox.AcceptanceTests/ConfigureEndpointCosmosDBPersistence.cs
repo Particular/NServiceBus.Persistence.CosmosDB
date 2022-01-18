@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
@@ -25,6 +26,10 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         {
             configuration.RegisterComponents(services => services.ConfigureComponent<PartitionKeyProvider>(DependencyLifecycle.SingleInstance));
         }
+        if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
+        {
+            configuration.RegisterComponents(services => services.ConfigureComponent<ContainerInformationProvider>(DependencyLifecycle.SingleInstance));
+        }
 
         return Task.FromResult(0);
     }
@@ -34,15 +39,23 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    class PartitionKeyProvider : ITransactionInformationFromMessagesExtractor
+    class PartitionKeyProvider : IPartitionKeyFromMessageExtractor
     {
-        ScenarioContext scenarioContext;
+        readonly ScenarioContext scenarioContext;
 
         public PartitionKeyProvider(ScenarioContext scenarioContext) => this.scenarioContext = scenarioContext;
 
-        public bool TryExtract(object message, out PartitionKey? partitionKey, out ContainerInformation? containerInformation)
+        public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
             partitionKey = new PartitionKey(scenarioContext.TestRunId.ToString());
+            return true;
+        }
+    }
+
+    class ContainerInformationProvider : IContainerInformationFromMessagesExtractor
+    {
+        public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out ContainerInformation? containerInformation)
+        {
             containerInformation = new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
             return true;
         }
