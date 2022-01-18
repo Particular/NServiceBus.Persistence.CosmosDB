@@ -3,6 +3,7 @@ namespace NServiceBus.Persistence.CosmosDB
     using System;
     using System.Collections.Generic;
 
+    // The overloads with the extractor argument state are there to enable low allocation scenarios (avoiding closure allocations)
     partial class ContainerInformationExtractor : IContainerInformationFromHeadersExtractor, IContainerInformationFromMessagesExtractor
     {
         readonly HashSet<string> extractContainerInformationFromHeadersHeaderKeys = new HashSet<string>();

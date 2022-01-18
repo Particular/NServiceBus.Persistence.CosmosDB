@@ -23,7 +23,7 @@
         /// <param name="headerKey">The header key.</param>
         /// <param name="extractor">The extraction function.</param>
         /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
-        /// <typeparam name="TArg">The argument type.</typeparam>
+        /// <typeparam name="TArg">The extractor argument type.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractContainerInformationFromHeader<TArg>(string headerKey, Func<string, TArg, ContainerInformation> extractor, TArg extractorArgument) =>
             ContainerInformationExtractor.ExtractContainerInformationFromHeader(headerKey, extractor, extractorArgument);
@@ -41,7 +41,7 @@
         /// </summary>
         /// <param name="extractor">The extraction function.</param>
         /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
-        /// <typeparam name="TArg">The argument type.</typeparam>
+        /// <typeparam name="TArg">The extractor argument type.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractContainerInformationFromHeaders<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation?> extractor, TArg extractorArgument) =>
             ContainerInformationExtractor.ExtractContainerInformationFromHeaders(extractor, extractorArgument);
@@ -67,7 +67,7 @@
         /// </summary>
         /// <param name="extractor">The extraction function.</param>
         /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
-        /// <typeparam name="TArg">The argument type.</typeparam>
+        /// <typeparam name="TArg">The extractor argument type.</typeparam>
         /// <typeparam name="TMessage">The message type to match against.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractContainerInformationFromMessage<TMessage, TArg>(Func<TMessage, TArg, ContainerInformation> extractor, TArg extractorArgument) =>
@@ -87,7 +87,7 @@
         /// </summary>
         /// <param name="extractor">The extraction function.</param>
         /// <param name="extractorArgument">The argument passed as state to the <paramref name="extractor"/></param>
-        /// <typeparam name="TArg">The argument type.</typeparam>
+        /// <typeparam name="TArg">The extractor argument type.</typeparam>
         /// <typeparam name="TMessage">The message type to match against.</typeparam>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractContainerInformationFromMessage<TMessage, TArg>(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor, TArg extractorArgument) =>

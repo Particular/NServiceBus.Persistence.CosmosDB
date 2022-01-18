@@ -4,6 +4,7 @@ namespace NServiceBus.Persistence.CosmosDB
     using System.Collections.Generic;
     using Microsoft.Azure.Cosmos;
 
+    // The overloads with the extractor argument state are there to enable low allocation scenarios (avoiding closure allocations)
     partial class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartitionKeyFromMessageExtractor
     {
         readonly HashSet<string> extractPartitionKeyFromHeadersHeaderKeys = new HashSet<string>();
