@@ -55,8 +55,8 @@
 
             var orderProcessSagaData = await SetupFixture.Container.ReadItemAsync<dynamic>(context.OrderProcessId,
                 new PartitionKey(context.OrderProcessId));
-            var shippingProcessSagaData = await nonDefaultContainer.ReadItemAsync<dynamic>(context.OrderProcessId,
-                new PartitionKey(context.OrderProcessId));
+            var shippingProcessSagaData = await nonDefaultContainer.ReadItemAsync<dynamic>(context.ShippingProcessId,
+                new PartitionKey(context.ShippingProcessId));
 
             Assert.AreEqual(HttpStatusCode.OK, orderProcessSagaData.StatusCode);
             Assert.AreEqual(HttpStatusCode.OK, shippingProcessSagaData.StatusCode);
@@ -134,7 +134,6 @@
 
                 public Task Handle(CompleteOrder message, IMessageHandlerContext context)
                 {
-                    //MarkAsComplete();
                     var orderCompleted = new OrderCompleted
                     {
                         OrderId = Data.OrderId,
@@ -170,8 +169,6 @@
 
                 public Task Timeout(CompleteOrder state, IMessageHandlerContext context)
                 {
-                    //MarkAsComplete();
-
                     state.OrderId = Data.OrderId;
                     state.ShippingProcessId = Data.Id;
 
