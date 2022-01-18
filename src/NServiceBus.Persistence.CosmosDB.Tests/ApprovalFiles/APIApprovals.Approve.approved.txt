@@ -54,17 +54,25 @@ namespace NServiceBus
 }
 namespace NServiceBus.Persistence.CosmosDB
 {
+    public interface IContainerInformationFromHeadersExtractor
+    {
+        bool TryExtract(System.Collections.Generic.IReadOnlyDictionary<string, string> headers, out NServiceBus.ContainerInformation? containerInformation);
+    }
+    public interface IContainerInformationFromMessagesExtractor
+    {
+        bool TryExtract(object message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, out NServiceBus.ContainerInformation? containerInformation);
+    }
+    public interface IPartitionKeyFromHeadersExtractor
+    {
+        bool TryExtract(System.Collections.Generic.IReadOnlyDictionary<string, string> headers, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey);
+    }
+    public interface IPartitionKeyFromMessageExtractor
+    {
+        bool TryExtract(object message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey);
+    }
     public interface IProvideCosmosClient
     {
         Microsoft.Azure.Cosmos.CosmosClient Client { get; }
-    }
-    public interface ITransactionInformationFromHeadersExtractor
-    {
-        bool TryExtract(System.Collections.Generic.IReadOnlyDictionary<string, string> headers, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey, out NServiceBus.ContainerInformation? containerInformation);
-    }
-    public interface ITransactionInformationFromMessagesExtractor
-    {
-        bool TryExtract(object message, out Microsoft.Azure.Cosmos.PartitionKey? partitionKey, out NServiceBus.ContainerInformation? containerInformation);
     }
     [System.Obsolete(@"This class was only ever used as a constant to place custom behaviors in the right part of the pipeline. It is no longer necessary to have a custom behavior to extract the transaction information. Use `persistence.TransactionInformation()` to conveniently map headers or message content to partition keys. Will be treated as an error from version 2.0.0. Will be removed in version 3.0.0.", false)]
     public sealed class LogicalOutboxBehavior : NServiceBus.Pipeline.IBehavior, NServiceBus.Pipeline.IBehavior<NServiceBus.Pipeline.IIncomingLogicalMessageContext, NServiceBus.Pipeline.IIncomingLogicalMessageContext>
@@ -88,13 +96,29 @@ namespace NServiceBus.Persistence.CosmosDB
     public class TransactionInformationConfiguration
     {
         public TransactionInformationConfiguration() { }
-        public void ExtractFromHeader(string headerKey, NServiceBus.ContainerInformation? containerInformation = default) { }
-        public void ExtractFromHeader(string headerKey, System.Func<string, string> converter, NServiceBus.ContainerInformation? containerInformation = default) { }
-        public void ExtractFromHeader<TArg>(string headerKey, System.Func<string, TArg, string> converter, TArg converterArgument, NServiceBus.ContainerInformation? containerInformation = default) { }
-        public void ExtractFromHeaders(NServiceBus.Persistence.CosmosDB.ITransactionInformationFromHeadersExtractor extractor) { }
-        public void ExtractFromMessage<TMessage>(System.Func<TMessage, Microsoft.Azure.Cosmos.PartitionKey> extractor, NServiceBus.ContainerInformation? containerInformation = default) { }
-        public void ExtractFromMessage<TMessage, TArg>(System.Func<TMessage, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument, NServiceBus.ContainerInformation? containerInformation = default) { }
-        public void ExtractFromMessages(NServiceBus.Persistence.CosmosDB.ITransactionInformationFromMessagesExtractor extractor) { }
+        public void ExtractContainerInformationFromHeader(string headerKey, System.Func<string, NServiceBus.ContainerInformation> extractor) { }
+        public void ExtractContainerInformationFromHeader<TArg>(string headerKey, System.Func<string, TArg, NServiceBus.ContainerInformation> extractor, TArg extractorArgument) { }
+        public void ExtractContainerInformationFromHeaders(NServiceBus.Persistence.CosmosDB.IContainerInformationFromHeadersExtractor extractor) { }
+        public void ExtractContainerInformationFromHeaders(System.Func<System.Collections.Generic.IReadOnlyDictionary<string, string>, NServiceBus.ContainerInformation?> extractor) { }
+        public void ExtractContainerInformationFromHeaders<TArg>(System.Func<System.Collections.Generic.IReadOnlyDictionary<string, string>, TArg, NServiceBus.ContainerInformation?> extractor, TArg extractorArgument) { }
+        public void ExtractContainerInformationFromMessage(NServiceBus.Persistence.CosmosDB.IContainerInformationFromMessagesExtractor extractor) { }
+        public void ExtractContainerInformationFromMessage<TMessage>(System.Func<TMessage, NServiceBus.ContainerInformation> extractor) { }
+        public void ExtractContainerInformationFromMessage<TMessage>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, NServiceBus.ContainerInformation> extractor) { }
+        public void ExtractContainerInformationFromMessage<TMessage, TArg>(System.Func<TMessage, TArg, NServiceBus.ContainerInformation> extractor, TArg extractorArgument) { }
+        public void ExtractContainerInformationFromMessage<TMessage, TArg>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, TArg, NServiceBus.ContainerInformation> extractor, TArg extractorArgument) { }
+        public void ExtractPartitionKeyFromHeader(string headerKey) { }
+        public void ExtractPartitionKeyFromHeader(string headerKey, System.Func<string, Microsoft.Azure.Cosmos.PartitionKey> extractor) { }
+        public void ExtractPartitionKeyFromHeader(string headerKey, System.Func<string, string> extractor) { }
+        public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, System.Func<string, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument) { }
+        public void ExtractPartitionKeyFromHeader<TArg>(string headerKey, System.Func<string, TArg, string> extractor, TArg extractorArgument) { }
+        public void ExtractPartitionKeyFromHeaders(NServiceBus.Persistence.CosmosDB.IPartitionKeyFromHeadersExtractor extractor) { }
+        public void ExtractPartitionKeyFromHeaders(System.Func<System.Collections.Generic.IReadOnlyDictionary<string, string>, Microsoft.Azure.Cosmos.PartitionKey?> extractor) { }
+        public void ExtractPartitionKeyFromHeaders<TArg>(System.Func<System.Collections.Generic.IReadOnlyDictionary<string, string>, TArg, Microsoft.Azure.Cosmos.PartitionKey?> extractor, TArg extractorArgument) { }
+        public void ExtractPartitionKeyFromMessage<TMessage>(System.Func<TMessage, Microsoft.Azure.Cosmos.PartitionKey> extractor) { }
+        public void ExtractPartitionKeyFromMessage<TMessage>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, Microsoft.Azure.Cosmos.PartitionKey> extractor) { }
+        public void ExtractPartitionKeyFromMessage<TMessage, TArg>(System.Func<TMessage, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument) { }
+        public void ExtractPartitionKeyFromMessage<TMessage, TArg>(System.Func<TMessage, System.Collections.Generic.IReadOnlyDictionary<string, string>, TArg, Microsoft.Azure.Cosmos.PartitionKey> extractor, TArg extractorArgument) { }
+        public void ExtractPartitionKeyFromMessages(NServiceBus.Persistence.CosmosDB.IPartitionKeyFromMessageExtractor extractor) { }
     }
     public sealed class TransactionalBatchOperationException : System.Exception
     {

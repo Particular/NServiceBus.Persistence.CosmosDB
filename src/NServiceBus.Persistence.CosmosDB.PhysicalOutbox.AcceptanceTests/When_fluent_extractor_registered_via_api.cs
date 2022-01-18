@@ -5,6 +5,7 @@
     using AcceptanceTesting;
     using AcceptanceTesting.Support;
     using EndpointTemplates;
+    using Microsoft.Azure.Cosmos;
     using NUnit.Framework;
 
     public class When_fluent_extractor_registered_via_api : NServiceBusAcceptanceTest
@@ -14,6 +15,7 @@
         {
             var runSettings = new RunSettings();
             runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+            runSettings.DoNotRegisterDefaultContainerInformationProvider();
 
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointWithFluentExtractor>(b => b.When((session, ctx) =>
@@ -21,19 +23,23 @@
                     var sendOptions = new SendOptions();
                     sendOptions.RouteToThisEndpoint();
                     sendOptions.SetHeader("PartitionKeyHeader", ctx.TestRunId.ToString());
+                    sendOptions.SetHeader("ContainerNameHeader", ctx.ContainerName);
 
                     return session.Send(new StartSaga1 { DataId = Guid.NewGuid() }, sendOptions);
                 }))
                 .Done(c => c.SagaReceivedMessage)
                 .Run(runSettings);
 
-            Assert.True(context.HeaderStateMatched);
+            Assert.True(context.PartitionHeaderStateMatched);
+            Assert.True(context.ContainerHeaderStateMatched);
         }
 
         public class Context : ScenarioContext
         {
             public bool SagaReceivedMessage { get; set; }
-            public bool HeaderStateMatched { get; set; }
+            public bool PartitionHeaderStateMatched { get; set; }
+            public bool ContainerHeaderStateMatched { get; set; }
+            public string ContainerName { get; } = SetupFixture.ContainerName;
         }
 
         public class EndpointWithFluentExtractor : EndpointConfigurationBuilder
@@ -44,11 +50,16 @@
                 {
                     var persistence = config.UsePersistence<CosmosPersistence>();
                     var transactionInformation = persistence.TransactionInformation();
-                    transactionInformation.ExtractFromHeader("PartitionKeyHeader", (value, state) =>
+                    transactionInformation.ExtractPartitionKeyFromHeader("PartitionKeyHeader", (value, state) =>
                     {
-                        state.HeaderStateMatched = Guid.Parse(value).Equals(state.TestRunId);
-                        return value;
-                    }, (Context)r.ScenarioContext, new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey)));
+                        state.PartitionHeaderStateMatched = Guid.Parse(value).Equals(state.TestRunId);
+                        return new PartitionKey(value);
+                    }, (Context)r.ScenarioContext);
+                    transactionInformation.ExtractContainerInformationFromHeader("ContainerNameHeader", (value, state) =>
+                    {
+                        state.ContainerHeaderStateMatched = value.Equals(state.ContainerName);
+                        return new ContainerInformation(value, new PartitionKeyPath(SetupFixture.PartitionPathKey));
+                    }, (Context)r.ScenarioContext);
                 });
             }
 
