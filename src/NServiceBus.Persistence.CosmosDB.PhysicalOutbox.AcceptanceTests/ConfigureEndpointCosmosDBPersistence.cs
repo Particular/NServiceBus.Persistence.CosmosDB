@@ -25,8 +25,11 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
-            // This populates the partition key at the physical stage to test the conventional outbox use-case
-            configuration.RegisterComponents(services => services.AddSingleton<ITransactionInformationFromHeadersExtractor, PartitionKeyProvider>());
+            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
+        }
+        if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
+        {
+            configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromHeadersExtractor, ContainerInformationProvider>());
         }
 
         return Task.FromResult(0);
@@ -37,16 +40,23 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.CompletedTask;
     }
 
-    class PartitionKeyProvider : ITransactionInformationFromHeadersExtractor
+    class PartitionKeyProvider : IPartitionKeyFromHeadersExtractor
     {
-        ScenarioContext scenarioContext;
+        readonly ScenarioContext scenarioContext;
 
         public PartitionKeyProvider(ScenarioContext scenarioContext) => this.scenarioContext = scenarioContext;
 
-        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey,
-            out ContainerInformation? containerInformation)
+        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
             partitionKey = new PartitionKey(scenarioContext.TestRunId.ToString());
+            return true;
+        }
+    }
+
+    class ContainerInformationProvider : IContainerInformationFromHeadersExtractor
+    {
+        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out ContainerInformation? containerInformation)
+        {
             containerInformation = new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
             return true;
         }

@@ -7,11 +7,10 @@
     using AcceptanceTesting.Support;
     using EndpointTemplates;
     using Microsoft.Azure.Cosmos;
-    using Microsoft.Extensions.DependencyInjection;
     using NUnit.Framework;
     using Persistence.CosmosDB;
 
-    public class When_custom_extractor_from_headers_registered : NServiceBusAcceptanceTest
+    public class When_custom_partition_key_extractor_from_headers_registered_via_api : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_be_used()
@@ -40,10 +39,11 @@
         {
             public EndpointWithCustomExtractor()
             {
-                EndpointSetup<DefaultServer>(config =>
+                EndpointSetup<DefaultServer>((config, r) =>
                 {
-                    config.RegisterComponents(c =>
-                        c.AddSingleton<ITransactionInformationFromHeadersExtractor>(b => new CustomExtractor(b.GetService<Context>())));
+                    var persistence = config.UsePersistence<CosmosPersistence>();
+                    var transactionInformation = persistence.TransactionInformation();
+                    transactionInformation.ExtractPartitionKeyFromHeaders(new CustomExtractor((Context)r.ScenarioContext));
                 });
             }
 
@@ -70,16 +70,14 @@
                 readonly Context testContext;
             }
 
-            public class CustomExtractor : ITransactionInformationFromHeadersExtractor
+            public class CustomExtractor : IPartitionKeyFromHeadersExtractor
             {
                 readonly Context testContext;
                 public CustomExtractor(Context testContext) => this.testContext = testContext;
 
-                public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey,
-                    out ContainerInformation? containerInformation)
+                public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
                 {
                     partitionKey = new PartitionKey(testContext.TestRunId.ToString());
-                    containerInformation = new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
                     testContext.ExtractorWasCalled = true;
                     return true;
                 }
