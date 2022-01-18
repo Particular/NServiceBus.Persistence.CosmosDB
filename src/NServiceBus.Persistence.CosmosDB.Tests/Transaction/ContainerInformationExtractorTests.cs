@@ -93,6 +93,19 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
         }
 
         [Test]
+        public void Should_extract_from_headers_with_extractor_and_allow_null()
+        {
+            extractor.ExtractContainerInformationFromHeaders(hdrs => null);
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(containerInformation, Is.Null);
+        }
+
+        [Test]
         public void Should_extract_from_headers_with_extractor_and_extractor_argument()
         {
             extractor.ExtractContainerInformationFromHeaders(
@@ -104,6 +117,19 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+        }
+
+        [Test]
+        public void Should_extract_from_headers_with_extractor_and_extractor_argument_and_allow_null()
+        {
+            extractor.ExtractContainerInformationFromHeaders((hdrs, toBeRemoved) => null, "__TOBEREMOVED__");
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(containerInformation, Is.Null);
         }
 
         [Test]

@@ -114,6 +114,19 @@
         }
 
         [Test]
+        public void Should_extract_from_headers_with_extractor_and_allow_null()
+        {
+            extractor.ExtractPartitionKeyFromHeaders(hdrs => null);
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
+
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(partitionKey, Is.Null);
+        }
+
+        [Test]
         public void Should_extract_from_headers_with_extractor_and_argument()
         {
             extractor.ExtractPartitionKeyFromHeaders((hdrs, toBeRemoved) => new PartitionKey(hdrs["HeaderKey"].Replace(toBeRemoved, string.Empty)), "__TOBEREMOVED__");
@@ -124,6 +137,19 @@
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+        }
+
+        [Test]
+        public void Should_extract_from_headers_with_extractor_and_argument_and_allow_null()
+        {
+            extractor.ExtractPartitionKeyFromHeaders((hdrs, toBeRemoved) => null, "__TOBEREMOVED__");
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
+
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(partitionKey, Is.Null);
         }
 
         [Test]
