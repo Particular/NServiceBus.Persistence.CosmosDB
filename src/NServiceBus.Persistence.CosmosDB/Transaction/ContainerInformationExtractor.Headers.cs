@@ -27,6 +27,10 @@ namespace NServiceBus.Persistence.CosmosDB
             return false;
         }
 
+        public void ExtractContainerInformationFromHeader(string headerKey, ContainerInformation containerInformation) =>
+            // When moving to CSharp 9 these can be static lambdas
+            ExtractContainerInformationFromHeader(headerKey, (_, container) => container, containerInformation);
+
         public void ExtractContainerInformationFromHeader(string headerKey, Func<string, ContainerInformation> converter) =>
             // When moving to CSharp 9 these can be static lambdas
             ExtractContainerInformationFromHeader(headerKey, (headerValue, invoker) => invoker(headerValue), converter);
