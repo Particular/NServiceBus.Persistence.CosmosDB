@@ -51,6 +51,19 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
         }
 
         [Test]
+        public void Should_extract_from_header_with_fixed_container()
+        {
+            extractor.ExtractContainerInformationFromHeader("HeaderKey", new ContainerInformation("FixedValue", fakePartitionKeyPath));
+
+            var headers = new Dictionary<string, string> { { "HeaderKey", "DOES NOT MATTER" } };
+
+            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
+        }
+
+        [Test]
         public void Should_extract_from_header_with_key_and_extractor()
         {
             extractor.ExtractContainerInformationFromHeader("HeaderKey",
@@ -208,6 +221,19 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             Assert.That(wasExtracted, Is.True);
             Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+        }
+
+        [Test]
+        public void Should_extract_from_message_with_fixed_container()
+        {
+            extractor.ExtractContainerInformationFromMessage<MyMessage>(new ContainerInformation("FixedValue", fakePartitionKeyPath));
+
+            var message = new MyMessage { SomeId = "SomeValue" };
+
+            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
+
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
         }
 
         [Test]
