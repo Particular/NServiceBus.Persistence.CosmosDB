@@ -9,6 +9,15 @@
     public partial class TransactionInformationConfiguration
     {
         /// <summary>
+        /// Adds an extraction rule that provides the same container information when the given <paramref name="headerKey"/> exists.
+        /// </summary>
+        /// <param name="headerKey">The header key.</param>
+        /// <param name="containerInformation">The container information to be used for the specified <paramref name="headerKey"/>.</param>
+        /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
+        public void ExtractContainerInformationFromHeader(string headerKey, ContainerInformation containerInformation) =>
+            ContainerInformationExtractor.ExtractContainerInformationFromHeader(headerKey, containerInformation);
+
+        /// <summary>
         /// Adds an extraction rule that extracts the container information from a given header represented by <paramref name="headerKey"/>.
         /// </summary>
         /// <param name="headerKey">The header key.</param>
@@ -49,9 +58,19 @@
         /// <summary>
         /// Adds an instance of <see cref="IContainerInformationFromHeadersExtractor"/> to the list of header extractors.
         /// </summary>
+        /// <param name="extractor">The custom extractor.</param>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractContainerInformationFromHeaders(IContainerInformationFromHeadersExtractor extractor) =>
             ContainerInformationExtractor.ExtractContainerInformationFromHeaders(extractor);
+
+        /// <summary>
+        /// Adds an extraction rule that provides the same container information for a given message type <typeparamref name="TMessage"/>
+        /// </summary>
+        /// <param name="containerInformation">The container information to be used for the specified <typeparamref name="TMessage"/>.</param>
+        /// <typeparam name="TMessage">The message type to match against.</typeparam>
+        /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
+        public void ExtractContainerInformationFromMessage<TMessage>(ContainerInformation containerInformation) =>
+            ContainerInformationExtractor.ExtractContainerInformationFromMessage<TMessage>(containerInformation);
 
         /// <summary>
         /// Adds an extraction rule that extracts the container information from a given message type <typeparamref name="TMessage"/>
@@ -96,6 +115,7 @@
         /// <summary>
         /// Adds an instance of <see cref="IContainerInformationFromMessagesExtractor"/> to the list of message extractors.
         /// </summary>
+        /// <param name="extractor">The custom extractor.</param>
         /// <remarks>Explicitly added extractors and extraction rules are executed before extractors registered on the container.</remarks>
         public void ExtractContainerInformationFromMessage(IContainerInformationFromMessagesExtractor extractor) =>
             ContainerInformationExtractor.ExtractContainerInformationFromMessage(extractor);
