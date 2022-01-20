@@ -1,6 +1,5 @@
 namespace NServiceBus.Persistence.CosmosDB.Tests.Saga
 {
-
     using System;
     using System.Collections.Generic;
     using System.Security.Cryptography;
@@ -49,12 +48,10 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Saga
             {
                 var stringBytes = Encoding.UTF8.GetBytes(src);
 
-                using (var sha1CryptoServiceProvider = SHA1.Create())
-                {
-                    var hashedBytes = sha1CryptoServiceProvider.ComputeHash(stringBytes);
-                    Array.Resize(ref hashedBytes, 16);
-                    return new Guid(hashedBytes);
-                }
+                using var sha1CryptoServiceProvider = SHA1.Create();
+                var hashedBytes = sha1CryptoServiceProvider.ComputeHash(stringBytes);
+                Array.Resize(ref hashedBytes, 16);
+                return new Guid(hashedBytes);
             }
         }
     }
