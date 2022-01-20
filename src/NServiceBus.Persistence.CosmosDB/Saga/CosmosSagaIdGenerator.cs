@@ -2,7 +2,9 @@
 {
     using System;
     using System.Buffers;
+#if NETFRAMEWORK
     using System.Runtime.InteropServices;
+#endif
     using System.Security.Cryptography;
     using System.Text;
     using Newtonsoft.Json;
@@ -53,19 +55,14 @@
 
                 using var sha1CryptoServiceProvider = SHA1.Create();
                 Span<byte> hashBuffer = stackalloc byte[20];
-                if (!sha1CryptoServiceProvider.TryComputeHash(stringBuffer, hashBuffer, out _))
+                if (!sha1CryptoServiceProvider.TryComputeHash(stringBuffer.AsSpan().Slice(0, numberOfBytesWritten), hashBuffer, out _))
                 {
                     var hashBufferLocal = sha1CryptoServiceProvider.ComputeHash(stringBuffer, 0, numberOfBytesWritten);
                     hashBufferLocal.CopyTo(hashBuffer);
                 }
 
                 var guidBytes = hashBuffer.Slice(0, 16);
-                if (!MemoryMarshal.TryRead<Guid>(guidBytes, out var deterministicGuid))
-                {
-                    deterministicGuid = new Guid(guidBytes.ToArray());
-                }
-
-                return deterministicGuid;
+                return new Guid(guidBytes);
             }
             finally
             {
