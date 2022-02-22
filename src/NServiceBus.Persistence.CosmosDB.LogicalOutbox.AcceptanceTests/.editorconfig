@@ -7,3 +7,6 @@ dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.NSB0002.severity = suggestion
 dotnet_diagnostic.PS0018.severity = suggestion
 dotnet_diagnostic.PS0013.severity = suggestion
+
+# Persistene library doesn't need saga analyzers
+dotnet_diagnostic.NSB0004.severity = none
