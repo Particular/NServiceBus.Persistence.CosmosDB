@@ -203,7 +203,14 @@
 
                         if (throttlingRequired)
                         {
-                            await Task.Delay(TimeSpan.FromMilliseconds(random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
+                            try
+                            {
+                                await Task.Delay(TimeSpan.FromMilliseconds(random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
+                            }
+                            catch (Exception ex) when (ex.IsCausedBy(token))
+                            {
+                                // intentionally swallowed because we want to avoid cancellation masking the fact that we were not able to acquire the lease lock in time
+                            }
                             continue;
                         }
 
