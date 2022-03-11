@@ -13,7 +13,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
     <PackageReference Include="NUnit" Version="3.13.2" />
-    <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="8.0.0-beta.1" />
+    <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="8.0.0-beta.1" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="$(PkgNServiceBus_PersistenceTests_Sources)\**\When_concurrent_update_exceed_lock_request_timeout_pessimistic.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
