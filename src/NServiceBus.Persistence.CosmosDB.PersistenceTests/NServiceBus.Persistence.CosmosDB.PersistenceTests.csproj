@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Remove once https://github.com/Particular/NServiceBus/pull/6303 is merged -->
     <Compile Remove="$(PkgNServiceBus_PersistenceTests_Sources)\**\When_concurrent_update_exceed_lock_request_timeout_pessimistic.cs" />
   </ItemGroup>
 
