@@ -76,7 +76,7 @@
         }
 
         [Test]
-        public void Should_throw_bigger_value_than_maximum_refresh_delay_for_minimum_refresh_delay([Random(700, 1100, 5, Distinct = true)] double millisecondsBiggerThanMaximumRefreshDelayValue)
+        public void Should_throw_bigger_value_than_maximum_refresh_delay_for_minimum_refresh_delay([Random(701, 1100, 5, Distinct = true)] double millisecondsBiggerThanMaximumRefreshDelayValue)
         {
             var configuration = new PessimisticLockingConfiguration();
             configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(TimeSpan.FromMilliseconds(700));
