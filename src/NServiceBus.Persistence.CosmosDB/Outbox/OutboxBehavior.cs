@@ -97,7 +97,7 @@
             }
 
             // Signals that Outbox persister Store and Commit should be no-ops
-            outboxTransaction.SuppressStoreAndCommit = true;
+            outboxTransaction.AbandonStoreAndCommit = true;
 
             var pendingTransportOperations = context.Extensions.Get<PendingTransportOperations>();
             setter(pendingTransportOperations);

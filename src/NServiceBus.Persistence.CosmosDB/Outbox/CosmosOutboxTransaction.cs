@@ -12,7 +12,7 @@
         public PartitionKey? PartitionKey { get; set; }
 
         // By default, store and commit are enabled
-        public bool SuppressStoreAndCommit { get; set; }
+        public bool AbandonStoreAndCommit { get; set; }
 
         public CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context)
         {
@@ -21,7 +21,7 @@
 
         public Task Commit(CancellationToken cancellationToken = default)
         {
-            if (SuppressStoreAndCommit)
+            if (AbandonStoreAndCommit)
             {
                 return Task.CompletedTask;
             }
