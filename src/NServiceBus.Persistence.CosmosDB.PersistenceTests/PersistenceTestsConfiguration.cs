@@ -50,13 +50,11 @@
 
         public ISagaPersister SagaStorage { get; private set; }
 
-        public ISynchronizedStorage SynchronizedStorage { get; private set; }
-
-        public ISynchronizedStorageAdapter SynchronizedStorageAdapter { get; private set; }
-
         public IOutboxStorage OutboxStorage { get; private set; }
 
         public CosmosClient Client { get; } = SetupFixture.CosmosDbClient;
+
+        public Func<ICompletableSynchronizedStorageSession> CreateStorageSession { get; private set; }
 
         public int OutboxTimeToLiveInSeconds { get; set; } = 100;
 
@@ -86,7 +84,6 @@
 
             var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
             var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);
-            SynchronizedStorage = new StorageSessionFactory(resolver, null);
             SagaStorage = new SagaPersister(serializer, sagaPersistenceConfiguration);
             OutboxStorage = new OutboxPersister(resolver, serializer, OutboxTimeToLiveInSeconds);
 
@@ -116,6 +113,11 @@
                 contextBag.Set(setAsDispatchedHolder);
                 contextBag.Set(new PartitionKey(partitionKey));
                 return contextBag;
+            };
+
+            CreateStorageSession = () =>
+            {
+                return new CosmosDbSynchronizedStorageSession(resolver);
             };
 
             return Task.CompletedTask;
