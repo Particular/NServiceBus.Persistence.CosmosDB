@@ -8,7 +8,7 @@
     using Extensibility;
     using Microsoft.Azure.Cosmos;
 
-    class StorageSession : ICompletableSynchronizedStorageSession, IWorkWithSharedTransactionalBatch
+    class StorageSession : IWorkWithSharedTransactionalBatch
     {
         // When outbox is involved, commitOnComplete will be false
         public StorageSession(ContainerHolderResolver resolver, ContextBag context)

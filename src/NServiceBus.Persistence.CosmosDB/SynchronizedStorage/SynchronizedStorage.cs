@@ -21,16 +21,10 @@
                 defaultContainerInformation = info;
             }
 
-            var currentSharedTransactionalBatchHolder = new CurrentSharedTransactionalBatchHolder();
-
-            context.Services.AddTransient(_ => currentSharedTransactionalBatchHolder.Current.Create());
-
             context.Services.AddSingleton(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
-            context.Services.AddSingleton<ISynchronizedStorage>(b => new StorageSessionFactory(b.GetService<ContainerHolderResolver>(), currentSharedTransactionalBatchHolder));
-            context.Services.AddSingleton<ISynchronizedStorageAdapter>(b => new StorageSessionAdapter(currentSharedTransactionalBatchHolder));
 
             context.Services.AddScoped<ICompletableSynchronizedStorageSession, CosmosDbSynchronizedStorageSession>();
-            context.Services.AddTransient<ICosmosStorageSession>(sp => sp.GetRequiredService<ICompletableSynchronizedStorageSession>().CosmosPersistenceSession())
+            context.Services.AddTransient(sp => sp.GetRequiredService<ICompletableSynchronizedStorageSession>().CosmosPersistenceSession());
         }
     }
 }

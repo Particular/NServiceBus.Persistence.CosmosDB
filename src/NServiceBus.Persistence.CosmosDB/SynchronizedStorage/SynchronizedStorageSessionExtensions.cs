@@ -18,7 +18,7 @@
 
             if (session is CosmosDbSynchronizedStorageSession workWith)
             {
-                return session.StorageSession., .Create();
+                return workWith.StorageSession.Create();
             }
 
             throw new Exception($"Cannot access the synchronized storage session. Ensure that 'EndpointConfiguration.UsePersistence<{nameof(CosmosPersistence)}>()' has been called.");

@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Persistence.CosmosDB.SynchronizedStorage
+﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System.Threading;
     using System.Threading.Tasks;

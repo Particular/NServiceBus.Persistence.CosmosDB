@@ -16,7 +16,7 @@
 
         public CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context)
         {
-            StorageSession = new StorageSession(resolver, context, false);
+            StorageSession = new StorageSession(resolver, context);
         }
 
         public Task Commit(CancellationToken cancellationToken = default)
