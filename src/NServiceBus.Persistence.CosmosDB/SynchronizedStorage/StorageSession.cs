@@ -11,24 +11,10 @@
     class StorageSession : ICompletableSynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {
         // When outbox is involved, commitOnComplete will be false
-        public StorageSession(ContainerHolderResolver resolver, ContextBag context, bool commitOnComplete)
+        public StorageSession(ContainerHolderResolver resolver, ContextBag context)
         {
-            this.commitOnComplete = commitOnComplete;
             CurrentContextBag = context;
             ContainerHolder = resolver.ResolveAndSetIfAvailable(context);
-        }
-
-        Task ICompletableSynchronizedStorageSession.CompleteAsync(CancellationToken cancellationToken) =>
-            commitOnComplete ? Commit(cancellationToken) : Task.CompletedTask;
-
-        void IDisposable.Dispose()
-        {
-            if (!commitOnComplete)
-            {
-                return;
-            }
-
-            Dispose();
         }
 
         public void AddOperation(IOperation operation)
@@ -110,7 +96,6 @@
             }
         }
 
-        readonly bool commitOnComplete;
         public ContextBag CurrentContextBag { get; set; }
         public Container Container => ContainerHolder.Container;
         public PartitionKeyPath PartitionKeyPath => ContainerHolder.PartitionKeyPath;

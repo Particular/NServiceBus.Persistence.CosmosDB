@@ -16,9 +16,9 @@
         {
             Guard.AgainstNull(nameof(session), session);
 
-            if (session is IWorkWithSharedTransactionalBatch workWith)
+            if (session is CosmosDbSynchronizedStorageSession workWith)
             {
-                return workWith.Create();
+                return session.StorageSession., .Create();
             }
 
             throw new Exception($"Cannot access the synchronized storage session. Ensure that 'EndpointConfiguration.UsePersistence<{nameof(CosmosPersistence)}>()' has been called.");

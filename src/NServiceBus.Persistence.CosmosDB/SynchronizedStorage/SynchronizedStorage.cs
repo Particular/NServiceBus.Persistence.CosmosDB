@@ -29,7 +29,8 @@
             context.Services.AddSingleton<ISynchronizedStorage>(b => new StorageSessionFactory(b.GetService<ContainerHolderResolver>(), currentSharedTransactionalBatchHolder));
             context.Services.AddSingleton<ISynchronizedStorageAdapter>(b => new StorageSessionAdapter(currentSharedTransactionalBatchHolder));
 
-            context.Pipeline.Register(new CurrentSharedTransactionalBatchBehavior(currentSharedTransactionalBatchHolder), "Manages the lifecycle of the current storage session.");
+            context.Services.AddScoped<ICompletableSynchronizedStorageSession, CosmosDbSynchronizedStorageSession>();
+            context.Services.AddTransient<ICosmosStorageSession>(sp => sp.GetRequiredService<ICompletableSynchronizedStorageSession>().CosmosPersistenceSession())
         }
     }
 }
