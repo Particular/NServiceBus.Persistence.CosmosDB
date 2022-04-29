@@ -28,7 +28,7 @@
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
-            var storageSession = (StorageSession)session;
+            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
             storageSession.AddOperation(new SagaSave(sagaData, partitionKey, serializer, context));
@@ -37,7 +37,7 @@
 
         public Task Update(IContainSagaData sagaData, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
-            var storageSession = (StorageSession)session;
+            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
             storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, serializer, context));
@@ -46,7 +46,7 @@
 
         public async Task<TSagaData> Get<TSagaData>(Guid sagaId, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default) where TSagaData : class, IContainSagaData
         {
-            var storageSession = (StorageSession)session;
+            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
 
             // reads need to go directly
             var container = storageSession.ContainerHolder.Container;
@@ -86,7 +86,7 @@
         public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
             where TSagaData : class, IContainSagaData
         {
-            var storageSession = (StorageSession)session;
+            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
 
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
             var sagaId = CosmosSagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
@@ -243,7 +243,7 @@
 
         public Task Complete(IContainSagaData sagaData, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
-            var storageSession = (StorageSession)session;
+            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
             storageSession.AddOperation(new SagaDelete(sagaData, partitionKey, context));

@@ -42,6 +42,7 @@
                 EndpointSetup<DefaultServer>(config =>
                 {
                     config.EnableOutbox();
+                    config.ConfigureTransport().TransportTransactionMode = TransportTransactionMode.ReceiveOnly;
                     config.RegisterComponents(c =>
                     {
                         c.AddScoped<MyRepository>();
