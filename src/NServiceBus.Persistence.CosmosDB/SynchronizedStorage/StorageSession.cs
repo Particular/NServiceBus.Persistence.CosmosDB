@@ -10,7 +10,6 @@
 
     class StorageSession : IWorkWithSharedTransactionalBatch
     {
-        // When outbox is involved, commitOnComplete will be false
         public StorageSession(ContainerHolderResolver resolver, ContextBag context)
         {
             CurrentContextBag = context;

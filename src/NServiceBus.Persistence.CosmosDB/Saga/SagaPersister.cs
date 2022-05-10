@@ -28,28 +28,28 @@
 
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
-            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
+            var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaSave(sagaData, partitionKey, serializer, context));
+            sharedTransactionalBatch.AddOperation(new SagaSave(sagaData, partitionKey, serializer, context));
             return Task.CompletedTask;
         }
 
         public Task Update(IContainSagaData sagaData, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
-            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
+            var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaUpdate(sagaData, partitionKey, serializer, context));
+            sharedTransactionalBatch.AddOperation(new SagaUpdate(sagaData, partitionKey, serializer, context));
             return Task.CompletedTask;
         }
 
         public async Task<TSagaData> Get<TSagaData>(Guid sagaId, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default) where TSagaData : class, IContainSagaData
         {
-            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
+            var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
 
             // reads need to go directly
-            var container = storageSession.ContainerHolder.Container;
+            var container = sharedTransactionalBatch.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
             bool sagaNotFound;
@@ -78,7 +78,7 @@
                 (_, sagaData) = await AcquireLease<TSagaData>(previousSagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
             }
 
-            storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
+            sharedTransactionalBatch.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
 
             return sagaData;
         }
@@ -86,13 +86,13 @@
         public async Task<TSagaData> Get<TSagaData>(string propertyName, object propertyValue, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
             where TSagaData : class, IContainSagaData
         {
-            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
+            var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
 
             // Saga ID needs to be calculated the same way as in SagaIdGenerator does
             var sagaId = CosmosSagaIdGenerator.Generate(typeof(TSagaData), propertyName, propertyValue);
 
             // reads need to go directly
-            var container = storageSession.ContainerHolder.Container;
+            var container = sharedTransactionalBatch.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
             TSagaData sagaData;
@@ -103,7 +103,7 @@
             }
 
             (_, sagaData) = await AcquireLease<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
-            storageSession.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
+            sharedTransactionalBatch.AddOperation(new SagaReleaseLock(sagaData, partitionKey, serializer, context));
             return sagaData;
         }
 
@@ -243,10 +243,10 @@
 
         public Task Complete(IContainSagaData sagaData, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
-            var storageSession = ((CosmosDbSynchronizedStorageSession)session).StorageSession;
+            var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
-            storageSession.AddOperation(new SagaDelete(sagaData, partitionKey, context));
+            sharedTransactionalBatch.AddOperation(new SagaDelete(sagaData, partitionKey, context));
 
             return Task.CompletedTask;
         }

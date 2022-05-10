@@ -117,7 +117,7 @@
 
             CreateStorageSession = () =>
             {
-                return new CosmosDbSynchronizedStorageSession(resolver);
+                return new CosmosSynchronizedStorageSession(resolver);
             };
 
             return Task.CompletedTask;
