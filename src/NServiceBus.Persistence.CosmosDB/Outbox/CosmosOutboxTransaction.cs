@@ -16,19 +16,9 @@
 
         public CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context) => StorageSession = new StorageSession(resolver, context);
 
-        public Task Commit(CancellationToken cancellationToken = default)
-        {
-            if (AbandonStoreAndCommit)
-            {
-                return Task.CompletedTask;
-            }
+        public Task Commit(CancellationToken cancellationToken = default) =>
+            AbandonStoreAndCommit ? Task.CompletedTask : StorageSession.Commit(cancellationToken);
 
-            return StorageSession.Commit(cancellationToken);
-        }
-
-        public void Dispose()
-        {
-            StorageSession.Dispose();
-        }
+        public void Dispose() => StorageSession.Dispose();
     }
 }
