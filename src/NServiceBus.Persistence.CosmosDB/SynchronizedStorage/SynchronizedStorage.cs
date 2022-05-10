@@ -6,6 +6,10 @@
 
     class SynchronizedStorage : Feature
     {
+        public SynchronizedStorage() =>
+            // Depends on the core feature
+            DependsOn<Features.SynchronizedStorage>();
+
         protected override void Setup(FeatureConfigurationContext context)
         {
             if (!context.Services.Any(descriptor => descriptor.ServiceType == typeof(IProvideCosmosClient)))
