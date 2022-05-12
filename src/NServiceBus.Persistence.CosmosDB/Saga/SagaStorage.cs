@@ -11,11 +11,12 @@
         {
             Defaults(s =>
             {
-                s.EnableFeatureByDefault<SynchronizedStorage>();
                 s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator());
+                s.EnableFeatureByDefault<SynchronizedStorage>();
             });
-            DependsOn<SynchronizedStorage>();
+
             DependsOn<Sagas>();
+            DependsOn<SynchronizedStorage>();
         }
 
         protected override void Setup(FeatureConfigurationContext context)

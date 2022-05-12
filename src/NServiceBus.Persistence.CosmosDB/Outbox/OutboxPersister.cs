@@ -55,7 +55,7 @@
         {
             var cosmosTransaction = (CosmosOutboxTransaction)transaction;
 
-            if (cosmosTransaction == null || cosmosTransaction.SuppressStoreAndCommit || cosmosTransaction.PartitionKey == null)
+            if (cosmosTransaction == null || cosmosTransaction.AbandonStoreAndCommit || cosmosTransaction.PartitionKey == null)
             {
                 return Task.CompletedTask;
             }

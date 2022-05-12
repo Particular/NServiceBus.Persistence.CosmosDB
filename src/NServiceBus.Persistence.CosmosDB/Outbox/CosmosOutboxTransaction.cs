@@ -12,26 +12,13 @@
         public PartitionKey? PartitionKey { get; set; }
 
         // By default, store and commit are enabled
-        public bool SuppressStoreAndCommit { get; set; }
+        public bool AbandonStoreAndCommit { get; set; }
 
-        public CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context)
-        {
-            StorageSession = new StorageSession(resolver, context, false);
-        }
+        public CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context) => StorageSession = new StorageSession(resolver, context);
 
-        public Task Commit(CancellationToken cancellationToken = default)
-        {
-            if (SuppressStoreAndCommit)
-            {
-                return Task.CompletedTask;
-            }
+        public Task Commit(CancellationToken cancellationToken = default) =>
+            AbandonStoreAndCommit ? Task.CompletedTask : StorageSession.Commit(cancellationToken);
 
-            return StorageSession.Commit(cancellationToken);
-        }
-
-        public void Dispose()
-        {
-            StorageSession.Dispose();
-        }
+        public void Dispose() => StorageSession.Dispose();
     }
 }
