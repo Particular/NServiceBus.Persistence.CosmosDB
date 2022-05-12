@@ -44,7 +44,7 @@
             }
         }
 #endif
-#if NETCOREAPP
+#if NET
         static Guid DeterministicGuid(string src)
         {
             var byteCount = Encoding.UTF8.GetByteCount(src);
