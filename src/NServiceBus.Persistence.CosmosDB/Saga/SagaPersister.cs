@@ -136,7 +136,7 @@
                 {
                     var iteratorResult = await JObject.LoadAsync(jsonReader, cancellationToken).ConfigureAwait(false);
 
-                    if (!(iteratorResult["Documents"] is JArray { HasValues: true } documents))
+                    if (iteratorResult["Documents"] is not JArray { HasValues: true } documents)
                     {
                         return default;
                     }

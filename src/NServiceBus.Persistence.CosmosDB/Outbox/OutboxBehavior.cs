@@ -59,7 +59,7 @@
                 return;
             }
 
-            if (!(transaction is CosmosOutboxTransaction outboxTransaction))
+            if (transaction is not CosmosOutboxTransaction outboxTransaction)
             {
                 await next(context).ConfigureAwait(false);
                 return;

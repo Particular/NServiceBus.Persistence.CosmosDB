@@ -51,18 +51,14 @@
                 return;
             }
 
-#pragma warning disable IDE0010 // We have the default case and don't need to list 300 HTTP codes
-            switch (result.StatusCode)
+#pragma warning disable IDE0072 // We have the default case and don't need to list 300 HTTP codes
+            throw result.StatusCode switch
             {
-                case HttpStatusCode.BadRequest:
-                    throw new TransactionalBatchOperationException("Bad request. Likely the partition key did not match.", result);
-                case HttpStatusCode.Conflict:
-                case HttpStatusCode.PreconditionFailed:
-                    throw new TransactionalBatchOperationException("Concurrency conflict.", result);
-                default:
-                    throw new TransactionalBatchOperationException(result);
-            }
-#pragma warning restore IDE0010
+                HttpStatusCode.BadRequest => new TransactionalBatchOperationException("Bad request. Likely the partition key did not match.", result),
+                HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => new TransactionalBatchOperationException("Concurrency conflict.", result),
+                _ => new TransactionalBatchOperationException(result),
+            };
+#pragma warning restore IDE0072
         }
         public abstract void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath);
         public virtual void Dispose() { }
