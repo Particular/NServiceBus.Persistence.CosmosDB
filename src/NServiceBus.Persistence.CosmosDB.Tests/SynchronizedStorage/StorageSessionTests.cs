@@ -983,6 +983,14 @@
                 QueryRequestOptions requestOptions = null) =>
                 throw new NotImplementedException();
 
+            public override FeedIterator GetItemQueryStreamIterator(FeedRange feedRange, QueryDefinition queryDefinition, string continuationToken,
+                QueryRequestOptions requestOptions = null) =>
+                throw new NotImplementedException();
+
+            public override FeedIterator<T> GetItemQueryIterator<T>(FeedRange feedRange, QueryDefinition queryDefinition,
+                string continuationToken = null, QueryRequestOptions requestOptions = null) =>
+                throw new NotImplementedException();
+
             public override IOrderedQueryable<T> GetItemLinqQueryable<T>(bool allowSynchronousQueryExecution = false, string continuationToken = null,
                 QueryRequestOptions requestOptions = null, CosmosLinqSerializerOptions linqSerializerOptions = null) =>
                 throw new NotImplementedException();
