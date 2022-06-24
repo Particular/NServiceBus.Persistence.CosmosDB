@@ -1,10 +1,7 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq.Expressions;
-    using System.Reflection;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
@@ -34,16 +31,6 @@
     /// <remarks>Can be renamed back to LogicalOutboxBehavior once the type is gone from the public API.</remarks>
     class OutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        static OutboxBehavior()
-        {
-            var field = typeof(PendingTransportOperations).GetField("operations", BindingFlags.NonPublic | BindingFlags.Instance);
-            var targetExp = Expression.Parameter(typeof(PendingTransportOperations), "target");
-            var fieldExp = Expression.Field(targetExp, field);
-            var assignExp = Expression.Assign(fieldExp, Expression.Constant(new ConcurrentStack<TransportOperation>()));
-
-            setter = Expression.Lambda<Action<PendingTransportOperations>>(assignExp, targetExp).Compile();
-        }
-
         internal OutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer)
         {
             this.containerHolderResolver = containerHolderResolver;
@@ -100,7 +87,7 @@
             outboxTransaction.AbandonStoreAndCommit = true;
 
             var pendingTransportOperations = context.Extensions.Get<PendingTransportOperations>();
-            setter(pendingTransportOperations);
+            pendingTransportOperations.Clear();
 
             foreach (var operation in outboxRecord.TransportOperations)
             {
@@ -131,7 +118,6 @@
         }
 
         readonly JsonSerializer serializer;
-        static Action<PendingTransportOperations> setter;
         readonly ContainerHolderResolver containerHolderResolver;
     }
 }
