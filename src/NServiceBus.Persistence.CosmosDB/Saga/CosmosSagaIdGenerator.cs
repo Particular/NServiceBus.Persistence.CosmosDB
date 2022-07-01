@@ -5,6 +5,9 @@
 #if NETFRAMEWORK
     using System.Runtime.InteropServices;
 #endif
+#if NET
+    using System.Runtime.CompilerServices;
+#endif
     using System.Security.Cryptography;
     using System.Text;
     using Newtonsoft.Json;
@@ -59,6 +62,7 @@
         }
 #endif
 #if NET
+        [SkipLocalsInit]
         static Guid DeterministicGuid(string sagaEntityTypeFullName, string correlationPropertyName, string serializedPropertyValue)
         {
             // sagaEntityTypeFullName_correlationPropertyName_serializedPropertyValue
