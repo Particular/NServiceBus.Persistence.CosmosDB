@@ -11,6 +11,8 @@
 
     static class CosmosSagaIdGenerator
     {
+        const byte SeparatorByte = 95; // Unicode for "_"
+
         public static Guid Generate(Type sagaEntityType, string correlationPropertyName, object correlationPropertyValue) => Generate(sagaEntityType.FullName, correlationPropertyName, correlationPropertyValue);
 
         public static Guid Generate(string sagaEntityTypeFullName, string correlationPropertyName, object correlationPropertyValue)
@@ -18,20 +20,32 @@
             // assumes single correlated sagas since v6 doesn't allow more than one corr prop
             // will still have to use a GUID since moving to a string id will have to wait since its a breaking change
             var serializedPropertyValue = JsonConvert.SerializeObject(correlationPropertyValue);
-            return DeterministicGuid($"{sagaEntityTypeFullName}_{correlationPropertyName}_{serializedPropertyValue}");
+            return DeterministicGuid(sagaEntityTypeFullName, correlationPropertyName, serializedPropertyValue);
         }
 
 #if NETFRAMEWORK
-        static Guid DeterministicGuid(string src)
+        static Guid DeterministicGuid(string sagaEntityTypeFullName, string correlationPropertyName, string serializedPropertyValue)
         {
-            var byteCount = Encoding.UTF8.GetByteCount(src);
-            var buffer = ArrayPool<byte>.Shared.Rent(byteCount);
+            // sagaEntityTypeFullName_correlationPropertyName_serializedPropertyValue
+            var length = sagaEntityTypeFullName.Length + correlationPropertyName.Length + serializedPropertyValue.Length + 2;
+
+            var encoding = Encoding.UTF8;
+            var maxByteCount = encoding.GetMaxByteCount(length);
+            var stringBuffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
+            var stringBufferSpan = stringBuffer.AsSpan();
+
             try
             {
-                var numberOfBytesWritten = Encoding.UTF8.GetBytes(src.AsSpan(), buffer);
+                var numberOfBytesWritten = encoding.GetBytes(sagaEntityTypeFullName.AsSpan(), stringBufferSpan);
+                stringBufferSpan[numberOfBytesWritten++] = SeparatorByte;
+
+                numberOfBytesWritten += encoding.GetBytes(correlationPropertyName.AsSpan(), stringBufferSpan.Slice(numberOfBytesWritten));
+                stringBufferSpan[numberOfBytesWritten++] = SeparatorByte;
+
+                numberOfBytesWritten += encoding.GetBytes(serializedPropertyValue.AsSpan(), stringBufferSpan.Slice(numberOfBytesWritten));
 
                 using var sha1CryptoServiceProvider = SHA1.Create();
-                var guidBytes = sha1CryptoServiceProvider.ComputeHash(buffer, 0, numberOfBytesWritten).AsSpan().Slice(0, 16);
+                var guidBytes = sha1CryptoServiceProvider.ComputeHash(stringBuffer, 0, numberOfBytesWritten).AsSpan().Slice(0, 16);
                 if (!MemoryMarshal.TryRead<Guid>(guidBytes, out var deterministicGuid))
                 {
                     deterministicGuid = new Guid(guidBytes.ToArray());
@@ -40,33 +54,46 @@
             }
             finally
             {
-                ArrayPool<byte>.Shared.Return(buffer, clearArray: true);
+                ArrayPool<byte>.Shared.Return(stringBuffer, clearArray: true);
             }
         }
 #endif
 #if NET
-        static Guid DeterministicGuid(string src)
+        static Guid DeterministicGuid(string sagaEntityTypeFullName, string correlationPropertyName, string serializedPropertyValue)
         {
-            var byteCount = Encoding.UTF8.GetByteCount(src);
-            var stringBuffer = ArrayPool<byte>.Shared.Rent(byteCount);
+            // sagaEntityTypeFullName_correlationPropertyName_serializedPropertyValue
+            var length = sagaEntityTypeFullName.Length + correlationPropertyName.Length + serializedPropertyValue.Length + 2;
+
+            const int MaxStackLimit = 256;
+            var encoding = Encoding.UTF8;
+            var maxByteCount = encoding.GetMaxByteCount(length);
+
+            byte[] sharedBuffer = null;
+            var stringBufferSpan = maxByteCount <= MaxStackLimit ?
+                stackalloc byte[MaxStackLimit] :
+                sharedBuffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
+
             try
             {
-                var numberOfBytesWritten = Encoding.UTF8.GetBytes(src.AsSpan(), stringBuffer);
+                var numberOfBytesWritten = encoding.GetBytes(sagaEntityTypeFullName.AsSpan(), stringBufferSpan);
+                stringBufferSpan[numberOfBytesWritten++] = SeparatorByte;
 
-                using var sha1CryptoServiceProvider = SHA1.Create();
+                numberOfBytesWritten += encoding.GetBytes(correlationPropertyName.AsSpan(), stringBufferSpan[numberOfBytesWritten..]);
+                stringBufferSpan[numberOfBytesWritten++] = SeparatorByte;
+
+                numberOfBytesWritten += encoding.GetBytes(serializedPropertyValue.AsSpan(), stringBufferSpan[numberOfBytesWritten..]);
+
                 Span<byte> hashBuffer = stackalloc byte[20];
-                if (!sha1CryptoServiceProvider.TryComputeHash(stringBuffer.AsSpan().Slice(0, numberOfBytesWritten), hashBuffer, out _))
-                {
-                    var hashBufferLocal = sha1CryptoServiceProvider.ComputeHash(stringBuffer, 0, numberOfBytesWritten);
-                    hashBufferLocal.CopyTo(hashBuffer);
-                }
-
-                var guidBytes = hashBuffer.Slice(0, 16);
+                _ = SHA1.HashData(stringBufferSpan[..numberOfBytesWritten], hashBuffer);
+                var guidBytes = hashBuffer[..16];
                 return new Guid(guidBytes);
             }
             finally
             {
-                ArrayPool<byte>.Shared.Return(stringBuffer, clearArray: true);
+                if (sharedBuffer != null)
+                {
+                    ArrayPool<byte>.Shared.Return(sharedBuffer, clearArray: true);
+                }
             }
         }
 #endif
