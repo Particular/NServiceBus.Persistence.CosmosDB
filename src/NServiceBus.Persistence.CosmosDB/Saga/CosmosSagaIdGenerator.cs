@@ -39,12 +39,15 @@
 
             try
             {
+                // sagaEntityTypeFullName_
                 var numberOfBytesWritten = encoding.GetBytes(sagaEntityTypeFullName.AsSpan(), stringBufferSpan);
                 stringBufferSpan[numberOfBytesWritten++] = SeparatorByte;
 
+                // sagaEntityTypeFullName_correlationPropertyName_
                 numberOfBytesWritten += encoding.GetBytes(correlationPropertyName.AsSpan(), stringBufferSpan.Slice(numberOfBytesWritten));
                 stringBufferSpan[numberOfBytesWritten++] = SeparatorByte;
 
+                // sagaEntityTypeFullName_correlationPropertyName_serializedPropertyValue
                 numberOfBytesWritten += encoding.GetBytes(serializedPropertyValue.AsSpan(), stringBufferSpan.Slice(numberOfBytesWritten));
 
                 using var sha1CryptoServiceProvider = SHA1.Create();
@@ -79,12 +82,15 @@
 
             try
             {
+                // sagaEntityTypeFullName_
                 var numberOfBytesWritten = encoding.GetBytes(sagaEntityTypeFullName.AsSpan(), stringBufferSpan);
                 stringBufferSpan[numberOfBytesWritten++] = SeparatorByte;
 
+                // sagaEntityTypeFullName_correlationPropertyName_
                 numberOfBytesWritten += encoding.GetBytes(correlationPropertyName.AsSpan(), stringBufferSpan[numberOfBytesWritten..]);
                 stringBufferSpan[numberOfBytesWritten++] = SeparatorByte;
 
+                // sagaEntityTypeFullName_correlationPropertyName_serializedPropertyValue
                 numberOfBytesWritten += encoding.GetBytes(serializedPropertyValue.AsSpan(), stringBufferSpan[numberOfBytesWritten..]);
 
                 Span<byte> hashBuffer = stackalloc byte[20];
