@@ -18,6 +18,7 @@
             {
                 throw new InvalidOperationException("Attempt to overwrite an existing session context.");
             }
+
             var wrapper = new Wrapper();
             pipelineContext.Value = wrapper;
             return new Scope(this);
@@ -32,15 +33,10 @@
 
         public readonly struct Scope : IDisposable
         {
-            public Scope(CurrentSharedTransactionalBatchHolder sharedTransactionalBatchHolder)
-            {
+            public Scope(CurrentSharedTransactionalBatchHolder sharedTransactionalBatchHolder) =>
                 this.sharedTransactionalBatchHolder = sharedTransactionalBatchHolder;
-            }
 
-            public void Dispose()
-            {
-                sharedTransactionalBatchHolder.pipelineContext.Value = null;
-            }
+            public void Dispose() => sharedTransactionalBatchHolder.pipelineContext.Value = null;
 
             readonly CurrentSharedTransactionalBatchHolder sharedTransactionalBatchHolder;
         }

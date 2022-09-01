@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;net6.0</TargetFrameworks>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
+    <LangVersion>10.0</LangVersion>
+    <RootNamespace>NServiceBus.TransactionalSession</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NServiceBus" Version="7.8.0-storage-session.3" />
+    <PackageReference Include="NServiceBus.TransactionalSession" Version="0.0.0-alpha.0.25" />
+    <PackageReference Include="Particular.Packaging" Version="2.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
+  </ItemGroup>
+
+</Project>
