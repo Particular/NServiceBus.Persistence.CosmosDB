@@ -4,20 +4,22 @@
     <TargetFrameworks>net472;net6.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBusTests.snk</AssemblyOriginatorKeyFile>
+    <LangVersion>10.0</LangVersion>
+    <!-- We want the root namespace to match the transactional session one -->
+    <RootNamespace>NServiceBus.TransactionalSession.AcceptanceTests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="2.0.1" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.30.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.1" />
-    <PackageReference Include="NServiceBus.Testing" Version="8.0.0-rc.1" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
     <PackageReference Include="Nunit" Version="3.13.3" />
     <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="8.0.0-rc.1" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.TransactionalSession\NServiceBus.Persistence.CosmosDB.TransactionalSession.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
@@ -25,8 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\SharedAcceptanceTests.All\*.cs" />
-    <Compile Include="..\SharedAcceptanceTests.RequirePartitionKey\*.cs" />
+    <Compile Include="..\SharedAcceptanceTests.RequirePartitionKey\TransactionalBatchCounterHandler.cs">
+      <Link>TransactionalBatchCounterHandler.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +47,7 @@
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Pipeline\*.*" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Recoverability\*.*" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Routing\**\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Sagas\*.*" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Satellites\*.*" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Scheduling\*.*" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\SelfVerification\*.*" />
@@ -51,6 +55,7 @@
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Timeout\*.*" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\TimeToBeReceived\*.*" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Tx\**\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Outbox\*.*" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Versioning\*.*" />
   </ItemGroup>
 
