@@ -18,7 +18,7 @@
 
         [TestCase(true)]
         [TestCase(false)]
-        public async Task Should_send_messages_and_store_document_on_transactional_session_commit(bool outboxEnabled)
+        public async Task Should_send_messages_and_store_document_in_synchronized_session_on_transactional_session_commit(bool outboxEnabled)
         {
             var documentId = Guid.NewGuid().ToString();
 
@@ -36,6 +36,44 @@
                     await transactionalSession.Send(new SampleMessage(), sendOptions);
 
                     var storageSession = transactionalSession.SynchronizedStorageSession.CosmosPersistenceSession();
+                    storageSession.Batch.CreateItem(new MyDocument
+                    {
+                        Id = documentId,
+                        Data = "SomeData",
+                        PartitionKey = PartitionKeyValue
+                    });
+
+                    await transactionalSession.Commit(CancellationToken.None).ConfigureAwait(false);
+                }))
+                .Done(c => c.MessageReceived)
+                .Run();
+
+            var response = await CosmosSetup.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(PartitionKeyValue));
+
+            Assert.IsNotNull(response);
+            Assert.AreEqual("SomeData", response.Resource.Data);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task Should_send_messages_and_store_document_in_cosmos_session_on_transactional_session_commit(bool outboxEnabled)
+        {
+            var documentId = Guid.NewGuid().ToString();
+
+            await Scenario.Define<Context>()
+                .WithEndpoint<AnEndpoint>(s => s.When(async (_, ctx) =>
+                {
+                    using var scope = ctx.Builder.CreateChildBuilder();
+                    using var transactionalSession = scope.Build<ITransactionalSession>();
+                    await transactionalSession.Open(new OpenCosmosDbSessionOptions(new PartitionKey(PartitionKeyValue)));
+
+                    var sendOptions = new SendOptions();
+                    sendOptions.SetHeader(PartitionKeyHeaderName, PartitionKeyValue);
+                    sendOptions.RouteToThisEndpoint();
+
+                    await transactionalSession.Send(new SampleMessage(), sendOptions);
+
+                    var storageSession = scope.Build<ICosmosStorageSession>();
                     storageSession.Batch.CreateItem(new MyDocument
                     {
                         Id = documentId,
