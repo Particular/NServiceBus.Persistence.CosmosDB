@@ -13,9 +13,9 @@ namespace NServiceBus.TransactionalSession
                 s.GetOrCreate<TransactionInformationConfiguration>().ExtractPartitionKeyFromHeaders(new ControlMessagePartitionKeyExtractor());
                 s.GetOrCreate<TransactionInformationConfiguration>().ExtractContainerInformationFromHeaders(new ControlMessageContainerInformationExtractor());
             });
-            EnableByDefault();
+
             DependsOn<SynchronizedStorage>();
-            DependsOn<TransactionalSessionFeature>();
+            DependsOn<TransactionalSession>();
         }
 
         protected override void Setup(FeatureConfigurationContext context)

@@ -6,6 +6,7 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Persistence.CosmosDB;
+using NServiceBus.TransactionalSession;
 using NServiceBus.TransactionalSession.AcceptanceTests;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
@@ -16,6 +17,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.DisableContainerCreation();
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
+        persistence.EnableTransactionalSession();
 
         configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
         configuration.RegisterComponents(services =>

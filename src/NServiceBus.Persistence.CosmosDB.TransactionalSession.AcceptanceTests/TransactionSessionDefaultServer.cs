@@ -4,7 +4,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Support;
-    using global::NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
 
     public class TransactionSessionDefaultServer : DefaultServer
     {
@@ -15,7 +15,6 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                 // Explicitly enforcing the type to be scanned. Otherwise the scanner would not pick it up in the acceptance tests
                 endpointConfiguration.TypesToInclude.Add(typeof(CosmosTransactionalSession));
 
-                configuration.EnableTransactionalSession();
                 configuration.RegisterStartupTask(provider =>
                     new CaptureServiceProviderStartupTask(provider, runDescriptor.ScenarioContext));
 
