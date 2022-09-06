@@ -19,8 +19,4 @@
     <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
-  </ItemGroup>
-
 </Project>

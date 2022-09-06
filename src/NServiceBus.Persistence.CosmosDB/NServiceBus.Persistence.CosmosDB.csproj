@@ -26,7 +26,6 @@
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.PessimisticLock.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
-    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 
 </Project>
