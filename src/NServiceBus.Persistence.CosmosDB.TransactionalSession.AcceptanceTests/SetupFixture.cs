@@ -5,6 +5,7 @@
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
     using NUnit.Framework;
@@ -16,15 +17,13 @@
         [OneTimeSetUp]
         public async Task OneTimeSetUp()
         {
-            var connectionStringEnvironmentVariableName = "CosmosDBPersistence_ConnectionString";
-            var connectionString = GetEnvironmentVariable(connectionStringEnvironmentVariableName,
+            var connectionString = GetEnvironmentVariable("CosmosDBPersistence_ConnectionString",
                 fallbackEmulatorConnectionString: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==");
 
             ContainerName = $"{DateTime.UtcNow.Ticks}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
-            DefaultContainerInformation = new ContainerInformation(ContainerName, new PartitionKeyPath(PartitionPathKey));
 
             var builder = new CosmosClientBuilder(connectionString);
-            builder.AddCustomHandlers(new LoggingHandler(), new TransactionalBatchCounterHandler());
+            builder.AddCustomHandlers(new LoggingHandler());
 
             CosmosDbClient = builder.Build();
 
@@ -39,7 +38,7 @@
                 PartitionKeyPath = PartitionPathKey
             });
 
-            await installer.Install("");
+            await installer.Install();
 
             var database = CosmosDbClient.GetDatabase(DatabaseName);
             Container = database.GetContainer(ContainerName);
@@ -54,17 +53,15 @@
 
         static string GetEnvironmentVariable(string variable, string fallbackEmulatorConnectionString)
         {
-            var candidate = Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
-            var environmentVariableConnectionString = string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(variable) : candidate;
+            var environmentVariableConnectionString = Environment.GetEnvironmentVariable(variable);
 
             return string.IsNullOrEmpty(environmentVariableConnectionString) ? fallbackEmulatorConnectionString : environmentVariableConnectionString;
         }
 
         public const string DatabaseName = "CosmosDBPersistence";
-        public const string PartitionPathKey = "/deep/down";
+        public const string PartitionPathKey = $"/{PartitionPropertyName}";
+        public const string PartitionPropertyName = "somekey";
         public static string ContainerName;
-        public static ContainerInformation DefaultContainerInformation;
-
         public static CosmosClient CosmosDbClient;
         public static Container Container;
         static double totalRequestCharges;
@@ -89,5 +86,67 @@
                 return response;
             }
         }
+    }
+
+    class Installer
+    {
+        public Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
+        {
+            installerSettings = settings;
+            this.clientProvider = clientProvider;
+        }
+
+        public async Task Install(CancellationToken cancellationToken = default)
+        {
+            if (installerSettings == null || installerSettings.Disabled)
+            {
+                return;
+            }
+
+            try
+            {
+                await CreateContainerIfNotExists(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
+            {
+                log.Error("Could not complete the installation. ", e);
+                throw;
+            }
+        }
+
+        async Task CreateContainerIfNotExists(CancellationToken cancellationToken)
+        {
+            await clientProvider.Client.CreateDatabaseIfNotExistsAsync(installerSettings.DatabaseName, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            var database = clientProvider.Client.GetDatabase(installerSettings.DatabaseName);
+
+            var containerProperties =
+                new ContainerProperties(installerSettings.ContainerName, installerSettings.PartitionKeyPath)
+                {
+                    // in order for individual items TTL to work (example outbox records)
+                    DefaultTimeToLive = -1
+                };
+
+            await database.CreateContainerIfNotExistsAsync(containerProperties, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        InstallerSettings installerSettings;
+        static ILog log = LogManager.GetLogger<Installer>();
+        readonly IProvideCosmosClient clientProvider;
+    }
+
+    class InstallerSettings
+    {
+        public bool Disabled { get; set; }
+        public string ContainerName { get; set; }
+        public string PartitionKeyPath { get; set; }
+        public string DatabaseName { get; set; }
+    }
+
+    class CosmosClientProvidedByConfiguration : IProvideCosmosClient
+    {
+        public CosmosClient Client { get; set; }
     }
 }
