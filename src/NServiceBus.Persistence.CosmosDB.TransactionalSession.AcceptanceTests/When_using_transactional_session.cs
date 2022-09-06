@@ -12,34 +12,27 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
 
     public class When_using_transactional_session : NServiceBusAcceptanceTest
     {
-        static string PartitionKeyHeaderName = "Tests.PartitionKey";
-        static string PartitionKeyValue = "SomePartition";
-
         [TestCase(true)]
         [TestCase(false)]
         public async Task Should_send_messages_and_store_document_in_synchronized_session_on_transactional_session_commit(bool outboxEnabled)
         {
             var documentId = Guid.NewGuid().ToString();
 
-            await Scenario.Define<Context>()
+            var context = await Scenario.Define<Context>()
                 .WithEndpoint<AnEndpoint>(s => s.When(async (_, ctx) =>
                 {
                     using var scope = ctx.ServiceProvider.CreateScope();
                     using var transactionalSession = scope.ServiceProvider.GetRequiredService<ITransactionalSession>();
-                    await transactionalSession.Open(new CosmosOpenSessionOptions(new PartitionKey(PartitionKeyValue)));
+                    await transactionalSession.Open(new CosmosOpenSessionOptions(new PartitionKey(ctx.TestRunId.ToString())));
 
-                    var sendOptions = new SendOptions();
-                    sendOptions.SetHeader(PartitionKeyHeaderName, PartitionKeyValue);
-                    sendOptions.RouteToThisEndpoint();
-
-                    await transactionalSession.Send(new SampleMessage(), sendOptions, CancellationToken.None);
+                    await transactionalSession.SendLocal(new SampleMessage());
 
                     var storageSession = transactionalSession.SynchronizedStorageSession.CosmosPersistenceSession();
                     storageSession.Batch.CreateItem(new MyDocument
                     {
                         Id = documentId,
                         Data = "SomeData",
-                        PartitionKey = PartitionKeyValue
+                        PartitionKey = ctx.TestRunId.ToString()
                     });
 
                     await transactionalSession.Commit(CancellationToken.None).ConfigureAwait(false);
@@ -47,7 +40,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                 .Done(c => c.MessageReceived)
                 .Run();
 
-            var response = await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(PartitionKeyValue));
+            var response = await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString()));
 
             Assert.IsNotNull(response);
             Assert.AreEqual("SomeData", response.Resource.Data);
@@ -59,25 +52,21 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
         {
             var documentId = Guid.NewGuid().ToString();
 
-            await Scenario.Define<Context>()
+            var context = await Scenario.Define<Context>()
                 .WithEndpoint<AnEndpoint>(s => s.When(async (_, ctx) =>
                 {
                     using var scope = ctx.ServiceProvider.CreateScope();
                     using var transactionalSession = scope.ServiceProvider.GetRequiredService<ITransactionalSession>();
-                    await transactionalSession.Open(new CosmosOpenSessionOptions(new PartitionKey(PartitionKeyValue)));
+                    await transactionalSession.Open(new CosmosOpenSessionOptions(new PartitionKey(ctx.TestRunId.ToString())));
 
-                    var sendOptions = new SendOptions();
-                    sendOptions.SetHeader(PartitionKeyHeaderName, PartitionKeyValue);
-                    sendOptions.RouteToThisEndpoint();
-
-                    await transactionalSession.Send(new SampleMessage(), sendOptions, CancellationToken.None);
+                    await transactionalSession.SendLocal(new SampleMessage());
 
                     var storageSession = scope.ServiceProvider.GetRequiredService<ICosmosStorageSession>();
                     storageSession.Batch.CreateItem(new MyDocument
                     {
                         Id = documentId,
                         Data = "SomeData",
-                        PartitionKey = PartitionKeyValue
+                        PartitionKey = ctx.TestRunId.ToString()
                     });
 
                     await transactionalSession.Commit(CancellationToken.None).ConfigureAwait(false);
@@ -85,7 +74,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                 .Done(c => c.MessageReceived)
                 .Run();
 
-            var response = await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(PartitionKeyValue));
+            var response = await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString()));
 
             Assert.IsNotNull(response);
             Assert.AreEqual("SomeData", response.Resource.Data);
@@ -97,13 +86,13 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
         {
             var documentId = Guid.NewGuid().ToString();
 
-            var result = await Scenario.Define<Context>()
+            var context = await Scenario.Define<Context>()
                 .WithEndpoint<AnEndpoint>(s => s.When(async (statelessSession, ctx) =>
                 {
                     using (var scope = ctx.ServiceProvider.CreateScope())
                     using (var transactionalSession = scope.ServiceProvider.GetRequiredService<ITransactionalSession>())
                     {
-                        await transactionalSession.Open(new CosmosOpenSessionOptions(new PartitionKey(PartitionKeyValue)));
+                        await transactionalSession.Open(new CosmosOpenSessionOptions(new PartitionKey(ctx.TestRunId.ToString())));
 
                         await transactionalSession.SendLocal(new SampleMessage());
 
@@ -112,26 +101,22 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                         {
                             Id = documentId,
                             Data = "SomeData",
-                            PartitionKey = PartitionKeyValue
+                            PartitionKey = ctx.TestRunId.ToString()
                         });
                     }
 
-                    var sendOptions = new SendOptions();
-                    sendOptions.SetHeader(PartitionKeyHeaderName, PartitionKeyValue);
-                    sendOptions.RouteToThisEndpoint();
-
                     //Send immediately dispatched message to finish the test
-                    await statelessSession.Send(new CompleteTestMessage(), sendOptions);
+                    await statelessSession.SendLocal(new CompleteTestMessage());
                 }))
                 .Done(c => c.CompleteMessageReceived)
                 .Run();
 
 
-            Assert.True(result.CompleteMessageReceived);
-            Assert.False(result.MessageReceived);
+            Assert.True(context.CompleteMessageReceived);
+            Assert.False(context.MessageReceived);
 
             var exception = Assert.ThrowsAsync<CosmosException>(async () =>
-                await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(PartitionKeyValue)));
+                await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString())));
             Assert.AreEqual(HttpStatusCode.NotFound, exception.StatusCode);
         }
 
@@ -145,13 +130,12 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                     using var scope = ctx.ServiceProvider.CreateScope();
                     using var transactionalSession = scope.ServiceProvider.GetRequiredService<ITransactionalSession>();
 
-                    await transactionalSession.Open(new CosmosOpenSessionOptions(new PartitionKey(PartitionKeyValue)));
+                    await transactionalSession.Open(new CosmosOpenSessionOptions(new PartitionKey(ctx.TestRunId.ToString())));
 
                     var sendOptions = new SendOptions();
-                    sendOptions.SetHeader(PartitionKeyHeaderName, PartitionKeyValue);
                     sendOptions.RequireImmediateDispatch();
                     sendOptions.RouteToThisEndpoint();
-                    await transactionalSession.Send(new SampleMessage(), sendOptions, CancellationToken.None);
+                    await transactionalSession.Send(new SampleMessage(), sendOptions);
                 }))
                 .Done(c => c.MessageReceived)
                 .Run()
@@ -171,20 +155,13 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
         {
             public AnEndpoint()
             {
-                void Configure(EndpointConfiguration c)
-                {
-                    var persistence = c.UsePersistence<CosmosPersistence>();
-
-                    persistence.TransactionInformation().ExtractPartitionKeyFromHeader(PartitionKeyHeaderName);
-                }
-
                 if ((bool)TestContext.CurrentContext.Test.Arguments[0]!)
                 {
-                    EndpointSetup<TransactionSessionDefaultServer>(Configure);
+                    EndpointSetup<TransactionSessionDefaultServer>();
                 }
                 else
                 {
-                    EndpointSetup<TransactionSessionWithOutboxEndpoint>(Configure);
+                    EndpointSetup<TransactionSessionWithOutboxEndpoint>();
                 }
             }
 
