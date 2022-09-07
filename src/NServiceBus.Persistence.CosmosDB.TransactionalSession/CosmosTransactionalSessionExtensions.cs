@@ -14,7 +14,6 @@
         public static PersistenceExtensions<CosmosPersistence> EnableTransactionalSession(
             this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
         {
-            persistenceExtensions.GetSettings().EnableFeatureByDefault<TransactionalSession>();
             persistenceExtensions.GetSettings().EnableFeatureByDefault<CosmosTransactionalSession>();
             return persistenceExtensions;
         }
