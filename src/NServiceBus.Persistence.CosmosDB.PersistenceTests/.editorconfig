@@ -6,5 +6,5 @@ dotnet_diagnostic.CA2007.severity = none
 # Justification: Tests don't support cancellation and don't need to forward IMessageHandlerContext.CancellationToken
 dotnet_diagnostic.NSB0002.severity = suggestion
 
-# Persistene library doesn't need saga analyzers
+# Persistence library doesn't need saga analyzers
 dotnet_diagnostic.NSB0004.severity = none
