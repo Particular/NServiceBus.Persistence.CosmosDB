@@ -6,7 +6,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
     using NUnit.Framework;
 
     /// <summary>
-    ///     Base class for all the NSB test that sets up our conventions
+    /// Base class for all the NSB test that sets up our conventions
     /// </summary>
     [TestFixture]
     public abstract class NServiceBusAcceptanceTest
