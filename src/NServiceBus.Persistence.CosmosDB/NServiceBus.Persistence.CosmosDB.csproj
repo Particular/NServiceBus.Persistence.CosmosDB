@@ -9,9 +9,22 @@
 
   <ItemGroup>
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="[7.1.10, 8.0.0)" />
+    <PackageReference Include="NServiceBus" Version="[7.8.0, 8.0.0)" />
     <PackageReference Include="Particular.Packaging" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="[3.23.0, 4)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.TransactionalSession" Key="$(NServiceBusKey)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.PersistenceTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.Tests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.PessimisticLock.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 
 </Project>

@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net6.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\Test.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\NServiceBusTests.snk</AssemblyOriginatorKeyFile>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <NoWarn>$(NoWarn);SYSLIB0021</NoWarn>
   </PropertyGroup>
@@ -15,7 +15,11 @@
     <PackageReference Include="NServiceBus.Testing" Version="7.3.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.0" />
     <PackageReference Include="Nunit" Version="3.13.2" />
-    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="7.6.0" />
+    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="7.8.0" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,29 +34,29 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="\**\ConfigureEndpointInMemoryPersistence.cs" />
-    <Compile Remove="\**\ConfigureEndpointLearningPersistence.cs" />
-    <Compile Remove="\**\ConventionEnforcementTests.cs" />
-    <Compile Remove="\**\DeterministicGuid.cs" />
-    <Compile Remove="\**\Audit\*.*" />
-    <Compile Remove="\**\Correlation\*.*" />
-    <Compile Remove="\**\DataBus\*.*" />
-    <Compile Remove="\**\DelayedDelivery\*.*" />
-    <Compile Remove="\**\Forwarding\*.*" />
-    <Compile Remove="\**\Feature\*.*" />
-    <Compile Remove="\**\MessageId\*.*" />
-    <Compile Remove="\**\Pipeline\*.*" />
-    <Compile Remove="\**\Recoverability\*.*" />
-    <Compile Remove="\**\Routing\**\*.*" />
-    <Compile Remove="\**\Satellites\*.*" />
-    <Compile Remove="\**\Scheduling\*.*" />
-    <Compile Remove="\**\SelfVerification\*.*" />
-    <Compile Remove="\**\Serialization\*.*" />
-    <Compile Remove="\**\Timeout\*.*" />
-    <Compile Remove="\**\TimeToBeReceived\*.*" />
-    <Compile Remove="\**\Tx\**\*.*" />
-    <Compile Remove="\**\Versioning\*.*" />
-    <Compile Remove="\**\Outbox\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\ConfigureEndpointInMemoryPersistence.cs" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\ConfigureEndpointLearningPersistence.cs" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\ConventionEnforcementTests.cs" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\DeterministicGuid.cs" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Audit\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Correlation\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\DataBus\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\DelayedDelivery\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Forwarding\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Feature\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\MessageId\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Pipeline\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Recoverability\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Routing\**\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Satellites\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Scheduling\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\SelfVerification\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Serialization\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Timeout\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\TimeToBeReceived\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Tx\**\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Versioning\*.*" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Outbox\*.*" />
   </ItemGroup>
 
 </Project>
