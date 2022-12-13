@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.AcceptanceTests
 {
     using System;
+    using System.Globalization;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -73,7 +74,7 @@
 
                 var requestCharge = response.Headers["x-ms-request-charge"];
                 await TestContext.Progress.WriteLineAsync($"Charged RUs:{requestCharge} for {request.Method.Method} {request.RequestUri} IsBatch:{request.Headers["x-ms-cosmos-is-batch-request"]}");
-                totalRequestCharges += Convert.ToDouble(requestCharge);
+                totalRequestCharges += Convert.ToDouble(requestCharge, CultureInfo.InvariantCulture);
 
                 await TestContext.Progress.WriteLineAsync($"Total charged RUs: {totalRequestCharges}");
 
