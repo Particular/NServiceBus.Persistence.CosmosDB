@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="2.0.1" />
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.32.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.32.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
     <PackageReference Include="NServiceBus" Version="8.0.3" />
     <PackageReference Include="NServiceBus.Testing" Version="8.0.1" />
