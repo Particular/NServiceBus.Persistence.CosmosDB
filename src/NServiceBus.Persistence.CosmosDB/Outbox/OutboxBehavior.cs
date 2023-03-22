@@ -62,7 +62,7 @@
             // Outbox operating at the logical stage
             if (!context.Extensions.TryGet<PartitionKey>(out var partitionKey))
             {
-                throw new Exception("For the outbox to work the following information must be provided at latest up to the incoming physical or logical message stage. A partition key via `context.Extensions.Set<PartitionKey>(yourPartitionKey)`.");
+                throw new Exception("For the outbox to work the a partition key must be provided at latest up to the incoming physical or logical message stage. Set one via '{nameof(CosmosPersistenceConfig.TransactionInformation)}'.");
             }
 
             var containerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context.Extensions);
@@ -73,6 +73,8 @@
 
             outboxTransaction.PartitionKey = partitionKey;
             outboxTransaction.StorageSession.ContainerHolder = containerHolder;
+
+            setAsDispatchedHolder.ThrowIfContainerIsNotSet();
 
             var outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions, context.CancellationToken)
                 .ConfigureAwait(false);
