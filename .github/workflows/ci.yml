@@ -56,4 +56,4 @@ jobs:
           azure-credentials: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           tag: CosmosPersistence
       - name: Run tests
-        uses: Particular/run-tests-action@v1.5.0
+        uses: Particular/run-tests-action@v1.5.1
