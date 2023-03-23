@@ -5,6 +5,8 @@
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
     using Outbox;
+    using Transport;
+    using Headers = NServiceBus.Headers;
 
     class OutboxPersister : IOutboxStorage
     {
@@ -37,10 +39,19 @@
 
             if (!context.TryGet<PartitionKey>(out var partitionKey))
             {
-                // we return null here to enable outbox work at logical stage
-                return null;
+                // because of the transactional session we cannot assume the incoming message is always present
+                if (!context.TryGet<IncomingMessage>(out var incomingMessage) ||
+                    !incomingMessage.Headers.ContainsKey(Headers.ControlMessageHeader))
+                {
+                    // we return null here to enable outbox work at logical stage
+                    return null;
+                }
+
+                partitionKey = new PartitionKey(messageId);
+                context.Set(partitionKey);
             }
 
+            setAsDispatchedHolder.ThrowIfContainerIsNotSet();
             setAsDispatchedHolder.PartitionKey = partitionKey;
 
             var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context)
@@ -72,6 +83,7 @@
         public async Task SetAsDispatched(string messageId, ContextBag context)
         {
             var setAsDispatchedHolder = context.Get<SetAsDispatchedHolder>();
+            setAsDispatchedHolder.ThrowIfContainerIsNotSet();
 
             var partitionKey = setAsDispatchedHolder.PartitionKey;
             var containerHolder = setAsDispatchedHolder.ContainerHolder;
