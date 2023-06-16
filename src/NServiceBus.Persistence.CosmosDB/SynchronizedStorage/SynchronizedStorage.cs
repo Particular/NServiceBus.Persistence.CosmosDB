@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
-    using System.Linq;
     using Features;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.DependencyInjection.Extensions;
 
     class SynchronizedStorage : Feature
     {
@@ -12,10 +12,7 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            if (!context.Services.Any(descriptor => descriptor.ServiceType == typeof(IProvideCosmosClient)))
-            {
-                context.Services.AddSingleton(context.Settings.Get<IProvideCosmosClient>());
-            }
+            context.Services.TryAddSingleton(context.Settings.Get<IProvideCosmosClient>());
 
             var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
 
@@ -28,7 +25,7 @@
             context.Services.AddSingleton(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
 
             context.Services.AddScoped<ICompletableSynchronizedStorageSession, CosmosSynchronizedStorageSession>();
-            context.Services.AddScoped(sp => sp.GetRequiredService<ICompletableSynchronizedStorageSession>().CosmosPersistenceSession());
+            context.Services.AddScoped(sp => (sp.GetService<ISynchronizedStorageSession>() as IWorkWithSharedTransactionalBatch)?.Create());
         }
     }
 }

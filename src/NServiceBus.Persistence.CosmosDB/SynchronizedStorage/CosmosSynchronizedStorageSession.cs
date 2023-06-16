@@ -17,7 +17,7 @@
         public CosmosSynchronizedStorageSession(ContainerHolderResolver containerHolderResolver) => this.containerHolderResolver = containerHolderResolver;
 
         public ValueTask<bool> TryOpen(IOutboxTransaction transaction, ContextBag context,
-            CancellationToken cancellationToken = new CancellationToken())
+            CancellationToken cancellationToken = default)
         {
             if (transaction is CosmosOutboxTransaction cosmosOutboxTransaction)
             {
@@ -34,10 +34,10 @@
         }
 
         public ValueTask<bool> TryOpen(TransportTransaction transportTransaction, ContextBag context,
-            CancellationToken cancellationToken = new CancellationToken()) =>
+            CancellationToken cancellationToken = default) =>
             new ValueTask<bool>(false);
 
-        public Task Open(ContextBag contextBag, CancellationToken cancellationToken = new CancellationToken())
+        public Task Open(ContextBag contextBag, CancellationToken cancellationToken = default)
         {
             // Creating the storage session already sets the correct context bag so there is no need to assign
             // CurrentContextBag here
@@ -46,7 +46,7 @@
             return Task.CompletedTask;
         }
 
-        public Task CompleteAsync(CancellationToken cancellationToken = new CancellationToken()) =>
+        public Task CompleteAsync(CancellationToken cancellationToken = default) =>
             commitOnComplete ? storageSession.Commit(cancellationToken) : Task.CompletedTask;
 
         public void Dispose()
