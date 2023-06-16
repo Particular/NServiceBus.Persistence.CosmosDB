@@ -28,7 +28,7 @@
             context.Services.AddSingleton(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
 
             context.Services.AddScoped<ICompletableSynchronizedStorageSession, CosmosSynchronizedStorageSession>();
-            context.Services.AddScoped(sp => sp.GetRequiredService<ICompletableSynchronizedStorageSession>().CosmosPersistenceSession());
+            context.Services.AddScoped(sp => (sp.GetService<ISynchronizedStorageSession>() as IWorkWithSharedTransactionalBatch)?.Create());
         }
     }
 }
