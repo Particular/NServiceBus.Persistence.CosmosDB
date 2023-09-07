@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBusTests.snk</AssemblyOriginatorKeyFile>
-    <LangVersion>11</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,12 +20,8 @@
     <Compile Remove="$(PkgNServiceBus_PersistenceTests_Sources)\**\When_concurrent_update_exceed_lock_request_timeout_pessimistic.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <Reference Include="System.Net.Http" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
   </ItemGroup>
 
- </Project>
+</Project>
