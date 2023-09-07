@@ -12,20 +12,6 @@
     using TransportOperation = Transport.TransportOperation;
 
     /// <summary>
-    /// Mimics the outbox behavior as part of the logical phase. This type is public so that it isn't renamed and it can be used to register logical behaviors before this behavior
-    /// </summary>
-    [ObsoleteEx(Message = "This class was only ever used as a constant to place custom behaviors in the right part of the pipeline. It is no longer necessary to have a custom behavior to extract the transaction information. Use `persistence.TransactionInformation()` to conveniently map headers or message content to partition keys.", TreatAsErrorFromVersion = "2", RemoveInVersion = "3")]
-    public sealed class LogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
-    {
-        internal LogicalOutboxBehavior()
-        {
-        }
-
-        /// <inheritdoc />
-        public Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next) => throw new NotImplementedException();
-    }
-
-    /// <summary>
     /// Mimics the outbox behavior as part of the logical phase.
     /// </summary>
     /// <remarks>Can be renamed back to LogicalOutboxBehavior once the type is gone from the public API.</remarks>
