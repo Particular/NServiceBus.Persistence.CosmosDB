@@ -22,8 +22,6 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            NonNativePubSubCheck.ThrowIfMessageDrivenPubSubInUse(context);
-
             var serializer = new JsonSerializer
             {
                 ContractResolver = new UpperCaseIdIntoLowerCaseIdContractResolver(),

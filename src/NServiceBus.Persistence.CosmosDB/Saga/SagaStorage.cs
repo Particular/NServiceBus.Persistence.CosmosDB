@@ -21,8 +21,6 @@
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            NonNativePubSubCheck.ThrowIfMessageDrivenPubSubInUse(context);
-
             var sagaConfiguration = context.Settings.GetOrDefault<SagaPersistenceConfiguration>() ?? new SagaPersistenceConfiguration();
             var pessimisticLockingConfiguration = sagaConfiguration.PessimisticLockingConfiguration;
             if (pessimisticLockingConfiguration.PessimisticLockingEnabled)
