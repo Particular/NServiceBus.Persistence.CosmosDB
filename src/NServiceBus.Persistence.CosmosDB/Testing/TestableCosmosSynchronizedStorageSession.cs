@@ -6,7 +6,7 @@
     using Persistence.CosmosDB;
 
     /// <summary>
-    /// A fake implementation for <see cref="SynchronizedStorageSession"/> for testing purposes.
+    /// A fake implementation for <see cref="ISynchronizedStorageSession"/> for testing purposes.
     /// </summary>
     public class TestableCosmosSynchronizedStorageSession : ISynchronizedStorageSession, IWorkWithSharedTransactionalBatch
     {

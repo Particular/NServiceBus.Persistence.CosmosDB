@@ -1,27 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBusTests.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitHubActionsTestLogger" Version="2.3.2" />
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.34.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
-    <PackageReference Include="NServiceBus.Testing" Version="8.1.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-    <PackageReference Include="Nunit" Version="3.13.3" />
-    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="8.1.1" GeneratePathProperty="true" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <Reference Include="System.Net.Http" />
+  <ItemGroup>
+    <PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0-preview-23424-02" />
+    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="9.0.0-alpha.2" GeneratePathProperty="true" />
+    <PackageReference Include="NServiceBus.Testing" Version="9.0.0-alpha.1" />
+    <PackageReference Include="Nunit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,7 +26,6 @@
     <Compile Include="..\NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests\When_custom_container_information_extractor_from_message_registered_via_*.cs" />
     <Compile Include="..\NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests\When_custom_container_information_extractor_from_headers_registered_via_*.cs" />
     <Compile Include="..\SharedAcceptanceTests.All\*.cs" />
-    <None Include="..\SharedAcceptanceTests.All\*.txt" />
   </ItemGroup>
 
   <ItemGroup>

@@ -8,7 +8,6 @@
     using Newtonsoft.Json;
     using Outbox;
     using Transport;
-    using Headers = NServiceBus.Headers;
 
     class OutboxPersister : IOutboxStorage
     {
@@ -43,7 +42,7 @@
             {
                 // because of the transactional session we cannot assume the incoming message is always present
                 if (!context.TryGet<IncomingMessage>(out var incomingMessage) ||
-                    !incomingMessage.Headers.ContainsKey(Headers.ControlMessageHeader))
+                    !incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
                 {
                     // we return null here to enable outbox work at logical stage
                     return null;
