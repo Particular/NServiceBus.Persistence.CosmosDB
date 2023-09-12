@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,21 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0-preview-23424-02" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-    <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="9.0.0-alpha.2" GeneratePathProperty="true" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Remove once https://github.com/Particular/NServiceBus/pull/6303 is merged -->
-    <Compile Remove="$(PkgNServiceBus_PersistenceTests_Sources)\**\When_concurrent_update_exceed_lock_request_timeout_pessimistic.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
   </ItemGroup>
 
 </Project>
