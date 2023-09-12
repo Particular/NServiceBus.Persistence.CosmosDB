@@ -14,7 +14,6 @@
     /// <summary>
     /// Mimics the outbox behavior as part of the logical phase.
     /// </summary>
-    /// <remarks>Can be renamed back to LogicalOutboxBehavior once the type is gone from the public API.</remarks>
     class LogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
         internal LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer)
