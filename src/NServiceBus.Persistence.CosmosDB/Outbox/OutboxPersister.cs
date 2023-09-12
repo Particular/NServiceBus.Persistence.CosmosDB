@@ -8,7 +8,7 @@
     using Newtonsoft.Json;
     using Outbox;
     using Transport;
-    using Headers = NServiceBus.Headers;
+    using Headers = Headers;
 
     class OutboxPersister : IOutboxStorage
     {
