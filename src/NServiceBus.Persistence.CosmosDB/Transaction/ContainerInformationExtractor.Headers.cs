@@ -6,10 +6,10 @@ namespace NServiceBus.Persistence.CosmosDB
     // The overloads with the extractor argument state are there to enable low allocation scenarios (avoiding closure allocations)
     partial class ContainerInformationExtractor : IContainerInformationFromHeadersExtractor, IContainerInformationFromMessagesExtractor
     {
-        readonly HashSet<string> extractContainerInformationFromHeadersHeaderKeys = new HashSet<string>();
+        readonly HashSet<string> extractContainerInformationFromHeadersHeaderKeys = [];
 
         readonly List<IContainerInformationFromHeadersExtractor> extractContainerInformationFromHeaders =
-            new List<IContainerInformationFromHeadersExtractor>();
+            [];
 
         public bool TryExtract(IReadOnlyDictionary<string, string> headers, out ContainerInformation? containerInformation)
         {

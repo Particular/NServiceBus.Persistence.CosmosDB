@@ -22,7 +22,7 @@
 
             if (operation is IReleaseLockOperation cleanupOperation)
             {
-                releaseLockOperations ??= new Dictionary<PartitionKey, Dictionary<int, IReleaseLockOperation>>();
+                releaseLockOperations ??= [];
                 AddOperation(cleanupOperation, operationPartitionKey, releaseLockOperations);
                 return;
             }
@@ -35,7 +35,7 @@
         {
             if (!operations.ContainsKey(operationPartitionKey))
             {
-                operations.Add(operationPartitionKey, new Dictionary<int, TOperation>());
+                operations.Add(operationPartitionKey, []);
             }
 
             var index = operations[operationPartitionKey].Count;
@@ -100,7 +100,7 @@
         public PartitionKeyPath PartitionKeyPath => ContainerHolder.PartitionKeyPath;
         public ContainerHolder ContainerHolder { get; set; }
 
-        readonly Dictionary<PartitionKey, Dictionary<int, IOperation>> operations = new Dictionary<PartitionKey, Dictionary<int, IOperation>>();
+        readonly Dictionary<PartitionKey, Dictionary<int, IOperation>> operations = [];
         Dictionary<PartitionKey, Dictionary<int, IReleaseLockOperation>> releaseLockOperations;
     }
 }

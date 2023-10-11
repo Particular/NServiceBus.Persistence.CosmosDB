@@ -31,7 +31,7 @@
                     messageId: "42",
                     properties: new DispatchProperties { { "Destination" , "somewhere"} },
                     body: Array.Empty<byte>(),
-                    headers: new Dictionary<string, string>()),
+                    headers: []),
             };
 
             var fakeCosmosClient = new FakeCosmosClient(new FakeContainer
