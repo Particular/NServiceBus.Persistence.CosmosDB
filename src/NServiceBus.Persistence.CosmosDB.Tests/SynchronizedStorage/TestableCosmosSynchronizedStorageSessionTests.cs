@@ -34,7 +34,7 @@
 
         class FakeTransactionalBatch : TransactionalBatch
         {
-            public List<object> CreatedItems { get; } = new List<object>();
+            public List<object> CreatedItems { get; } = [];
 
             public override TransactionalBatch CreateItem<T>(T item, TransactionalBatchItemRequestOptions requestOptions = null)
             {
