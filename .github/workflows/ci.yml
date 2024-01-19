@@ -39,13 +39,13 @@ jobs:
         run: dotnet build src --configuration Release
       - name: Upload packages
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4.0.0
+        uses: actions/upload-artifact@v4.1.0
         with:
           name: NuGet packages
           path: nugets/
           retention-days: 7
       - name: Azure login
-        uses: azure/login@v1.6.0
+        uses: azure/login@v1.6.1
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
       - name: Setup Cosmos DB
