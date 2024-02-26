@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus
 {
+    using System;
     using Configuration.AdvancedExtensibility;
     using Microsoft.Azure.Cosmos;
     using Persistence.CosmosDB;
@@ -15,8 +16,8 @@
         /// <remarks>The lifetime of the provided client is assumed to be controlled by the caller of this method and thus the client will not be disposed.</remarks>
         public static PersistenceExtensions<CosmosPersistence> CosmosClient(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, CosmosClient cosmosClient)
         {
-            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
-            Guard.AgainstNull(nameof(cosmosClient), cosmosClient);
+            ArgumentNullException.ThrowIfNull(persistenceExtensions);
+            ArgumentNullException.ThrowIfNull(cosmosClient);
 
             persistenceExtensions.GetSettings().Set<IProvideCosmosClient>(new CosmosClientProvidedByConfiguration { Client = cosmosClient });
             return persistenceExtensions;
@@ -27,7 +28,7 @@
         /// </summary>
         public static PersistenceExtensions<CosmosPersistence> DatabaseName(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, string databaseName)
         {
-            Guard.AgainstNullAndEmpty(nameof(databaseName), databaseName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
 
             persistenceExtensions.GetSettings().Set(SettingsKeys.DatabaseName, databaseName);
 
@@ -40,7 +41,7 @@
         /// <remarks>When the default container is not set the container information needs to be provided as part of the message handling pipeline.</remarks>
         public static PersistenceExtensions<CosmosPersistence> DefaultContainer(this PersistenceExtensions<CosmosPersistence> persistenceExtensions, string containerName, string partitionKeyPath)
         {
-            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+            ArgumentNullException.ThrowIfNull(persistenceExtensions);
 
             persistenceExtensions.GetSettings().Set(new ContainerInformation(containerName, new PartitionKeyPath(partitionKeyPath)));
 
@@ -52,7 +53,7 @@
         /// </summary>
         public static void DisableContainerCreation(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
         {
-            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+            ArgumentNullException.ThrowIfNull(persistenceExtensions);
 
             var installerSettings = persistenceExtensions.GetSettings().GetOrCreate<InstallerSettings>();
             installerSettings.Disabled = true;
@@ -69,7 +70,7 @@
         /// </summary>
         public static TransactionInformationConfiguration TransactionInformation(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
         {
-            Guard.AgainstNull(nameof(persistenceExtensions), persistenceExtensions);
+            ArgumentNullException.ThrowIfNull(persistenceExtensions);
 
             return persistenceExtensions.GetSettings().GetOrCreate<TransactionInformationConfiguration>();
         }

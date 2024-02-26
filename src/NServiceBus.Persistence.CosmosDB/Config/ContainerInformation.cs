@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus
 {
-    using Persistence.CosmosDB;
+    using System;
 
     /// <summary>
     /// Represents the container name and the partition key path when the container information is provided at runtime through the pipeline.
@@ -14,7 +14,7 @@
         /// <param name="partitionKeyPath">The partition key path matching the container in use.</param>
         public ContainerInformation(string containerName, PartitionKeyPath partitionKeyPath)
         {
-            Guard.AgainstNullAndEmpty(nameof(containerName), containerName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
 
             ContainerName = containerName;
             PartitionKeyPath = partitionKeyPath;

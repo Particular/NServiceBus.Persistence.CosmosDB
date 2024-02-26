@@ -57,7 +57,7 @@ namespace NServiceBus.Persistence.CosmosDB
 
         public void ExtractContainerInformationFromHeaders(IContainerInformationFromHeadersExtractor extractor)
         {
-            Guard.AgainstNull(nameof(extractor), extractor);
+            ArgumentNullException.ThrowIfNull(extractor);
 
             extractContainerInformationFromHeaders.Add(extractor);
         }

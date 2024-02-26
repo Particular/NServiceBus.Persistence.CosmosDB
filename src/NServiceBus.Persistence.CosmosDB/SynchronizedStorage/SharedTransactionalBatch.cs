@@ -25,7 +25,7 @@
 
         public override TransactionalBatch CreateItem<T>(T item, TransactionalBatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNull(nameof(item), item);
+            ArgumentNullException.ThrowIfNull(item);
 
             operationsHolder.AddOperation(new CreateItemOperation<T>(item, requestOptions, PartitionKey));
             return this;
@@ -33,7 +33,7 @@
 
         public override TransactionalBatch CreateItemStream(Stream streamPayload, TransactionalBatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNull(nameof(streamPayload), streamPayload);
+            ArgumentNullException.ThrowIfNull(streamPayload);
 
             operationsHolder.AddOperation(new CreateItemStreamOperation(streamPayload, requestOptions, PartitionKey));
             return this;
@@ -41,7 +41,7 @@
 
         public override TransactionalBatch ReadItem(string id, TransactionalBatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNullAndEmpty(nameof(id), id);
+            ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
             operationsHolder.AddOperation(new ReadItemOperation(id, requestOptions, PartitionKey));
             return this;
@@ -49,7 +49,7 @@
 
         public override TransactionalBatch UpsertItem<T>(T item, TransactionalBatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNull(nameof(item), item);
+            ArgumentNullException.ThrowIfNull(item);
 
             operationsHolder.AddOperation(new UpsertItemOperation<T>(item, requestOptions, PartitionKey));
             return this;
@@ -57,7 +57,7 @@
 
         public override TransactionalBatch UpsertItemStream(Stream streamPayload, TransactionalBatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNull(nameof(streamPayload), streamPayload);
+            ArgumentNullException.ThrowIfNull(streamPayload);
 
             operationsHolder.AddOperation(new UpsertItemStreamOperation(streamPayload, requestOptions, PartitionKey));
             return this;
@@ -65,8 +65,8 @@
 
         public override TransactionalBatch ReplaceItem<T>(string id, T item, TransactionalBatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNullAndEmpty(nameof(id), id);
-            Guard.AgainstNull(nameof(item), item);
+            ArgumentException.ThrowIfNullOrWhiteSpace(id);
+            ArgumentNullException.ThrowIfNull(item);
 
             operationsHolder.AddOperation(new ReplaceItemOperation<T>(id, item, requestOptions, PartitionKey));
             return this;
@@ -74,8 +74,8 @@
 
         public override TransactionalBatch ReplaceItemStream(string id, Stream streamPayload, TransactionalBatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNullAndEmpty(nameof(id), id);
-            Guard.AgainstNull(nameof(streamPayload), streamPayload);
+            ArgumentException.ThrowIfNullOrWhiteSpace(id);
+            ArgumentNullException.ThrowIfNull(streamPayload);
 
             operationsHolder.AddOperation(new ReplaceItemStreamOperation(id, streamPayload, requestOptions, PartitionKey));
             return this;
@@ -83,7 +83,7 @@
 
         public override TransactionalBatch DeleteItem(string id, TransactionalBatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNullAndEmpty(nameof(id), id);
+            ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
             operationsHolder.AddOperation(new DeleteItemOperation(id, requestOptions, PartitionKey));
             return this;
@@ -91,8 +91,8 @@
 
         public override TransactionalBatch PatchItem(string id, IReadOnlyList<PatchOperation> patchOperations, TransactionalBatchPatchItemRequestOptions requestOptions = null)
         {
-            Guard.AgainstNullAndEmpty(nameof(id), id);
-            Guard.AgainstNull(nameof(patchOperations), patchOperations);
+            ArgumentException.ThrowIfNullOrWhiteSpace(id);
+            ArgumentNullException.ThrowIfNull(patchOperations);
 
             operationsHolder.AddOperation(new PatchItemOperation(id, patchOperations, requestOptions, PartitionKey));
             return this;
