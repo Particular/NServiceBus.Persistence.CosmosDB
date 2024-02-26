@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Tests
 {
     using System;
-    using System.Collections.Generic;
     using NUnit.Framework;
     using Routing;
     using Transport;

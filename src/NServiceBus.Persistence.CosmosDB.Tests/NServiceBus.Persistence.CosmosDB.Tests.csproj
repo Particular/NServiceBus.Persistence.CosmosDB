@@ -18,9 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.37.1" />
-    <PackageReference Include="NServiceBus" Version="9.0.0-alpha.4" />
-    <PackageReference Include="NServiceBus.Testing" Version="9.0.0-alpha.1" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.38.1" />
+    <PackageReference Include="NServiceBus" Version="9.0.0" />
+    <PackageReference Include="NServiceBus.Testing" Version="9.0.0" />
     <PackageReference Include="Particular.Approvals" Version="0.6.0" />
     <PackageReference Include="PublicApiGenerator" Version="11.1.0" />
   </ItemGroup>

@@ -166,10 +166,10 @@
                     var now = DateTime.UtcNow.ToFileTimeUtc();
                     var reservedUntil = DateTime.UtcNow.Add(leaseLockTime).ToFileTimeUtc();
 
-                    IReadOnlyList<PatchOperation> patchOperations = new List<PatchOperation>
-                    {
+                    IReadOnlyList<PatchOperation> patchOperations =
+                    [
                         PatchOperation.Add($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}", reservedUntil)
-                    };
+                    ];
                     var requestOptions = new PatchItemRequestOptions
                     {
                         FilterPredicate =

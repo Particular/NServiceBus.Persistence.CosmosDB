@@ -19,14 +19,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C4C88BE6-36A9-4F37-B9C6-3FEAD151C836}"
 	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\ci.yml = ..\.github\workflows\ci.yml
 		Custom.Build.props = Custom.Build.props
+		..\.github\workflows\release.yml = ..\.github\workflows\release.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.TransactionalSession", "NServiceBus.Persistence.CosmosDB.TransactionalSession\NServiceBus.Persistence.CosmosDB.TransactionalSession.csproj", "{EAE3490D-346E-4700-BE06-3F706BE8A510}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.TransactionalSession", "NServiceBus.Persistence.CosmosDB.TransactionalSession\NServiceBus.Persistence.CosmosDB.TransactionalSession.csproj", "{EAE3490D-346E-4700-BE06-3F706BE8A510}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests\NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests.csproj", "{5DC54F36-FB1B-410A-8711-75A5496F3869}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests", "NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests\NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests.csproj", "{5DC54F36-FB1B-410A-8711-75A5496F3869}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests", "NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests\NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests.csproj", "{5043C20C-6C60-40A9-9201-0C557F820833}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests", "NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests\NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests.csproj", "{5043C20C-6C60-40A9-9201-0C557F820833}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

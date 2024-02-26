@@ -146,10 +146,10 @@
     {
         static IReadOnlyList<PatchOperation> cleanupPatchOperations;
 
-        static IReadOnlyList<PatchOperation> CleanupPatchOperations => cleanupPatchOperations ??= new List<PatchOperation>
-        {
+        static IReadOnlyList<PatchOperation> CleanupPatchOperations => cleanupPatchOperations ??=
+        [
             PatchOperation.Remove($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}")
-        };
+        ];
 
         public SagaReleaseLock(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
         {
