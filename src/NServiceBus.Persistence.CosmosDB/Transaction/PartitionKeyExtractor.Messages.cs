@@ -59,7 +59,7 @@ namespace NServiceBus.Persistence.CosmosDB
 
         public void ExtractPartitionKeyFromMessages(IPartitionKeyFromMessageExtractor extractor)
         {
-            Guard.AgainstNull(nameof(extractor), extractor);
+            ArgumentNullException.ThrowIfNull(extractor);
 
             extractPartitionKeyFromMessages.Add(extractor);
         }

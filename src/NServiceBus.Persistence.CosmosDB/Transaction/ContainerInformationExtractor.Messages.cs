@@ -62,7 +62,7 @@ namespace NServiceBus.Persistence.CosmosDB
 
         public void ExtractContainerInformationFromMessage(IContainerInformationFromMessagesExtractor extractor)
         {
-            Guard.AgainstNull(nameof(extractor), extractor);
+            ArgumentNullException.ThrowIfNull(extractor);
 
             extractContainerInformationFromMessages.Add(extractor);
         }

@@ -70,7 +70,7 @@ namespace NServiceBus.Persistence.CosmosDB
 
         public void ExtractPartitionKeyFromHeaders(IPartitionKeyFromHeadersExtractor extractor)
         {
-            Guard.AgainstNull(nameof(extractor), extractor);
+            ArgumentNullException.ThrowIfNull(extractor);
 
             extractPartitionKeyFromHeaders.Add(extractor);
         }
