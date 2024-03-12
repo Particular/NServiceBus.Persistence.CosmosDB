@@ -15,12 +15,12 @@
     <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="8.0.0" GeneratePathProperty="true" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(PkgNServiceBus_PersistenceTests_Sources)' != ''">
     <!-- Remove once https://github.com/Particular/NServiceBus/pull/6303 is merged -->
     <Compile Remove="$(PkgNServiceBus_PersistenceTests_Sources)\**\When_concurrent_update_exceed_lock_request_timeout_pessimistic.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net481'">
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 
