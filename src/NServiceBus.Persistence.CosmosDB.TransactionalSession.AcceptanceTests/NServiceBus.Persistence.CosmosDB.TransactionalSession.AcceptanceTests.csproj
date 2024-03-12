@@ -23,7 +23,7 @@
     <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.TransactionalSession\NServiceBus.Persistence.CosmosDB.TransactionalSession.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net481'">
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 
