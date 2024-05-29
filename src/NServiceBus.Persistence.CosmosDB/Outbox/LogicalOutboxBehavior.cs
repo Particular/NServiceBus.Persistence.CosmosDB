@@ -47,7 +47,7 @@
             // Outbox operating at the logical stage
             if (!context.Extensions.TryGet<PartitionKey>(out var partitionKey))
             {
-                throw new Exception($"For the outbox to work a partition key must be set before the pipeline incoming physical stage. Set one via '{nameof(CosmosPersistenceConfig.TransactionInformation)}'.");
+                throw new Exception($"For the outbox to work a partition key must be provided either in the incoming physical or at latest in the logical message stage. Set one via '{nameof(CosmosPersistenceConfig.TransactionInformation)}'.");
             }
 
             var containerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context.Extensions);
