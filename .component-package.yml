@@ -1,4 +1,0 @@
-ComponentType: Persistence
-ComponentPackages:
-  - Name: NServiceBus.Persistence.CosmosDB
-  - Name: NServiceBus.Persistence.CosmosDB.TransactionalSession
