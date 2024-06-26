@@ -14,6 +14,7 @@
         [Test]
         public async Task Should_work()
         {
+            // TODO Skip this test on emulator
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointUsingDefaultCredentials>(b => b.When(session => session.SendLocal(new StartSaga1
                 {
@@ -52,7 +53,11 @@
                         }
                     }), new CosmosClientOptions());
 
-                    config.UsePersistence<CosmosPersistence>().CosmosClient(cosmosClient);
+                    var persistence = config.UsePersistence<CosmosPersistence>();
+                    persistence.CosmosClient(cosmosClient);
+                    // with RBAC data plane operations are not supported, so we are using the existing database and container
+                    persistence.DatabaseName(Environment.GetEnvironmentVariable("CosmosDBPersistence_ConnectionString_DatabaseName"));
+                    persistence.DefaultContainer(Environment.GetEnvironmentVariable("CosmosDBPersistence_ConnectionString_ContainerOrTableName"), SetupFixture.PartitionPathKey);
                 });
 
             public class JustASaga : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
