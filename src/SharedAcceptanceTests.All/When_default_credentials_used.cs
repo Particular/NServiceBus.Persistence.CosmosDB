@@ -14,7 +14,11 @@
         [Test]
         public async Task Should_work()
         {
-            // TODO Skip this test on emulator
+            if (SetupFixture.IsRunningWithEmulator)
+            {
+                Assert.Ignore("This test uses DefaultAzureCredential which is not supported with the emulator.");
+            }
+
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointUsingDefaultCredentials>(b => b.When(session => session.SendLocal(new StartSaga1
                 {
@@ -23,13 +27,12 @@
                 .Done(c => c.SagaReceivedMessage)
                 .Run();
 
-            Assert.True(context.ProviderWasCalled);
+            Assert.True(context.SagaReceivedMessage);
         }
 
         public class Context : ScenarioContext
         {
             public bool SagaReceivedMessage { get; set; }
-            public bool ProviderWasCalled { get; set; }
         }
 
         public class EndpointUsingDefaultCredentials : EndpointConfigurationBuilder
@@ -43,21 +46,14 @@
                     };
                     builder.TryGetValue("AccountEndpoint", out var accountEndpoint);
 
-                    TestContext.WriteLine(accountEndpoint);
-
-                    var cosmosClient = new CosmosClient($"{accountEndpoint}", new DefaultAzureCredential(new DefaultAzureCredentialOptions
-                    {
-                        Diagnostics =
-                        {
-                            IsLoggingEnabled = true
-                        }
-                    }), new CosmosClientOptions());
+                    var cosmosClient = new CosmosClient($"{accountEndpoint}", new DefaultAzureCredential(), new CosmosClientOptions());
 
                     var persistence = config.UsePersistence<CosmosPersistence>();
+                    persistence.DisableContainerCreation();
                     persistence.CosmosClient(cosmosClient);
                     // with RBAC data plane operations are not supported, so we are using the existing database and container
                     persistence.DatabaseName(Environment.GetEnvironmentVariable("CosmosDBPersistence_ConnectionString_DatabaseName"));
-                    persistence.DefaultContainer(Environment.GetEnvironmentVariable("CosmosDBPersistence_ConnectionString_ContainerOrTableName"), SetupFixture.PartitionPathKey);
+                    persistence.DefaultContainer(Environment.GetEnvironmentVariable("CosmosDBPersistence_ConnectionString_ContainerOrTableName"), "/id");
                 });
 
             public class JustASaga : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
