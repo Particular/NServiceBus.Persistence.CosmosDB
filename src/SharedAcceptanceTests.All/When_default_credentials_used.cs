@@ -15,7 +15,7 @@
         public async Task Should_work()
         {
             var context = await Scenario.Define<Context>()
-                .WithEndpoint<EndpointWithCustomProvider>(b => b.When(session => session.SendLocal(new StartSaga1
+                .WithEndpoint<EndpointUsingDefaultCredentials>(b => b.When(session => session.SendLocal(new StartSaga1
                 {
                     DataId = Guid.NewGuid()
                 })))
@@ -31,9 +31,9 @@
             public bool ProviderWasCalled { get; set; }
         }
 
-        public class EndpointWithCustomProvider : EndpointConfigurationBuilder
+        public class EndpointUsingDefaultCredentials : EndpointConfigurationBuilder
         {
-            public EndpointWithCustomProvider() =>
+            public EndpointUsingDefaultCredentials() =>
                 EndpointSetup<DefaultServer>(config =>
                 {
                     var builder = new DbConnectionStringBuilder
