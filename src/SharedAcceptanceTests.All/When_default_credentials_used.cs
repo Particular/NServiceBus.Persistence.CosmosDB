@@ -42,7 +42,15 @@
                     };
                     builder.TryGetValue("AccountEndpoint", out var accountEndpoint);
 
-                    var cosmosClient = new CosmosClient($"{accountEndpoint}", new DefaultAzureCredential(), new CosmosClientOptions());
+                    TestContext.WriteLine(accountEndpoint);
+
+                    var cosmosClient = new CosmosClient($"{accountEndpoint}", new DefaultAzureCredential(new DefaultAzureCredentialOptions
+                    {
+                        Diagnostics =
+                        {
+                            IsLoggingEnabled = true
+                        }
+                    }), new CosmosClientOptions());
 
                     config.UsePersistence<CosmosPersistence>().CosmosClient(cosmosClient);
                 });
