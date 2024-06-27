@@ -8,6 +8,7 @@
     using Logging;
     using Microsoft.Azure.Cosmos;
     using Microsoft.Azure.Cosmos.Fluent;
+    using NServiceBus.AcceptanceTests;
     using NUnit.Framework;
     using Persistence.CosmosDB;
 
@@ -17,7 +18,7 @@
         [OneTimeSetUp]
         public async Task OneTimeSetUp()
         {
-            var connectionString = GetConnectionStringOrFallback();
+            var connectionString = ConnectionStringHelper.GetConnectionStringOrFallback();
 
             ContainerName = $"{DateTime.UtcNow.Ticks}_{Path.GetFileNameWithoutExtension(Path.GetTempFileName())}";
 
@@ -50,17 +51,6 @@
             CosmosDbClient.Dispose();
         }
 
-        public static string GetConnectionStringOrFallback(string environmentVariableName = "CosmosDBPersistence_ConnectionString", string fallbackEmulatorConnectionString = EmulatorConnectionString)
-        {
-            var candidate = Environment.GetEnvironmentVariable(environmentVariableName, EnvironmentVariableTarget.User);
-            var environmentVariableConnectionString = string.IsNullOrWhiteSpace(candidate) ? Environment.GetEnvironmentVariable(environmentVariableName) : candidate;
-
-            return string.IsNullOrEmpty(environmentVariableConnectionString) ? fallbackEmulatorConnectionString : environmentVariableConnectionString;
-        }
-
-        public static bool IsRunningWithEmulator => GetConnectionStringOrFallback() == EmulatorConnectionString;
-
-        const string EmulatorConnectionString = "AccountEndpoint = https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
         public const string DatabaseName = "CosmosDBPersistence";
         public const string PartitionPathKey = $"/{PartitionPropertyName}";
         public const string PartitionPropertyName = "somekey";
