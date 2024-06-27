@@ -14,7 +14,7 @@
         [Test]
         public async Task Should_work()
         {
-            if (SetupFixture.IsRunningWithEmulator)
+            if (ConnectionStringHelper.IsRunningWithEmulator)
             {
                 Assert.Ignore("This test uses DefaultAzureCredential which is not supported with the emulator.");
             }
@@ -42,7 +42,7 @@
                 {
                     var builder = new DbConnectionStringBuilder
                     {
-                        ConnectionString = SetupFixture.GetConnectionStringOrFallback()
+                        ConnectionString = ConnectionStringHelper.GetConnectionStringOrFallback()
                     };
                     builder.TryGetValue("AccountEndpoint", out var accountEndpoint);
 
