@@ -38,7 +38,7 @@
                 .Done(s => s.SagaCompleted)
                 .Run();
 
-            Assert.IsTrue(context.ConcurrentMessagesSent);
+            Assert.That(context.ConcurrentMessagesSent, Is.True);
             Assert.AreEqual(0, context.RetryCount);
         }
 
@@ -67,7 +67,7 @@
             {
                 var response = await container.CreateItemStreamAsync(stream, new PartitionKey(actualSagaId.ToString()));
 
-                Assert.IsTrue(response.IsSuccessStatusCode, "Successfully imported");
+                Assert.That(response.IsSuccessStatusCode, Is.True, "Successfully imported");
             }
         }
 

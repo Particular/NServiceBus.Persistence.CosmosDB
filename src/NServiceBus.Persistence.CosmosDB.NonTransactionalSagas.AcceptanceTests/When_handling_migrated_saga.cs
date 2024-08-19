@@ -54,7 +54,7 @@
             {
                 var response = await container.CreateItemStreamAsync(stream, new PartitionKey(actualSagaId.ToString()));
 
-                Assert.IsTrue(response.IsSuccessStatusCode, "Successfully imported");
+                Assert.That(response.IsSuccessStatusCode, Is.True, "Successfully imported");
             }
         }
 

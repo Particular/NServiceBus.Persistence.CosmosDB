@@ -22,7 +22,7 @@
                 .Done(s => s.SagaCompleted)
                 .Run();
 
-            Assert.IsTrue(scenario.ConcurrentMessagesSent);
+            Assert.That(scenario.ConcurrentMessagesSent, Is.True);
             Assert.AreEqual(0, scenario.RetryCount);
         }
 
