@@ -29,7 +29,7 @@
             var handler = new HandlerUsingSynchronizedStorageSessionExtension();
             await handler.Handle(new MyMessage(), handlerContext);
 
-            Assert.IsNotEmpty(transactionalBatch.CreatedItems.OfType<MyItem>());
+            Assert.That(transactionalBatch.CreatedItems.OfType<MyItem>(), Is.Not.Empty);
         }
 
         class FakeTransactionalBatch : TransactionalBatch
