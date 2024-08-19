@@ -99,7 +99,7 @@
             var synchronizedStorageSessionContextBag = new ContextBag();
             await storageSession.TryOpen(outboxTransaction, synchronizedStorageSessionContextBag);
 
-            Assert.AreSame(synchronizedStorageSessionContextBag, storageSession.CurrentContextBag);
+            Assert.That(storageSession.CurrentContextBag, Is.SameAs(synchronizedStorageSessionContextBag));
         }
 
         [Test]
