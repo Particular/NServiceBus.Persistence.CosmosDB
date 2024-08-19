@@ -38,8 +38,11 @@
                 .Done(s => s.SagaCompleted)
                 .Run();
 
-            Assert.That(context.ConcurrentMessagesSent, Is.True);
-            Assert.That(context.RetryCount, Is.EqualTo(0));
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.ConcurrentMessagesSent, Is.True);
+                Assert.That(context.RetryCount, Is.EqualTo(0));
+            });
         }
 
         static string MigrationDocument = @"{{

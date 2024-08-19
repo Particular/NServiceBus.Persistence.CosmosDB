@@ -8,8 +8,11 @@
         partial void AssertPartitionPart(Context scenarioContext)
         {
             string partitionKeyPath = scenarioContext.PartitionKeyPath;
-            Assert.That(partitionKeyPath, Is.EqualTo(SetupFixture.PartitionPathKey));
-            Assert.That(scenarioContext.PartitionKey, Is.EqualTo(new PartitionKey(scenarioContext.TestRunId.ToString())));
+            Assert.Multiple(() =>
+            {
+                Assert.That(partitionKeyPath, Is.EqualTo(SetupFixture.PartitionPathKey));
+                Assert.That(scenarioContext.PartitionKey, Is.EqualTo(new PartitionKey(scenarioContext.TestRunId.ToString())));
+            });
         }
     }
 }

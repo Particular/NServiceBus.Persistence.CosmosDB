@@ -46,8 +46,11 @@
 
             await behavior.Invoke(context, _ => Task.CompletedTask);
 
-            Assert.That(context.Extensions.TryGet<PartitionKey>(out var partitionKey), Is.True);
-            Assert.That(partitionKey, Is.EqualTo(new PartitionKey(true)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.Extensions.TryGet<PartitionKey>(out var partitionKey), Is.True);
+                Assert.That(partitionKey, Is.EqualTo(new PartitionKey(true)));
+            });
         }
 
         [Test]
@@ -85,8 +88,11 @@
 
             await behavior.Invoke(context, _ => Task.CompletedTask);
 
-            Assert.That(context.Extensions.TryGet<ContainerInformation>(out var containerInformation), Is.True);
-            Assert.That(containerInformation, Is.EqualTo(new ContainerInformation("containerName", new PartitionKeyPath("/deep/down"))));
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.Extensions.TryGet<ContainerInformation>(out var containerInformation), Is.True);
+                Assert.That(containerInformation, Is.EqualTo(new ContainerInformation("containerName", new PartitionKeyPath("/deep/down"))));
+            });
         }
 
         [Test]
@@ -115,8 +121,11 @@
 
             await behavior.Invoke(context, _ => Task.CompletedTask);
 
-            Assert.That(capturedMessageInstanceFromPartionKeyExtractor, Is.Not.Null.And.EqualTo(messageInstance));
-            Assert.That(capturedHeadersFromPartionKeyExtractor, Is.Not.Null.And.EqualTo(messageHeaders));
+            Assert.Multiple(() =>
+            {
+                Assert.That(capturedMessageInstanceFromPartionKeyExtractor, Is.Not.Null.And.EqualTo(messageInstance));
+                Assert.That(capturedHeadersFromPartionKeyExtractor, Is.Not.Null.And.EqualTo(messageHeaders));
+            });
         }
 
         [Test]
@@ -146,8 +155,11 @@
 
             await behavior.Invoke(context, _ => Task.CompletedTask);
 
-            Assert.That(capturedMessageInstanceFromContainerInformationExtractor, Is.Not.Null.And.EqualTo(messageInstance));
-            Assert.That(capturedHeadersFromContainerInformationExtractor, Is.Not.Null.And.EqualTo(messageHeaders));
+            Assert.Multiple(() =>
+            {
+                Assert.That(capturedMessageInstanceFromContainerInformationExtractor, Is.Not.Null.And.EqualTo(messageInstance));
+                Assert.That(capturedHeadersFromContainerInformationExtractor, Is.Not.Null.And.EqualTo(messageHeaders));
+            });
         }
 
         delegate bool TryExtractPartitionKey(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey);

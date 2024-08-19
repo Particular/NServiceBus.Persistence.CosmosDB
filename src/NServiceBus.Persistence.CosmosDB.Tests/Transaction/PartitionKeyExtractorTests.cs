@@ -26,8 +26,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.False);
-            Assert.That(partitionKey, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.False);
+                Assert.That(partitionKey, Is.Null);
+            });
         }
 
         [Test]
@@ -44,8 +47,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            });
         }
 
         [Test]
@@ -57,8 +63,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            });
         }
 
         [Test]
@@ -70,8 +79,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            });
         }
 
         [Test]
@@ -83,8 +95,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            });
         }
 
         [Test]
@@ -96,8 +111,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            });
         }
 
         [Test]
@@ -109,8 +127,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            });
         }
 
         [Test]
@@ -122,8 +143,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.False);
-            Assert.That(partitionKey, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.False);
+                Assert.That(partitionKey, Is.Null);
+            });
         }
 
         [Test]
@@ -135,8 +159,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            });
         }
 
         [Test]
@@ -148,8 +175,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.False);
-            Assert.That(partitionKey, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.False);
+                Assert.That(partitionKey, Is.Null);
+            });
         }
 
         [Test]
@@ -161,8 +191,11 @@
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("HeaderValue")));
+            });
         }
 
         [Test]
@@ -185,8 +218,11 @@
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
-            Assert.That(wasExtracted, Is.False);
-            Assert.That(partitionKey, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.False);
+                Assert.That(partitionKey, Is.Null);
+            });
         }
 
         [Test]
@@ -199,8 +235,11 @@
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue")));
+            });
         }
 
         [Test]
@@ -212,8 +251,11 @@
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue")));
+            });
         }
 
         [Test]
@@ -225,8 +267,11 @@
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE")));
+            });
         }
 
         [Test]
@@ -240,8 +285,11 @@
 
             var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE_HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SOMEVALUE_HeaderValue")));
+            });
         }
 
         [Test]
@@ -255,8 +303,11 @@
 
             var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue_HeaderValue")));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new PartitionKey("SomeValue_HeaderValue")));
+            });
         }
 
         [Test]

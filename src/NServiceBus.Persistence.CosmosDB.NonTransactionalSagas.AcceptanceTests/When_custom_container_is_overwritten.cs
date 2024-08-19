@@ -58,8 +58,11 @@
             var shippingProcessSagaData = await nonDefaultContainer.ReadItemAsync<dynamic>(context.ShippingProcessId,
                 new PartitionKey(context.ShippingProcessId));
 
-            Assert.That(orderProcessSagaData.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            Assert.That(shippingProcessSagaData.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.Multiple(() =>
+            {
+                Assert.That(orderProcessSagaData.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(shippingProcessSagaData.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            });
         }
 
         [TearDown]

@@ -28,8 +28,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.False);
-            Assert.That(partitionKey, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.False);
+                Assert.That(partitionKey, Is.Null);
+            });
         }
 
         [Test]
@@ -46,8 +49,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -59,8 +65,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -73,8 +82,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -87,8 +99,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -101,8 +116,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -114,8 +132,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
-            Assert.That(wasExtracted, Is.False);
-            Assert.That(containerInformation, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.False);
+                Assert.That(containerInformation, Is.Null);
+            });
         }
 
         [Test]
@@ -128,8 +149,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -141,8 +165,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
-            Assert.That(wasExtracted, Is.False);
-            Assert.That(containerInformation, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.False);
+                Assert.That(containerInformation, Is.Null);
+            });
         }
 
         [Test]
@@ -154,8 +181,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+            });
         }
 
         class CustomHeadersExtractor : IContainerInformationFromHeadersExtractor
@@ -192,8 +222,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var containerInformation);
 
-            Assert.That(wasExtracted, Is.False);
-            Assert.That(containerInformation, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.False);
+                Assert.That(containerInformation, Is.Null);
+            });
         }
 
         [Test]
@@ -206,8 +239,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -219,8 +255,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -232,8 +271,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -245,8 +287,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -260,8 +305,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE_HeaderValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE_HeaderValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
@@ -275,8 +323,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
 
             var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
 
-            Assert.That(wasExtracted, Is.True);
-            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue_HeaderValue", fakePartitionKeyPath)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExtracted, Is.True);
+                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue_HeaderValue", fakePartitionKeyPath)));
+            });
         }
 
         [Test]
