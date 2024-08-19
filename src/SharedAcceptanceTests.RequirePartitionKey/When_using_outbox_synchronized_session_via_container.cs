@@ -19,8 +19,8 @@
                 .Run()
                 .ConfigureAwait(false);
 
-            Assert.True(context.RepositoryHasBatch);
-            Assert.True(context.RepositoryHasContainer);
+            Assert.That(context.RepositoryHasBatch, Is.True);
+            Assert.That(context.RepositoryHasContainer, Is.True);
             AssertPartitionPart(context);
         }
 

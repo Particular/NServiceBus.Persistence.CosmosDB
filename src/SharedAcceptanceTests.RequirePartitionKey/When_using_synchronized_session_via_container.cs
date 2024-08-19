@@ -17,7 +17,7 @@
                 .Run()
                 .ConfigureAwait(false);
 
-            Assert.True(context.HandlerHasBatch);
+            Assert.That(context.HandlerHasBatch, Is.True);
         }
 
         public class Context : ScenarioContext

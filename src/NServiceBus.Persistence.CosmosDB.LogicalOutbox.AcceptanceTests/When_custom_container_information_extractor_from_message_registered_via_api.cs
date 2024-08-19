@@ -25,7 +25,7 @@
                 .Done(c => c.SagaReceivedMessage)
                 .Run(runSettings);
 
-            Assert.True(context.ExtractorWasCalled);
+            Assert.That(context.ExtractorWasCalled, Is.True);
         }
 
         public class Context : ScenarioContext
