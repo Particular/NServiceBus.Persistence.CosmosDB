@@ -19,7 +19,7 @@
                 .Run()
                 .ConfigureAwait(false);
 
-            Assert.AreEqual(1, TransactionalBatchCounterHandler.TotalTransactionalBatches, "Expected to have a single transactional batch but found more.");
+            Assert.That(TransactionalBatchCounterHandler.TotalTransactionalBatches, Is.EqualTo(1), "Expected to have a single transactional batch but found more.");
         }
 
         public class Context : ScenarioContext

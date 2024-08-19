@@ -23,7 +23,7 @@
                 .Run();
 
             Assert.That(scenario.ConcurrentMessagesSent, Is.True);
-            Assert.AreEqual(0, scenario.RetryCount);
+            Assert.That(scenario.RetryCount, Is.EqualTo(0));
         }
 
         public class HighContentionScenario : ScenarioContext

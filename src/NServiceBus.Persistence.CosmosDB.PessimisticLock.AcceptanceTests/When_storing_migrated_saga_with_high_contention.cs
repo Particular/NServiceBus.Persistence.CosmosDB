@@ -39,7 +39,7 @@
                 .Run();
 
             Assert.That(context.ConcurrentMessagesSent, Is.True);
-            Assert.AreEqual(0, context.RetryCount);
+            Assert.That(context.RetryCount, Is.EqualTo(0));
         }
 
         static string MigrationDocument = @"{{
