@@ -45,9 +45,10 @@
         }
 
         [OneTimeTearDown]
-        public Task OneTimeTearDown()
+        public async Task OneTimeTearDown()
         {
-            return Container.DeleteContainerStreamAsync();
+            await Container.DeleteContainerStreamAsync();
+            CosmosDbClient.Dispose();
         }
 
         static string GetEnvironmentVariable(string variable, string fallbackEmulatorConnectionString)
