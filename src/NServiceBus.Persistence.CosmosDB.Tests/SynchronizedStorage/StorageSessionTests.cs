@@ -38,10 +38,13 @@
             await storageSession.CompleteAsync();
             storageSession.Dispose();
 
-            Assert.That(firstOperation.WasDisposed, Is.False);
-            Assert.That(firstOperation.WasApplied, Is.False);
-            Assert.That(secondOperation.WasDisposed, Is.False);
-            Assert.That(secondOperation.WasApplied, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstOperation.WasDisposed, Is.False);
+                Assert.That(firstOperation.WasApplied, Is.False);
+                Assert.That(secondOperation.WasDisposed, Is.False);
+                Assert.That(secondOperation.WasApplied, Is.False);
+            });
         }
 
         [Test]
@@ -73,15 +76,18 @@
             await outboxTransaction.Commit();
             outboxTransaction.Dispose();
 
-            Assert.That(firstOperationWasDisposed, Is.False);
-            Assert.That(firstOperationWasApplied, Is.False);
-            Assert.That(secondOperationWasDisposed, Is.False);
-            Assert.That(secondOperationWasApplied, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstOperationWasDisposed, Is.False);
+                Assert.That(firstOperationWasApplied, Is.False);
+                Assert.That(secondOperationWasDisposed, Is.False);
+                Assert.That(secondOperationWasApplied, Is.False);
 
-            Assert.That(firstOperation.WasDisposed, Is.True);
-            Assert.That(firstOperation.WasApplied, Is.True);
-            Assert.That(secondOperation.WasDisposed, Is.True);
-            Assert.That(secondOperation.WasApplied, Is.True);
+                Assert.That(firstOperation.WasDisposed, Is.True);
+                Assert.That(firstOperation.WasApplied, Is.True);
+                Assert.That(secondOperation.WasDisposed, Is.True);
+                Assert.That(secondOperation.WasApplied, Is.True);
+            });
         }
 
         [Test]
@@ -99,7 +105,7 @@
             var synchronizedStorageSessionContextBag = new ContextBag();
             await storageSession.TryOpen(outboxTransaction, synchronizedStorageSessionContextBag);
 
-            Assert.AreSame(synchronizedStorageSessionContextBag, storageSession.CurrentContextBag);
+            Assert.That(storageSession.CurrentContextBag, Is.SameAs(synchronizedStorageSessionContextBag));
         }
 
         [Test]
@@ -150,10 +156,13 @@
 
             storageSession.Dispose();
 
-            Assert.That(firstOperation.WasDisposed, Is.True);
-            Assert.That(firstOperation.WasApplied, Is.False);
-            Assert.That(secondOperation.WasDisposed, Is.True);
-            Assert.That(secondOperation.WasApplied, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstOperation.WasDisposed, Is.True);
+                Assert.That(firstOperation.WasApplied, Is.False);
+                Assert.That(secondOperation.WasDisposed, Is.True);
+                Assert.That(secondOperation.WasApplied, Is.False);
+            });
         }
 
         [Test]
@@ -179,15 +188,18 @@
 
             outboxTransaction.Dispose();
 
-            Assert.That(firstOperationWasDisposed, Is.False);
-            Assert.That(firstOperationWasApplied, Is.False);
-            Assert.That(secondOperationWasDisposed, Is.False);
-            Assert.That(secondOperationWasApplied, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstOperationWasDisposed, Is.False);
+                Assert.That(firstOperationWasApplied, Is.False);
+                Assert.That(secondOperationWasDisposed, Is.False);
+                Assert.That(secondOperationWasApplied, Is.False);
 
-            Assert.That(firstOperation.WasDisposed, Is.True);
-            Assert.That(firstOperation.WasApplied, Is.False);
-            Assert.That(secondOperation.WasDisposed, Is.True);
-            Assert.That(secondOperation.WasApplied, Is.False);
+                Assert.That(firstOperation.WasDisposed, Is.True);
+                Assert.That(firstOperation.WasApplied, Is.False);
+                Assert.That(secondOperation.WasDisposed, Is.True);
+                Assert.That(secondOperation.WasApplied, Is.False);
+            });
         }
 
         [Test]
@@ -214,9 +226,12 @@
 
             await storageSession.CompleteAsync();
 
-            Assert.That(firstOperation.WasApplied, Is.True);
-            Assert.That(secondOperation.WasApplied, Is.True);
-            Assert.That(firstOperation.AppliedBatch, Is.EqualTo(secondOperation.AppliedBatch), "Operations with the same partition key must be in the same batch");
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstOperation.WasApplied, Is.True);
+                Assert.That(secondOperation.WasApplied, Is.True);
+                Assert.That(firstOperation.AppliedBatch, Is.EqualTo(secondOperation.AppliedBatch), "Operations with the same partition key must be in the same batch");
+            });
         }
 
         [Test]
@@ -251,14 +266,17 @@
 
             await outboxTransaction.Commit();
 
-            Assert.That(firstOperationWasApplied, Is.False);
-            Assert.That(secondOperationWasApplied, Is.False);
-            Assert.That(firstOperationAppliedBatch, Is.Null);
-            Assert.That(secondOperationAppliedBatch, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstOperationWasApplied, Is.False);
+                Assert.That(secondOperationWasApplied, Is.False);
+                Assert.That(firstOperationAppliedBatch, Is.Null);
+                Assert.That(secondOperationAppliedBatch, Is.Null);
 
-            Assert.That(firstOperation.WasApplied, Is.True);
-            Assert.That(secondOperation.WasApplied, Is.True);
-            Assert.That(firstOperation.AppliedBatch, Is.EqualTo(secondOperation.AppliedBatch), "Operations with the same partition key must be in the same batch");
+                Assert.That(firstOperation.WasApplied, Is.True);
+                Assert.That(secondOperation.WasApplied, Is.True);
+                Assert.That(firstOperation.AppliedBatch, Is.EqualTo(secondOperation.AppliedBatch), "Operations with the same partition key must be in the same batch");
+            });
         }
 
         [Test]
@@ -285,9 +303,12 @@
 
             await storageSession.CompleteAsync();
 
-            Assert.That(firstOperation.WasApplied, Is.True);
-            Assert.That(secondOperation.WasApplied, Is.True);
-            Assert.That(firstOperation.AppliedBatch, Is.Not.EqualTo(secondOperation.AppliedBatch), "Operations with the different partition keys cannot be in the same batch");
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstOperation.WasApplied, Is.True);
+                Assert.That(secondOperation.WasApplied, Is.True);
+                Assert.That(firstOperation.AppliedBatch, Is.Not.EqualTo(secondOperation.AppliedBatch), "Operations with the different partition keys cannot be in the same batch");
+            });
         }
 
         [Test]
@@ -322,14 +343,17 @@
 
             await outboxTransaction.Commit();
 
-            Assert.That(firstOperationWasApplied, Is.False);
-            Assert.That(secondOperationWasApplied, Is.False);
-            Assert.That(firstOperationAppliedBatch, Is.Null);
-            Assert.That(secondOperationAppliedBatch, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstOperationWasApplied, Is.False);
+                Assert.That(secondOperationWasApplied, Is.False);
+                Assert.That(firstOperationAppliedBatch, Is.Null);
+                Assert.That(secondOperationAppliedBatch, Is.Null);
 
-            Assert.That(firstOperation.WasApplied, Is.True);
-            Assert.That(secondOperation.WasApplied, Is.True);
-            Assert.That(firstOperation.AppliedBatch, Is.Not.EqualTo(secondOperation.AppliedBatch), "Operations with the different partition keys cannot be in the same batch");
+                Assert.That(firstOperation.WasApplied, Is.True);
+                Assert.That(secondOperation.WasApplied, Is.True);
+                Assert.That(firstOperation.AppliedBatch, Is.Not.EqualTo(secondOperation.AppliedBatch), "Operations with the different partition keys cannot be in the same batch");
+            });
         }
 
         [Test]
@@ -356,10 +380,13 @@
 
             await storageSession.CompleteAsync();
 
-            Assert.That(operation.WasApplied, Is.True);
-            Assert.That(operation.WasDisposed, Is.False);
-            Assert.That(releaseOperation.WasApplied, Is.False);
-            Assert.That(releaseOperation.WasDisposed, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(operation.WasApplied, Is.True);
+                Assert.That(operation.WasDisposed, Is.False);
+                Assert.That(releaseOperation.WasApplied, Is.False);
+                Assert.That(releaseOperation.WasDisposed, Is.True);
+            });
         }
 
         [Test]
@@ -394,15 +421,18 @@
 
             await outboxTransaction.Commit();
 
-            Assert.That(operationWasApplied, Is.False);
-            Assert.That(operationWasDisposed, Is.False);
-            Assert.That(releaseOperationWasApplied, Is.False);
-            Assert.That(releaseOperationWasDisposed, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(operationWasApplied, Is.False);
+                Assert.That(operationWasDisposed, Is.False);
+                Assert.That(releaseOperationWasApplied, Is.False);
+                Assert.That(releaseOperationWasDisposed, Is.False);
 
-            Assert.That(operation.WasApplied, Is.True);
-            Assert.That(operation.WasDisposed, Is.False);
-            Assert.That(releaseOperation.WasApplied, Is.False);
-            Assert.That(releaseOperation.WasDisposed, Is.True);
+                Assert.That(operation.WasApplied, Is.True);
+                Assert.That(operation.WasDisposed, Is.False);
+                Assert.That(releaseOperation.WasApplied, Is.False);
+                Assert.That(releaseOperation.WasDisposed, Is.True);
+            });
         }
 
         [Test]
@@ -430,8 +460,11 @@
             await storageSession.CompleteAsync();
             storageSession.Dispose();
 
-            Assert.That(releaseOperation.WasApplied, Is.False);
-            Assert.That(releaseOperation.WasDisposed, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(releaseOperation.WasApplied, Is.False);
+                Assert.That(releaseOperation.WasDisposed, Is.True);
+            });
         }
 
         [Test]
@@ -466,11 +499,14 @@
             await outboxTransaction.Commit();
             outboxTransaction.Dispose();
 
-            Assert.That(releaseOperationWasApplied, Is.False);
-            Assert.That(releaseOperationWasDisposed, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(releaseOperationWasApplied, Is.False);
+                Assert.That(releaseOperationWasDisposed, Is.False);
 
-            Assert.That(releaseOperation.WasApplied, Is.False);
-            Assert.That(releaseOperation.WasDisposed, Is.True);
+                Assert.That(releaseOperation.WasApplied, Is.False);
+                Assert.That(releaseOperation.WasDisposed, Is.True);
+            });
         }
 
         [Test]
@@ -498,11 +534,14 @@
 
             storageSession.Dispose();
 
-            Assert.That(firstReleaseOperation.WasApplied, Is.True);
-            Assert.That(secondReleaseOperation.WasApplied, Is.True);
-            Assert.That(firstReleaseOperation.WasDisposed, Is.True);
-            Assert.That(secondReleaseOperation.WasDisposed, Is.True);
-            Assert.That(firstReleaseOperation.AppliedBatch, Is.EqualTo(secondReleaseOperation.AppliedBatch), "Release operations with the same partition key must be in the same batch");
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstReleaseOperation.WasApplied, Is.True);
+                Assert.That(secondReleaseOperation.WasApplied, Is.True);
+                Assert.That(firstReleaseOperation.WasDisposed, Is.True);
+                Assert.That(secondReleaseOperation.WasDisposed, Is.True);
+                Assert.That(firstReleaseOperation.AppliedBatch, Is.EqualTo(secondReleaseOperation.AppliedBatch), "Release operations with the same partition key must be in the same batch");
+            });
         }
 
         [Test]
@@ -540,18 +579,21 @@
 
             outboxTransaction.Dispose();
 
-            Assert.That(firstReleaseOperationWasApplied, Is.False);
-            Assert.That(secondReleaseOperationWasApplied, Is.False);
-            Assert.That(firstReleaseOperationWasDisposed, Is.False);
-            Assert.That(secondReleaseOperationWasDisposed, Is.False);
-            Assert.That(firstReleaseOperationAppliedBatch, Is.Null);
-            Assert.That(secondReleaseOperationAppliedBatch, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstReleaseOperationWasApplied, Is.False);
+                Assert.That(secondReleaseOperationWasApplied, Is.False);
+                Assert.That(firstReleaseOperationWasDisposed, Is.False);
+                Assert.That(secondReleaseOperationWasDisposed, Is.False);
+                Assert.That(firstReleaseOperationAppliedBatch, Is.Null);
+                Assert.That(secondReleaseOperationAppliedBatch, Is.Null);
 
-            Assert.That(firstReleaseOperation.WasApplied, Is.True);
-            Assert.That(secondReleaseOperation.WasApplied, Is.True);
-            Assert.That(firstReleaseOperation.WasDisposed, Is.True);
-            Assert.That(secondReleaseOperation.WasDisposed, Is.True);
-            Assert.That(firstReleaseOperation.AppliedBatch, Is.EqualTo(secondReleaseOperation.AppliedBatch), "Release operations with the same partition key must be in the same batch");
+                Assert.That(firstReleaseOperation.WasApplied, Is.True);
+                Assert.That(secondReleaseOperation.WasApplied, Is.True);
+                Assert.That(firstReleaseOperation.WasDisposed, Is.True);
+                Assert.That(secondReleaseOperation.WasDisposed, Is.True);
+                Assert.That(firstReleaseOperation.AppliedBatch, Is.EqualTo(secondReleaseOperation.AppliedBatch), "Release operations with the same partition key must be in the same batch");
+            });
         }
 
         [Test]
@@ -582,10 +624,13 @@
 
             Assert.DoesNotThrow(() => storageSession.Dispose());
 
-            Assert.That(firstReleaseOperation.WasApplied, Is.True);
-            Assert.That(secondReleaseOperation.WasApplied, Is.True);
-            Assert.That(firstReleaseOperation.WasDisposed, Is.True);
-            Assert.That(secondReleaseOperation.WasDisposed, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstReleaseOperation.WasApplied, Is.True);
+                Assert.That(secondReleaseOperation.WasApplied, Is.True);
+                Assert.That(firstReleaseOperation.WasDisposed, Is.True);
+                Assert.That(secondReleaseOperation.WasDisposed, Is.True);
+            });
         }
 
         [Test]
@@ -619,10 +664,13 @@
 
             Assert.DoesNotThrow(() => outboxTransaction.Dispose());
 
-            Assert.That(firstReleaseOperation.WasApplied, Is.True);
-            Assert.That(secondReleaseOperation.WasApplied, Is.True);
-            Assert.That(firstReleaseOperation.WasDisposed, Is.True);
-            Assert.That(secondReleaseOperation.WasDisposed, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstReleaseOperation.WasApplied, Is.True);
+                Assert.That(secondReleaseOperation.WasApplied, Is.True);
+                Assert.That(firstReleaseOperation.WasDisposed, Is.True);
+                Assert.That(secondReleaseOperation.WasDisposed, Is.True);
+            });
         }
 
         [Test]
@@ -650,11 +698,14 @@
 
             storageSession.Dispose();
 
-            Assert.That(firstReleaseOperation.WasApplied, Is.True);
-            Assert.That(secondReleaseOperation.WasApplied, Is.True);
-            Assert.That(firstReleaseOperation.WasDisposed, Is.True);
-            Assert.That(secondReleaseOperation.WasDisposed, Is.True);
-            Assert.That(firstReleaseOperation.AppliedBatch, Is.Not.EqualTo(secondReleaseOperation.AppliedBatch), "Release operations with the different partition keys must be in different batches.");
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstReleaseOperation.WasApplied, Is.True);
+                Assert.That(secondReleaseOperation.WasApplied, Is.True);
+                Assert.That(firstReleaseOperation.WasDisposed, Is.True);
+                Assert.That(secondReleaseOperation.WasDisposed, Is.True);
+                Assert.That(firstReleaseOperation.AppliedBatch, Is.Not.EqualTo(secondReleaseOperation.AppliedBatch), "Release operations with the different partition keys must be in different batches.");
+            });
         }
 
         [Test]
@@ -692,18 +743,21 @@
 
             outboxTransaction.Dispose();
 
-            Assert.That(firstReleaseOperationWasApplied, Is.False);
-            Assert.That(secondReleaseOperationWasApplied, Is.False);
-            Assert.That(firstReleaseOperationWasDisposed, Is.False);
-            Assert.That(secondReleaseOperationWasDisposed, Is.False);
-            Assert.That(firstReleaseOperationAppliedBatch, Is.Null);
-            Assert.That(secondReleaseOperationAppliedBatch, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstReleaseOperationWasApplied, Is.False);
+                Assert.That(secondReleaseOperationWasApplied, Is.False);
+                Assert.That(firstReleaseOperationWasDisposed, Is.False);
+                Assert.That(secondReleaseOperationWasDisposed, Is.False);
+                Assert.That(firstReleaseOperationAppliedBatch, Is.Null);
+                Assert.That(secondReleaseOperationAppliedBatch, Is.Null);
 
-            Assert.That(firstReleaseOperation.WasApplied, Is.True);
-            Assert.That(secondReleaseOperation.WasApplied, Is.True);
-            Assert.That(firstReleaseOperation.WasDisposed, Is.True);
-            Assert.That(secondReleaseOperation.WasDisposed, Is.True);
-            Assert.That(firstReleaseOperation.AppliedBatch, Is.Not.EqualTo(secondReleaseOperation.AppliedBatch), "Release operations with the different partition keys must be in different batches.");
+                Assert.That(firstReleaseOperation.WasApplied, Is.True);
+                Assert.That(secondReleaseOperation.WasApplied, Is.True);
+                Assert.That(firstReleaseOperation.WasDisposed, Is.True);
+                Assert.That(secondReleaseOperation.WasDisposed, Is.True);
+                Assert.That(firstReleaseOperation.AppliedBatch, Is.Not.EqualTo(secondReleaseOperation.AppliedBatch), "Release operations with the different partition keys must be in different batches.");
+            });
         }
 
         [Test]
@@ -729,8 +783,11 @@
             storageSession.AddOperation(releaseOperation);
 
             Assert.That(async () => await storageSession.CompleteAsync(), Throws.Exception);
-            Assert.That(releaseOperation.WasApplied, Is.False);
-            Assert.That(releaseOperation.WasDisposed, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(releaseOperation.WasApplied, Is.False);
+                Assert.That(releaseOperation.WasDisposed, Is.False);
+            });
         }
 
         [Test]
@@ -759,8 +816,11 @@
             await storageSession.CompleteAsync();
 
             Assert.That(async () => await outboxTransaction.Commit(), Throws.Exception);
-            Assert.That(releaseOperation.WasApplied, Is.False);
-            Assert.That(releaseOperation.WasDisposed, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(releaseOperation.WasApplied, Is.False);
+                Assert.That(releaseOperation.WasDisposed, Is.False);
+            });
         }
 
         class ThrowOnApplyOperation : FakeOperation

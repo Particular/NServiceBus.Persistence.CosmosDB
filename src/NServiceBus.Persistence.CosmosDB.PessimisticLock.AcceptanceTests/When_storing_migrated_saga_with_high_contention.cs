@@ -38,8 +38,11 @@
                 .Done(s => s.SagaCompleted)
                 .Run();
 
-            Assert.IsTrue(context.ConcurrentMessagesSent);
-            Assert.AreEqual(0, context.RetryCount);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.ConcurrentMessagesSent, Is.True);
+                Assert.That(context.RetryCount, Is.EqualTo(0));
+            });
         }
 
         static string MigrationDocument = @"{{
@@ -67,7 +70,7 @@
             {
                 var response = await container.CreateItemStreamAsync(stream, new PartitionKey(actualSagaId.ToString()));
 
-                Assert.IsTrue(response.IsSuccessStatusCode, "Successfully imported");
+                Assert.That(response.IsSuccessStatusCode, Is.True, "Successfully imported");
             }
         }
 

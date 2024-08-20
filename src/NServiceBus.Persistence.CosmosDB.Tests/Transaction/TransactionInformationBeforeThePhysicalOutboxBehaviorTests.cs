@@ -44,8 +44,11 @@
 
             await behavior.Invoke(context, _ => Task.CompletedTask);
 
-            Assert.That(context.Extensions.TryGet<PartitionKey>(out var partitionKey), Is.True);
-            Assert.AreEqual(new PartitionKey(true), partitionKey);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.Extensions.TryGet<PartitionKey>(out var partitionKey), Is.True);
+                Assert.That(partitionKey, Is.EqualTo(new PartitionKey(true)));
+            });
         }
 
         [Test]
@@ -83,8 +86,11 @@
 
             await behavior.Invoke(context, _ => Task.CompletedTask);
 
-            Assert.That(context.Extensions.TryGet<ContainerInformation>(out var containerInformation), Is.True);
-            Assert.AreEqual(new ContainerInformation("containerName", new PartitionKeyPath("/deep/down")), containerInformation);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.Extensions.TryGet<ContainerInformation>(out var containerInformation), Is.True);
+                Assert.That(containerInformation, Is.EqualTo(new ContainerInformation("containerName", new PartitionKeyPath("/deep/down"))));
+            });
         }
 
         [Test]

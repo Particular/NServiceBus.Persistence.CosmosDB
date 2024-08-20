@@ -11,11 +11,14 @@
         {
             var configuration = new PessimisticLockingConfiguration();
 
-            Assert.That(configuration.LeaseLockTime, Is.EqualTo(TimeSpan.FromMinutes(1)));
-            Assert.That(configuration.LeaseLockAcquisitionTimeout, Is.EqualTo(TimeSpan.FromMinutes(1)));
-            Assert.That(configuration.LeaseLockAcquisitionMinimumRefreshDelay, Is.EqualTo(TimeSpan.FromMilliseconds(500)));
-            Assert.That(configuration.LeaseLockAcquisitionMaximumRefreshDelay, Is.EqualTo(TimeSpan.FromMilliseconds(1000)));
-            Assert.That(configuration.PessimisticLockingEnabled, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(configuration.LeaseLockTime, Is.EqualTo(TimeSpan.FromMinutes(1)));
+                Assert.That(configuration.LeaseLockAcquisitionTimeout, Is.EqualTo(TimeSpan.FromMinutes(1)));
+                Assert.That(configuration.LeaseLockAcquisitionMinimumRefreshDelay, Is.EqualTo(TimeSpan.FromMilliseconds(500)));
+                Assert.That(configuration.LeaseLockAcquisitionMaximumRefreshDelay, Is.EqualTo(TimeSpan.FromMilliseconds(1000)));
+                Assert.That(configuration.PessimisticLockingEnabled, Is.False);
+            });
         }
 
         [Test]
@@ -35,7 +38,7 @@
 
             configuration.SetLeaseLockTime(fromMinutes);
 
-            Assert.AreEqual(fromMinutes, configuration.LeaseLockTime);
+            Assert.That(configuration.LeaseLockTime, Is.EqualTo(fromMinutes));
         }
 
         [Test]
@@ -55,7 +58,7 @@
 
             configuration.SetLeaseLockTime(fromMinutes);
 
-            Assert.AreEqual(fromMinutes, configuration.LeaseLockTime);
+            Assert.That(configuration.LeaseLockTime, Is.EqualTo(fromMinutes));
         }
 
         [Test]
@@ -95,7 +98,7 @@
             configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(fromMilliseconds);
             configuration.ValidateRefreshDelays();
 
-            Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMinimumRefreshDelay);
+            Assert.That(configuration.LeaseLockAcquisitionMinimumRefreshDelay, Is.EqualTo(fromMilliseconds));
         }
 
         [Test]
@@ -109,7 +112,7 @@
             configuration.SetLeaseLockAcquisitionMinimumRefreshDelay(fromMilliseconds);
             configuration.ValidateRefreshDelays();
 
-            Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMinimumRefreshDelay);
+            Assert.That(configuration.LeaseLockAcquisitionMinimumRefreshDelay, Is.EqualTo(fromMilliseconds));
         }
 
         [Test]
@@ -149,7 +152,7 @@
             configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(fromMilliseconds);
             configuration.ValidateRefreshDelays();
 
-            Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMaximumRefreshDelay);
+            Assert.That(configuration.LeaseLockAcquisitionMaximumRefreshDelay, Is.EqualTo(fromMilliseconds));
         }
 
         [Test]
@@ -163,7 +166,7 @@
             configuration.SetLeaseLockAcquisitionMaximumRefreshDelay(fromMilliseconds);
             configuration.ValidateRefreshDelays();
 
-            Assert.AreEqual(fromMilliseconds, configuration.LeaseLockAcquisitionMaximumRefreshDelay);
+            Assert.That(configuration.LeaseLockAcquisitionMaximumRefreshDelay, Is.EqualTo(fromMilliseconds));
         }
     }
 }

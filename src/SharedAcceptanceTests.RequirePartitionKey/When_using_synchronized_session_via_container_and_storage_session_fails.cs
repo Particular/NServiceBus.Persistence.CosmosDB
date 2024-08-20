@@ -24,7 +24,7 @@
                 .Run()
                 .ConfigureAwait(false);
 
-            Assert.AreEqual(0, TransactionalBatchCounterHandler.TotalTransactionalBatches, "Expected to have no transactional batch but found one.");
+            Assert.That(TransactionalBatchCounterHandler.TotalTransactionalBatches, Is.EqualTo(0), "Expected to have no transactional batch but found one.");
         }
 
         public class Context : ScenarioContext

@@ -22,8 +22,11 @@
                 .Done(s => s.SagaCompleted)
                 .Run();
 
-            Assert.IsTrue(scenario.ConcurrentMessagesSent);
-            Assert.AreEqual(0, scenario.RetryCount);
+            Assert.Multiple(() =>
+            {
+                Assert.That(scenario.ConcurrentMessagesSent, Is.True);
+                Assert.That(scenario.RetryCount, Is.EqualTo(0));
+            });
         }
 
         public class HighContentionScenario : ScenarioContext

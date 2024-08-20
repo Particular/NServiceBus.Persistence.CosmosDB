@@ -12,11 +12,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests.Saga
     {
         [Test]
         public void Should_return_the_same_guid_regardless_of_the_tfm() =>
-            Assert.AreEqual(new Guid("c718ea15-a555-f79f-fa37-62477f3b07ca"), CosmosSagaIdGenerator.Generate("SagaEntityTypeFullName", "CorrelationPropertyName", "SomeValue"));
+            Assert.That(CosmosSagaIdGenerator.Generate("SagaEntityTypeFullName", "CorrelationPropertyName", "SomeValue"), Is.EqualTo(new Guid("c718ea15-a555-f79f-fa37-62477f3b07ca")));
 
-        [TestCaseSource("RandomInput")]
+        [TestCaseSource(nameof(RandomInput))]
         public void Should_return_the_same_guid_as_previous(string fullname, string propertyName, string propertyValue) =>
-            Assert.AreEqual(PreviousCosmosSagaIdGenerator.Generate(fullname, propertyName, propertyValue), CosmosSagaIdGenerator.Generate(fullname, propertyName, propertyValue));
+            Assert.That(CosmosSagaIdGenerator.Generate(fullname, propertyName, propertyValue), Is.EqualTo(PreviousCosmosSagaIdGenerator.Generate(fullname, propertyName, propertyValue)));
 
         public static IEnumerable<object[]> RandomInput
         {

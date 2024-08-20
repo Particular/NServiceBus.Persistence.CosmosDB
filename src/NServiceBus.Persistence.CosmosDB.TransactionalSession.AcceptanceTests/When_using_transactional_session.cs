@@ -42,8 +42,8 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
 
             var response = await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString()));
 
-            Assert.IsNotNull(response);
-            Assert.AreEqual("SomeData", response.Resource.Data);
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.Resource.Data, Is.EqualTo("SomeData"));
         }
 
         [TestCase(true)]
@@ -76,8 +76,8 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
 
             var response = await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString()));
 
-            Assert.IsNotNull(response);
-            Assert.AreEqual("SomeData", response.Resource.Data);
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.Resource.Data, Is.EqualTo("SomeData"));
         }
 
         [TestCase(true)]
@@ -117,7 +117,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
 
             var exception = Assert.ThrowsAsync<CosmosException>(async () =>
                 await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString())));
-            Assert.AreEqual(HttpStatusCode.NotFound, exception.StatusCode);
+            Assert.That(exception.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         }
 
         [TestCase(true)]
