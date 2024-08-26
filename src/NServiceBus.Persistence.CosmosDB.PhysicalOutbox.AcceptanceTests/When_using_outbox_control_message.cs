@@ -28,7 +28,7 @@ namespace NServiceBus.AcceptanceTests
                 .Run(runSettings)
                 .ConfigureAwait(false);
 
-            Assert.True(context.ProcessedControlMessage);
+            Assert.That(context.ProcessedControlMessage, Is.True);
         }
 
         public class Context : ScenarioContext

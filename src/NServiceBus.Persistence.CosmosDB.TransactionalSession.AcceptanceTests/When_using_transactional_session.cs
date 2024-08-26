@@ -112,7 +112,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                 .Run();
 
 
-            Assert.True(context.CompleteMessageReceived);
+            Assert.That(context.CompleteMessageReceived, Is.True);
             Assert.That(context.MessageReceived, Is.False);
 
             var exception = Assert.ThrowsAsync<CosmosException>(async () =>
@@ -141,7 +141,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                 .Run()
                 ;
 
-            Assert.True(result.MessageReceived);
+            Assert.That(result.MessageReceived, Is.True);
         }
 
         class Context : ScenarioContext, IInjectServiceProvider
