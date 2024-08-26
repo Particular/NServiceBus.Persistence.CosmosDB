@@ -113,7 +113,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
 
 
             Assert.True(context.CompleteMessageReceived);
-            Assert.False(context.MessageReceived);
+            Assert.That(context.MessageReceived, Is.False);
 
             var exception = Assert.ThrowsAsync<CosmosException>(async () =>
                 await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString())));
