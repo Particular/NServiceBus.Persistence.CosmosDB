@@ -30,8 +30,11 @@
                 .Done(c => c.SagaReceivedMessage)
                 .Run(runSettings);
 
-            Assert.That(context.PartitionHeaderStateMatched, Is.True);
-            Assert.That(context.ContainerHeaderStateMatched, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.PartitionHeaderStateMatched, Is.True);
+                Assert.That(context.ContainerHeaderStateMatched, Is.True);
+            });
         }
 
         public class Context : ScenarioContext

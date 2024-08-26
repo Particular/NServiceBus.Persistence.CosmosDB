@@ -111,9 +111,11 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                 .Done(c => c.CompleteMessageReceived)
                 .Run();
 
-
-            Assert.That(context.CompleteMessageReceived, Is.True);
-            Assert.That(context.MessageReceived, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.CompleteMessageReceived, Is.True);
+                Assert.That(context.MessageReceived, Is.False);
+            });
 
             var exception = Assert.ThrowsAsync<CosmosException>(async () =>
                 await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString())));
