@@ -111,9 +111,11 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                 .Done(c => c.CompleteMessageReceived)
                 .Run();
 
-
-            Assert.True(context.CompleteMessageReceived);
-            Assert.False(context.MessageReceived);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.CompleteMessageReceived, Is.True);
+                Assert.That(context.MessageReceived, Is.False);
+            });
 
             var exception = Assert.ThrowsAsync<CosmosException>(async () =>
                 await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString())));
@@ -141,7 +143,7 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                 .Run()
                 ;
 
-            Assert.True(result.MessageReceived);
+            Assert.That(result.MessageReceived, Is.True);
         }
 
         class Context : ScenarioContext, IInjectServiceProvider
