@@ -140,10 +140,48 @@ namespace NServiceBus.TransactionalSession.AcceptanceTests
                     await transactionalSession.Send(new SampleMessage(), sendOptions);
                 }))
                 .Done(c => c.MessageReceived)
-                .Run()
-                ;
+                .Run();
 
             Assert.That(result.MessageReceived, Is.True);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task Should_allow_using_synchronized_storage_even_when_there_are_no_outgoing_operations(bool outboxEnabled)
+        {
+            var documentId = Guid.NewGuid().ToString();
+
+            var context = await Scenario.Define<Context>()
+                .WithEndpoint<AnEndpoint>(s => s.When(async (statelessSession, ctx) =>
+                {
+                    using (var scope = ctx.ServiceProvider.CreateScope())
+                    using (var transactionalSession = scope.ServiceProvider.GetRequiredService<ITransactionalSession>())
+                    {
+                        await transactionalSession.Open(
+                            new CosmosOpenSessionOptions(new PartitionKey(ctx.TestRunId.ToString())));
+
+                        var storageSession = scope.ServiceProvider.GetRequiredService<ICosmosStorageSession>();
+                        storageSession.Batch.CreateItem(new MyDocument
+                        {
+                            Id = documentId,
+                            Data = "SomeData",
+                            PartitionKey = ctx.TestRunId.ToString()
+                        });
+
+                        // Deliberately not sending any messages via the transactional session before committing
+                        await transactionalSession.Commit(CancellationToken.None).ConfigureAwait(false);
+                    }
+
+                    //Send immediately dispatched message to finish the test
+                    await statelessSession.SendLocal(new CompleteTestMessage());
+                }))
+                .Done(c => c.CompleteMessageReceived)
+                .Run();
+
+            var response = await SetupFixture.Container.ReadItemAsync<MyDocument>(documentId, new PartitionKey(context.TestRunId.ToString()));
+
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.Resource.Data, Is.EqualTo("SomeData"));
         }
 
         class Context : ScenarioContext, IInjectServiceProvider
