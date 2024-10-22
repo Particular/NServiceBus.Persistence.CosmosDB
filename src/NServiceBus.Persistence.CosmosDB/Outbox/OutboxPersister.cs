@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -59,7 +60,14 @@
             var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
+            if (outboxRecord == null)
+            {
+                return null;
+            }
+
+            var outboxMessage = new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray());
+            context.Set("TempDebugOutboxOutgoingTransportOperations", outboxMessage.TransportOperations);
+            return outboxMessage;
         }
 
         public Task Store(OutboxMessage message, IOutboxTransaction transaction, ContextBag context, CancellationToken cancellationToken = default)
@@ -79,6 +87,9 @@
                 cosmosTransaction.PartitionKey.Value,
                 serializer,
                 context));
+
+            context.Set("TempDebugOutboxOutgoingTransportOperations", message.TransportOperations);
+
             return Task.CompletedTask;
         }
 
@@ -90,10 +101,16 @@
             var partitionKey = setAsDispatchedHolder.PartitionKey;
             var containerHolder = setAsDispatchedHolder.ContainerHolder;
 
+            if (!context.TryGet<NServiceBus.Outbox.TransportOperation[]>("TempDebugOutboxOutgoingTransportOperations", out var transportOperations))
+            {
+                transportOperations = Array.Empty<NServiceBus.Outbox.TransportOperation>();
+            }
+
             var operation = new OutboxDelete(new OutboxRecord
             {
                 Id = messageId,
-                Dispatched = true
+                Dispatched = true,
+                TransportOperations = transportOperations.Select(op => new StorageTransportOperation(op)).ToArray()
             }, partitionKey, serializer, ttlInSeconds, context);
 
             var transactionalBatch = containerHolder.Container.CreateTransactionalBatch(partitionKey);
