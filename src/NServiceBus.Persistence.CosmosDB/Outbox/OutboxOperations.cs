@@ -80,10 +80,14 @@
 
             jObject.Add("ttl", ttlInSeconds);
 
+            // only delete if we have the same version as in CosmosDB
+            Context.TryGet<string>($"cosmos_etag:{record.Id}", out var deleteEtag);
+
             // has to be kept open
             stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
             var options = new TransactionalBatchItemRequestOptions
             {
+                IfMatchEtag = deleteEtag,
                 EnableContentResponseOnWrite = false
             };
             transactionalBatch.UpsertItemStream(stream, options);
