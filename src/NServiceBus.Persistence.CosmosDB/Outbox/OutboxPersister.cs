@@ -1,11 +1,13 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB
 {
+    using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
+    using NServiceBus.Logging;
     using Outbox;
     using Transport;
     using Headers = NServiceBus.Headers;
@@ -59,12 +61,25 @@
             var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
+            var logResult = outboxRecord == null ? "null" : $"{{ Dispatched={outboxRecord.Dispatched}, TxOps.Length={outboxRecord.TransportOperations.Length} }}";
+            log.Info($"CosmosDB:Outbox:Get, MessageId='{messageId}', Container='{setAsDispatchedHolder.ContainerHolder.Container.Id}', PartitionKey={partitionKey}, Result={logResult}");
+
+            if (outboxRecord == null)
+            {
+                return null;
+            }
+
+            var outboxMessage = new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray());
+            context.Set("TempDebugOutboxOutgoingTransportOperations", outboxMessage.TransportOperations);
+            return outboxMessage;
         }
 
         public Task Store(OutboxMessage message, IOutboxTransaction transaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             var cosmosTransaction = (CosmosOutboxTransaction)transaction;
+
+            var logTx = (cosmosTransaction == null) ? "null" : $"Tx = {{ AbandonStoreAndCommit={cosmosTransaction.AbandonStoreAndCommit}, PartitionKey={cosmosTransaction.PartitionKey}, Container='{cosmosTransaction.StorageSession.Container.Id}' }}";
+            log.Info($"CosmosDB:Outbox:Store, MessageId='{message.MessageId}, TxOps.Length={message.TransportOperations.Length}, Transaction = {logTx}");
 
             if (cosmosTransaction == null || cosmosTransaction.AbandonStoreAndCommit || cosmosTransaction.PartitionKey == null)
             {
@@ -79,6 +94,9 @@
                 cosmosTransaction.PartitionKey.Value,
                 serializer,
                 context));
+
+            context.Set("TempDebugOutboxOutgoingTransportOperations", message.TransportOperations);
+
             return Task.CompletedTask;
         }
 
@@ -90,10 +108,18 @@
             var partitionKey = setAsDispatchedHolder.PartitionKey;
             var containerHolder = setAsDispatchedHolder.ContainerHolder;
 
+            if (!context.TryGet<NServiceBus.Outbox.TransportOperation[]>("TempDebugOutboxOutgoingTransportOperations", out var transportOperations))
+            {
+                transportOperations = Array.Empty<NServiceBus.Outbox.TransportOperation>();
+            }
+
+            log.Info($"CosmosDB:Outbox:SetAsDispatched, MessageId='{messageId}, PartitionKey={partitionKey}, Container='{containerHolder.Container.Id}'");
+
             var operation = new OutboxDelete(new OutboxRecord
             {
                 Id = messageId,
-                Dispatched = true
+                Dispatched = true,
+                TransportOperations = transportOperations.Select(op => new StorageTransportOperation(op)).ToArray()
             }, partitionKey, serializer, ttlInSeconds, context);
 
             var transactionalBatch = containerHolder.Container.CreateTransactionalBatch(partitionKey);
@@ -103,6 +129,8 @@
 
         readonly JsonSerializer serializer;
         readonly int ttlInSeconds;
+
+        static readonly ILog log = LogManager.GetLogger<OutboxPersister>();
 
         internal static readonly string SchemaVersion = "1.0.0";
         ContainerHolderResolver containerHolderResolver;

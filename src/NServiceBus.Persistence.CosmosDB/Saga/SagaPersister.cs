@@ -10,6 +10,8 @@
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using NServiceBus.Logging;
+    using NServiceBus.Transport;
     using Sagas;
 
     class SagaPersister : ISagaPersister
@@ -26,10 +28,14 @@
             acquireLeaseLockTimeout = lockingConfiguration.LeaseLockAcquisitionTimeout;
         }
 
+        static string GetMessageId(ContextBag context) => context.TryGet<IncomingMessage>(out var msg) ? msg.MessageId : "unknown";
+
         public Task Save(IContainSagaData sagaData, SagaCorrelationProperty correlationProperty, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
         {
             var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
+
+            log.Info($"CosmosDB:Saga:Save, MessageId={GetMessageId(context)}, SagaId='{sagaData.Id}', Container='{sharedTransactionalBatch.Container.Id}', PartitionKey={partitionKey}");
 
             sharedTransactionalBatch.AddOperation(new SagaSave(sagaData, partitionKey, serializer, context));
             return Task.CompletedTask;
@@ -39,6 +45,8 @@
         {
             var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
+
+            log.Info($"CosmosDB:Saga:Update, MessageId={GetMessageId(context)}, SagaId='{sagaData.Id}', Container='{sharedTransactionalBatch.Container.Id}', PartitionKey={partitionKey}");
 
             sharedTransactionalBatch.AddOperation(new SagaUpdate(sagaData, partitionKey, serializer, context));
             return Task.CompletedTask;
@@ -52,11 +60,17 @@
             var container = sharedTransactionalBatch.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
+            log.Info($"CosmosDB:Saga:GetById:Start, MessageId={GetMessageId(context)}, SagaId='{sagaId}', Container='{container.Id}', PartitionKey={partitionKey}, Pessimistic={pessimisticLockingEnabled}, MigrationMode={migrationModeEnabled}");
+
             bool sagaNotFound;
             TSagaData sagaData;
             if (!pessimisticLockingEnabled)
             {
                 (sagaNotFound, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+
+                var sagaDataLog = sagaData == null ? "null" : $"{{ Id = {sagaData.Id}, Type = {sagaData.GetType().Name} }}";
+                log.Info($"CosmosDB:Saga:GetById:Result, MessageId={GetMessageId(context)}, SagaNotFound={sagaNotFound}, SagaData={sagaDataLog}");
+
                 // if the previous lookup by id wasn't successful and the migration mode is enabled try to query for the saga data because the saga id probably represents
                 // the saga id of the migrated saga.
                 if (sagaNotFound && migrationModeEnabled &&
@@ -95,10 +109,16 @@
             var container = sharedTransactionalBatch.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
+            log.Info($"CosmosDB:Saga:GetByCorrelation:Start, MessageId={GetMessageId(context)}, SagaId='{sagaId}', Container='{container.Id}', PartitionKey={partitionKey}, Pessimistic={pessimisticLockingEnabled}, MigrationMode={migrationModeEnabled}");
+
             TSagaData sagaData;
             if (!pessimisticLockingEnabled)
             {
-                (_, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+                (var sagaNotFound, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+
+                var sagaDataLog = sagaData == null ? "null" : $"{{ Id = {sagaData.Id}, Type = {sagaData.GetType().Name} }}";
+                log.Info($"CosmosDB:Saga:GetByCorrelation:Result, MessageId={GetMessageId(context)}, SagaNotFound={sagaNotFound}, SagaData={sagaDataLog}");
+
                 return sagaData;
             }
 
@@ -246,6 +266,8 @@
             var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
+            log.Info($"CosmosDB:Saga:Complete:Start, MessageId={GetMessageId(context)}, SagaId='{sagaData.Id}', Container='{sharedTransactionalBatch.Container.Id}', PartitionKey={partitionKey}, Pessimistic={pessimisticLockingEnabled}, MigrationMode={migrationModeEnabled}");
+
             sharedTransactionalBatch.AddOperation(new SagaDelete(sagaData, partitionKey, context));
 
             return Task.CompletedTask;
@@ -269,5 +291,7 @@
         readonly int acquireLeaseLockRefreshMinimumDelayMilliseconds;
         readonly TimeSpan acquireLeaseLockTimeout;
         static readonly Random random = new Random();
+
+        static readonly ILog log = LogManager.GetLogger<SagaPersister>();
     }
 }
