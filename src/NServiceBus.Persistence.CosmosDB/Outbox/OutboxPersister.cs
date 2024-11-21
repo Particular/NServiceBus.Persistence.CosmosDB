@@ -7,6 +7,7 @@
     using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
+    using NServiceBus.Logging;
     using Outbox;
     using Transport;
     using Headers = NServiceBus.Headers;
@@ -60,6 +61,9 @@
             var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
+            var logResult = outboxRecord == null ? "null" : $"{{ Dispatched={outboxRecord.Dispatched}, TxOps.Length={outboxRecord.TransportOperations.Length} }}";
+            log.Info($"CosmosDB:Outbox:Get, MessageId='{messageId}', Container='{setAsDispatchedHolder.ContainerHolder.Container.Id}', PartitionKey={partitionKey}, Result={logResult}");
+
             if (outboxRecord == null)
             {
                 return null;
@@ -73,6 +77,9 @@
         public Task Store(OutboxMessage message, IOutboxTransaction transaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             var cosmosTransaction = (CosmosOutboxTransaction)transaction;
+
+            var logTx = (cosmosTransaction == null) ? "null" : $"Tx = {{ AbandonStoreAndCommit={cosmosTransaction.AbandonStoreAndCommit}, PartitionKey={cosmosTransaction.PartitionKey}, Container='{cosmosTransaction.StorageSession.Container.Id}' }}";
+            log.Info($"CosmosDB:Outbox:Store, MessageId='{message.MessageId}, TxOps.Length={message.TransportOperations.Length}, Transaction = {logTx}");
 
             if (cosmosTransaction == null || cosmosTransaction.AbandonStoreAndCommit || cosmosTransaction.PartitionKey == null)
             {
@@ -106,6 +113,8 @@
                 transportOperations = Array.Empty<NServiceBus.Outbox.TransportOperation>();
             }
 
+            log.Info($"CosmosDB:Outbox:SetAsDispatched, MessageId='{messageId}, PartitionKey={partitionKey}, Container='{containerHolder.Container.Id}'");
+
             var operation = new OutboxDelete(new OutboxRecord
             {
                 Id = messageId,
@@ -120,6 +129,8 @@
 
         readonly JsonSerializer serializer;
         readonly int ttlInSeconds;
+
+        static readonly ILog log = LogManager.GetLogger<OutboxPersister>();
 
         internal static readonly string SchemaVersion = "1.0.0";
         ContainerHolderResolver containerHolderResolver;

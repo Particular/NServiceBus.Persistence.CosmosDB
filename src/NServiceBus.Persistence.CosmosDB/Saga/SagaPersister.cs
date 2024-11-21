@@ -10,6 +10,7 @@
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using NServiceBus.Logging;
     using Sagas;
 
     class SagaPersister : ISagaPersister
@@ -31,6 +32,8 @@
             var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
+            log.Info($"CosmosDB:Saga:Save, SagaId='{sagaData.Id}', Container='{sharedTransactionalBatch.Container.Id}', PartitionKey={partitionKey}");
+
             sharedTransactionalBatch.AddOperation(new SagaSave(sagaData, partitionKey, serializer, context));
             return Task.CompletedTask;
         }
@@ -39,6 +42,8 @@
         {
             var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
+
+            log.Info($"CosmosDB:Saga:Update, SagaId='{sagaData.Id}', Container='{sharedTransactionalBatch.Container.Id}', PartitionKey={partitionKey}");
 
             sharedTransactionalBatch.AddOperation(new SagaUpdate(sagaData, partitionKey, serializer, context));
             return Task.CompletedTask;
@@ -52,11 +57,17 @@
             var container = sharedTransactionalBatch.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
+            log.Info($"CosmosDB:Saga:GetById:Start, SagaId='{sagaId}', Container='{container.Id}', PartitionKey={partitionKey}, Pessimistic={pessimisticLockingEnabled}, MigrationMode={migrationModeEnabled}");
+
             bool sagaNotFound;
             TSagaData sagaData;
             if (!pessimisticLockingEnabled)
             {
                 (sagaNotFound, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+
+                var sagaDataLog = sagaData == null ? "null" : $"{{ Id = {sagaData.Id}, Type = {sagaData.GetType().Name} }}";
+                log.Info($"CosmosDB:Saga:GetById:Result, SagaNotFound={sagaNotFound}, SagaData={sagaDataLog}");
+
                 // if the previous lookup by id wasn't successful and the migration mode is enabled try to query for the saga data because the saga id probably represents
                 // the saga id of the migrated saga.
                 if (sagaNotFound && migrationModeEnabled &&
@@ -95,10 +106,16 @@
             var container = sharedTransactionalBatch.Container;
             var partitionKey = GetPartitionKey(context, sagaId);
 
+            log.Info($"CosmosDB:Saga:GetByCorrelation:Start, SagaId='{sagaId}', Container='{container.Id}', PartitionKey={partitionKey}, Pessimistic={pessimisticLockingEnabled}, MigrationMode={migrationModeEnabled}");
+
             TSagaData sagaData;
             if (!pessimisticLockingEnabled)
             {
-                (_, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+                (var sagaNotFound, sagaData) = await ReadSagaData<TSagaData>(sagaId, context, container, partitionKey, cancellationToken).ConfigureAwait(false);
+
+                var sagaDataLog = sagaData == null ? "null" : $"{{ Id = {sagaData.Id}, Type = {sagaData.GetType().Name} }}";
+                log.Info($"CosmosDB:Saga:GetByCorrelation:Result, SagaNotFound={sagaNotFound}, SagaData={sagaDataLog}");
+
                 return sagaData;
             }
 
@@ -246,6 +263,8 @@
             var sharedTransactionalBatch = (IWorkWithSharedTransactionalBatch)session;
             var partitionKey = GetPartitionKey(context, sagaData.Id);
 
+            log.Info($"CosmosDB:Saga:Complete:Start, SagaId='{sagaData.Id}', Container='{sharedTransactionalBatch.Container.Id}', PartitionKey={partitionKey}, Pessimistic={pessimisticLockingEnabled}, MigrationMode={migrationModeEnabled}");
+
             sharedTransactionalBatch.AddOperation(new SagaDelete(sagaData, partitionKey, context));
 
             return Task.CompletedTask;
@@ -269,5 +288,7 @@
         readonly int acquireLeaseLockRefreshMinimumDelayMilliseconds;
         readonly TimeSpan acquireLeaseLockTimeout;
         static readonly Random random = new Random();
+
+        static readonly ILog log = LogManager.GetLogger<SagaPersister>();
     }
 }
