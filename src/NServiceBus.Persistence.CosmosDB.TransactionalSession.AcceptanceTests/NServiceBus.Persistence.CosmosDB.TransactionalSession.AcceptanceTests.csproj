@@ -22,4 +22,5 @@
   <ItemGroup>
     <PackageReference Include="NServiceBus.AcceptanceTesting" Version="9.1.2" />
   </ItemGroup>
+
 </Project>
