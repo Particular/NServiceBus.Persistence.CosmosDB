@@ -17,7 +17,7 @@
     <PackageReference Include="NUnit.Analyzers" Version="4.4.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="9.2.3" GeneratePathProperty="true" />
   </ItemGroup>

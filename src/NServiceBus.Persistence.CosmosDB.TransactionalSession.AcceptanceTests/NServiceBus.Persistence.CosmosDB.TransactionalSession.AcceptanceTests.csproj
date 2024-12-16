@@ -23,7 +23,7 @@
   <ItemGroup>
     <PackageReference Include="NServiceBus.AcceptanceTesting" Version="9.2.3" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Compile Include="..\SharedAcceptanceTests.All\ConnectionStringHelper.cs" />
   </ItemGroup>
