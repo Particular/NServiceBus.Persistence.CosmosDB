@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Logging;
     using Microsoft.Azure.Cosmos;
 
     static class TransactionalBatchExtensions
@@ -42,6 +43,8 @@
 
             using (var batchOutcomeResponse = await transactionalBatch.ExecuteAsync(cancellationToken).ConfigureAwait(false))
             {
+                log.Info($"CosmosDB:TransactionalBatchExtensions:ExecuteOperationsAsync, ActivityId: {batchOutcomeResponse?.ActivityId}, Count: {batchOutcomeResponse?.Count}, RequestCharge: {batchOutcomeResponse?.RequestCharge}");
+
                 for (var i = 0; i < batchOutcomeResponse.Count; i++)
                 {
                     var result = batchOutcomeResponse[i];
@@ -77,5 +80,7 @@
                 }
             }
         }
+
+        internal static ILog log = LogManager.GetLogger<TransactionalBatch>();
     }
 }
