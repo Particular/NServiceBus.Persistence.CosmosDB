@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
@@ -36,14 +37,22 @@
         internal static async Task ExecuteOperationsAsync<TOperation>(this TransactionalBatch transactionalBatch, Dictionary<int, TOperation> operationMappings, PartitionKeyPath partitionKeyPath, CancellationToken cancellationToken = default)
             where TOperation : IOperation
         {
+            var partitionKeysInBatch = new List<PartitionKey>();
+
             foreach (var operation in operationMappings.Values)
             {
                 operation.Apply(transactionalBatch, partitionKeyPath);
+
+                partitionKeysInBatch.Add(operation.PartitionKey);
             }
+
+            var uniquePartitionKeys = partitionKeysInBatch.Distinct();
+
+            var uniquePartionKeysString = string.Join(", ", uniquePartitionKeys);
 
             using (var batchOutcomeResponse = await transactionalBatch.ExecuteAsync(cancellationToken).ConfigureAwait(false))
             {
-                log.Info($"CosmosDB:TransactionalBatchExtensions:ExecuteOperationsAsync, ActivityId: {batchOutcomeResponse?.ActivityId}, Count: {batchOutcomeResponse?.Count}, RequestCharge: {batchOutcomeResponse?.RequestCharge}");
+                log.Info($"CosmosDB:TransactionalBatchExtensions:ExecuteOperationsAsync, PartitionKeyPath: {partitionKeyPath}, PartionKeysInBatch: {uniquePartionKeysString}, ActivityId: {batchOutcomeResponse?.ActivityId}, Count: {batchOutcomeResponse?.Count}, RequestCharge: {batchOutcomeResponse?.RequestCharge}");
 
                 for (var i = 0; i < batchOutcomeResponse.Count; i++)
                 {
