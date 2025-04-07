@@ -16,6 +16,8 @@
 
             using (var batchOutcomeResponse = await transactionalBatch.ExecuteAsync(cancellationToken).ConfigureAwait(false))
             {
+                log.Info($"CosmosDB:TransactionalBatchExtensions:ExecuteOperationAsync, PartitionKeyPath: {partitionKeyPath}, PartionKeysInBatch: {partitionKeyPath}, ActivityId: {batchOutcomeResponse?.ActivityId}, Count: {batchOutcomeResponse?.Count}, RequestCharge: {batchOutcomeResponse?.RequestCharge}");
+
                 if (batchOutcomeResponse.Count > 1)
                 {
                     throw new Exception($"The transactional batch was expected to have a single operation but contained {batchOutcomeResponse.Count} operations.");
