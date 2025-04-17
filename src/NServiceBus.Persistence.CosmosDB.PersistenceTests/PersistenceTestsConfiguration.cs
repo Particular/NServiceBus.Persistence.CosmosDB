@@ -16,9 +16,9 @@ public partial class PersistenceTestsConfiguration : IProvideCosmosClient
 {
     static PersistenceTestsConfiguration()
     {
-        SagaVariants = new[] { new TestFixtureData(new TestVariant(new PersistenceConfiguration(false))).SetArgDisplayNames("Optimistic"), new TestFixtureData(new TestVariant(new PersistenceConfiguration(true))).SetArgDisplayNames("Pessimistic") };
+        SagaVariants = [new TestFixtureData(new TestVariant(new PersistenceConfiguration(false))).SetArgDisplayNames("Optimistic"), new TestFixtureData(new TestVariant(new PersistenceConfiguration(true))).SetArgDisplayNames("Pessimistic")];
 
-        OutboxVariants = new[] { new TestFixtureData(new TestVariant(new PersistenceConfiguration(false))).SetArgDisplayNames("Optimistic") };
+        OutboxVariants = [new TestFixtureData(new TestVariant(new PersistenceConfiguration(false))).SetArgDisplayNames("Optimistic")];
     }
 
     public class PersistenceConfiguration(bool usePessimisticLocking)

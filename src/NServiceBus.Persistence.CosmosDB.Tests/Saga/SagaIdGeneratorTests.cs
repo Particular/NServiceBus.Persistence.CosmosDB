@@ -24,7 +24,7 @@ public class SagaIdGeneratorTests
         {
             for (int i = 0; i < 10; i++)
             {
-                yield return new[] { TestContext.CurrentContext.Random.GetString(), TestContext.CurrentContext.Random.GetString(), TestContext.CurrentContext.Random.GetString() };
+                yield return [TestContext.CurrentContext.Random.GetString(), TestContext.CurrentContext.Random.GetString(), TestContext.CurrentContext.Random.GetString()];
             }
         }
     }

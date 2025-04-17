@@ -30,7 +30,7 @@ class ExtendedOutboxStorageTests(TestVariant param)
         string messageId = Guid.NewGuid().ToString();
         await storage.Get(messageId, ctx);
 
-        var messageToStore = new OutboxMessage(messageId, new[] { new TransportOperation("x", null, null, null) });
+        var messageToStore = new OutboxMessage(messageId, [new TransportOperation("x", null, null, null)]);
         using (IOutboxTransaction transaction = await storage.BeginTransaction(ctx))
         {
             await storage.Store(messageToStore, transaction, ctx);

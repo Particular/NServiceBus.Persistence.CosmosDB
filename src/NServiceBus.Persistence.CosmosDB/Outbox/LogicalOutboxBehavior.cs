@@ -14,18 +14,13 @@ using TransportOperation = Transport.TransportOperation;
 /// <summary>
 /// Mimics the outbox behavior as part of the logical phase.
 /// </summary>
-class LogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
+class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer)
+    : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
 {
-    internal LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer)
-    {
-        this.containerHolderResolver = containerHolderResolver;
-        this.serializer = serializer;
-    }
-
     /// <inheritdoc />
     public async Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
     {
-        if (!context.Extensions.TryGet<IOutboxTransaction>(out IOutboxTransaction transaction))
+        if (!context.Extensions.TryGet(out IOutboxTransaction transaction))
         {
             await next(context).ConfigureAwait(false);
             return;
@@ -45,7 +40,7 @@ class LogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomin
         }
 
         // Outbox operating at the logical stage
-        if (!context.Extensions.TryGet<PartitionKey>(out PartitionKey partitionKey))
+        if (!context.Extensions.TryGet(out PartitionKey partitionKey))
         {
             throw new Exception($"For the outbox to work a partition key must be provided either in the incoming physical or at latest in the logical message stage. Set one via '{nameof(CosmosPersistenceConfig.TransactionInformation)}'.");
         }
@@ -103,7 +98,4 @@ class LogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomin
 
         throw new Exception("Could not find routing strategy to deserialize.");
     }
-
-    readonly JsonSerializer serializer;
-    readonly ContainerHolderResolver containerHolderResolver;
 }

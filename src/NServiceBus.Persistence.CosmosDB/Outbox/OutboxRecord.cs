@@ -1,7 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB;
 
-using System;
-
 class OutboxRecord
 {
     public OutboxRecord()
@@ -14,9 +12,9 @@ class OutboxRecord
         TransportOperations = transportOperations;
     }
 
-    public string Id { get; set; }
+    public string Id { get; init; }
 
     public bool Dispatched { get; set; }
 
-    public StorageTransportOperation[] TransportOperations { get; set; } = Array.Empty<StorageTransportOperation>();
+    public StorageTransportOperation[] TransportOperations { get; init; } = [];
 }

@@ -25,14 +25,14 @@ public class LogicalOutboxBehaviorTests
     {
         string messageId = Guid.NewGuid().ToString();
 
-        TransportOperation[] transportOperations = new[]
-        {
+        TransportOperation[] transportOperations =
+        [
             new TransportOperation(
                 "42",
                 new DispatchProperties { { "Destination", "somewhere" } },
                 Array.Empty<byte>(),
                 [])
-        };
+        ];
 
         var fakeCosmosClient = new FakeCosmosClient(new FakeContainer
         {

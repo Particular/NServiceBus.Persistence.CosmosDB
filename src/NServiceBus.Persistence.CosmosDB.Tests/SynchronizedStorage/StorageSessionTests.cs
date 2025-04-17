@@ -739,7 +739,7 @@ public class StorageSessionTests
 
         public void Dispose() => WasDisposed = true;
 
-        public PartitionKey PartitionKey { get; set; }
+        public PartitionKey PartitionKey { get; init; }
         public virtual void Success(TransactionalBatchOperationResult result) => throw new NotImplementedException();
 
         public virtual void Conflict(TransactionalBatchOperationResult result) => throw new NotImplementedException();

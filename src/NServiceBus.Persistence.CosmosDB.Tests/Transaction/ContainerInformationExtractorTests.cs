@@ -338,7 +338,7 @@ public class ContainerInformationExtractorTests
 
     class MyMessage
     {
-        public string SomeId { get; set; }
+        public string SomeId { get; init; }
     }
 
     class MyOtherMessage

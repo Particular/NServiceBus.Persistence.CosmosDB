@@ -20,16 +20,13 @@ static class OutboxContainerExtensions
             return default;
         }
 
-        using (var streamReader = new StreamReader(responseMessage.Content))
-        {
-            using (var jsonReader = new JsonTextReader(streamReader))
-            {
-                OutboxRecord outboxRecord = serializer.Deserialize<OutboxRecord>(jsonReader);
+        using var streamReader = new StreamReader(responseMessage.Content);
+        using var jsonReader = new JsonTextReader(streamReader);
 
-                context.Set($"cosmos_etag:{messageId}", responseMessage.Headers.ETag);
+        OutboxRecord outboxRecord = serializer.Deserialize<OutboxRecord>(jsonReader);
 
-                return outboxRecord;
-            }
-        }
+        context.Set($"cosmos_etag:{messageId}", responseMessage.Headers.ETag);
+
+        return outboxRecord;
     }
 }

@@ -237,7 +237,7 @@ public class When_using_transactional_session : NServiceBusAcceptanceTest
     class MyDocument
     {
         [JsonProperty("id")] public string Id { get; set; }
-        public string Data { get; set; }
+        public string Data { get; init; }
 
         [JsonProperty(SetupFixture.PartitionPropertyName)]
         public string PartitionKey { get; set; }

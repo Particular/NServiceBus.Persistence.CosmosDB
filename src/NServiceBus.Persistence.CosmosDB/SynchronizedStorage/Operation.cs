@@ -25,7 +25,7 @@ abstract class Operation(PartitionKey partitionKey, JsonSerializer serializer, C
 {
     static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> partitionKeyPathAndSegments;
 
-    static readonly string[] PathSeparator = { "." };
+    static readonly string[] PathSeparator = ["."];
 
     static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> PartitionKeyPathAndSegments =>
         partitionKeyPathAndSegments ??= new ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)>();

@@ -319,7 +319,7 @@ public class PartitionKeyExtractorTests
 
     class MyMessage
     {
-        public string SomeId { get; set; }
+        public string SomeId { get; init; }
     }
 
     class MyOtherMessage
