@@ -1,23 +1,22 @@
-namespace NServiceBus
+namespace NServiceBus;
+
+using System;
+using Configuration.AdvancedExtensibility;
+using Outbox;
+using Persistence.CosmosDB;
+
+/// <summary>
+/// Cosmos DB outbox settings
+/// </summary>
+public static class CosmosOutboxSettingsExtensions
 {
-    using System;
-    using Configuration.AdvancedExtensibility;
-    using Outbox;
-    using Persistence.CosmosDB;
-
     /// <summary>
-    /// Cosmos DB outbox settings
+    /// Sets the time to live for outbox deduplication records
     /// </summary>
-    public static class CosmosOutboxSettingsExtensions
+    public static void TimeToKeepOutboxDeduplicationData(this OutboxSettings outboxSettings, TimeSpan timeToKeepOutboxDeduplicationData)
     {
-        /// <summary>
-        /// Sets the time to live for outbox deduplication records
-        /// </summary>
-        public static void TimeToKeepOutboxDeduplicationData(this OutboxSettings outboxSettings, TimeSpan timeToKeepOutboxDeduplicationData)
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeToKeepOutboxDeduplicationData, TimeSpan.Zero);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeToKeepOutboxDeduplicationData, TimeSpan.Zero);
 
-            outboxSettings.GetSettings().Set(SettingsKeys.OutboxTimeToLiveInSeconds, (int)timeToKeepOutboxDeduplicationData.TotalSeconds);
-        }
+        outboxSettings.GetSettings().Set(SettingsKeys.OutboxTimeToLiveInSeconds, (int)timeToKeepOutboxDeduplicationData.TotalSeconds);
     }
 }

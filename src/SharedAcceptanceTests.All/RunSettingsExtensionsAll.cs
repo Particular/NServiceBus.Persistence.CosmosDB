@@ -1,10 +1,9 @@
-﻿namespace NServiceBus.AcceptanceTests
-{
-    using NServiceBus.AcceptanceTesting.Support;
+﻿namespace NServiceBus.AcceptanceTests;
 
-    public static partial class RunSettingsExtensions
-    {
-        public static void DoNotRegisterDefaultContainerInformationProvider(this RunSettings runSettings) =>
-            runSettings.Set(new DoNotRegisterDefaultContainerInformationProvider());
-    }
+using NServiceBus.AcceptanceTesting.Support;
+
+public static partial class RunSettingsExtensions
+{
+    public static void DoNotRegisterDefaultContainerInformationProvider(this RunSettings runSettings) =>
+        runSettings.Set(new DoNotRegisterDefaultContainerInformationProvider());
 }

@@ -1,176 +1,147 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using Extensibility;
+using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+abstract class SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : Operation(partitionKey, serializer, context)
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Text;
-    using Extensibility;
-    using Microsoft.Azure.Cosmos;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
+    protected readonly IContainSagaData sagaData = sagaData;
+    protected Stream stream = Stream.Null;
 
-    abstract class SagaOperation : Operation
+    static ConcurrentDictionary<Type, JObject> sagaMetaDataCache = new();
+
+    public override void Success(TransactionalBatchOperationResult result)
     {
-        protected readonly IContainSagaData sagaData;
-        protected Stream stream = Stream.Null;
+        base.Success(result);
 
-        static ConcurrentDictionary<Type, JObject> sagaMetaDataCache =
-            new ConcurrentDictionary<Type, JObject>();
-
-        protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context)
-            => this.sagaData = sagaData;
-
-        public override void Success(TransactionalBatchOperationResult result)
-        {
-            base.Success(result);
-
-            Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
-        }
-
-        protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
-        {
-            var jObject = JObject.FromObject(sagaData, Serializer);
-
-            JObject metadata;
-            if (Context.TryGet($"cosmos_migratedsagaid:{sagaData.Id}", out Guid migratedSagaId))
-            {
-                metadata = CreateMetadata(sagaData.GetType());
-                metadata.Add(MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, migratedSagaId);
-            }
-            else
-            {
-                // in the case it is not a migrated saga the metadata can be shared since it is the same per saga data type
-                // the value factory is not thread safe but that is OK since the object is not heavy to create
-                metadata = sagaMetaDataCache.GetOrAdd(sagaData.GetType(), type => CreateMetadata(type));
-            }
-
-            jObject.Add(MetadataExtensions.MetadataKey, metadata);
-
-            EnrichWithPartitionKeyIfNecessary(jObject, partitionKeyPath);
-
-            return jObject;
-        }
-
-        static JObject CreateMetadata(Type sagaDataType) =>
-            new JObject
-            {
-                {MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current},
-                {MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataType.FullName}
-            };
-
-        public override void Dispose() => stream.Dispose();
+        Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
     }
 
-    sealed class SagaSave : SagaOperation
+    protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
     {
-        public SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
-            : base(sagaData, partitionKey, serializer, context)
+        var jObject = JObject.FromObject(sagaData, Serializer);
+
+        JObject metadata;
+        if (Context.TryGet($"cosmos_migratedsagaid:{sagaData.Id}", out Guid migratedSagaId))
         {
+            metadata = CreateMetadata(sagaData.GetType());
+            metadata.Add(MetadataExtensions.SagaDataContainerMigratedSagaIdMetadataKey, migratedSagaId);
+        }
+        else
+        {
+            // in the case it is not a migrated saga the metadata can be shared since it is the same per saga data type
+            // the value factory is not thread safe but that is OK since the object is not heavy to create
+            metadata = sagaMetaDataCache.GetOrAdd(sagaData.GetType(), type => CreateMetadata(type));
         }
 
-        public override void Conflict(TransactionalBatchOperationResult result)
-        {
-            throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
-        }
+        jObject.Add(MetadataExtensions.MetadataKey, metadata);
 
-        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
-        {
-            var jObject = ToEnrichedJObject(partitionKeyPath);
+        EnrichWithPartitionKeyIfNecessary(jObject, partitionKeyPath);
 
-            // Has to be kept open for transaction batch to be able to use the stream
-            stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
-            var options = new TransactionalBatchItemRequestOptions
-            {
-                EnableContentResponseOnWrite = false
-            };
-            transactionalBatch.CreateItemStream(stream, options);
-        }
+        return jObject;
     }
 
-    sealed class SagaUpdate : SagaOperation
+    static JObject CreateMetadata(Type sagaDataType) =>
+        new()
+        {
+            { MetadataExtensions.SagaDataContainerSchemaVersionMetadataKey, SagaSchemaVersion.Current },
+            { MetadataExtensions.SagaDataContainerFullTypeNameMetadataKey, sagaDataType.FullName }
+        };
+
+    public override void Dispose() => stream.Dispose();
+}
+
+sealed class SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : SagaOperation(sagaData, partitionKey, serializer, context)
+{
+    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
+
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
-        public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
+        JObject jObject = ToEnrichedJObject(partitionKeyPath);
+
+        // Has to be kept open for transaction batch to be able to use the stream
+        stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
+        var options = new TransactionalBatchItemRequestOptions { EnableContentResponseOnWrite = false };
+        transactionalBatch.CreateItemStream(stream, options);
+    }
+}
+
+sealed class SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : SagaOperation(sagaData, partitionKey, serializer, context)
+{
+    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
+
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
+    {
+        JObject jObject = ToEnrichedJObject(partitionKeyPath);
+
+        // only update if we have the same version as in CosmosDB
+        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out string updateEtag);
+        var options = new TransactionalBatchItemRequestOptions
         {
-        }
+            IfMatchEtag = updateEtag,
+            EnableContentResponseOnWrite = false
+        };
 
-        public override void Conflict(TransactionalBatchOperationResult result)
+        // has to be kept open
+        stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
+        transactionalBatch.ReplaceItemStream(sagaData.Id.ToString(), stream, options);
+    }
+}
+
+sealed class SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, ContextBag context)
+    : SagaOperation(sagaData, partitionKey, null, context)
+{
+    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
+
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
+    {
+        // only delete if we have the same version as in CosmosDB
+        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out string deleteEtag);
+        var deleteOptions = new TransactionalBatchItemRequestOptions
         {
-            throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
-        }
+            IfMatchEtag = deleteEtag,
+            EnableContentResponseOnWrite = false
+        };
+        transactionalBatch.DeleteItem(sagaData.Id.ToString(), deleteOptions);
+    }
+}
 
-        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
+// Special cleanup operation that only gets executed for pessimistic locking
+sealed class SagaReleaseLock(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : SagaOperation(sagaData, partitionKey, serializer, context), IReleaseLockOperation
+{
+    static IReadOnlyList<PatchOperation> cleanupPatchOperations;
+
+    static IReadOnlyList<PatchOperation> CleanupPatchOperations => cleanupPatchOperations ??=
+    [
+        PatchOperation.Remove($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}")
+    ];
+
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
+    {
+        // only update if we have the same version as in CosmosDB
+        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out string updateEtag);
+        var requestOptions = new TransactionalBatchPatchItemRequestOptions
         {
-            var jObject = ToEnrichedJObject(partitionKeyPath);
+            IfMatchEtag = updateEtag,
+            EnableContentResponseOnWrite = false
+        };
 
-            // only update if we have the same version as in CosmosDB
-            Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);
-            var options = new TransactionalBatchItemRequestOptions
-            {
-                IfMatchEtag = updateEtag,
-                EnableContentResponseOnWrite = false,
-            };
-
-            // has to be kept open
-            stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
-            transactionalBatch.ReplaceItemStream(sagaData.Id.ToString(), stream, options);
-        }
+        transactionalBatch.PatchItem(sagaData.Id.ToString(), CleanupPatchOperations, requestOptions);
     }
 
-    sealed class SagaDelete : SagaOperation
+    public override void Conflict(TransactionalBatchOperationResult result)
     {
-        public SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, ContextBag context) : base(sagaData, partitionKey, null, context)
-        {
-        }
-
-        public override void Conflict(TransactionalBatchOperationResult result)
-        {
-            throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
-        }
-
-        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
-        {
-            // only delete if we have the same version as in CosmosDB
-            Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var deleteEtag);
-            var deleteOptions = new TransactionalBatchItemRequestOptions
-            {
-                IfMatchEtag = deleteEtag,
-                EnableContentResponseOnWrite = false,
-            };
-            transactionalBatch.DeleteItem(sagaData.Id.ToString(), deleteOptions);
-        }
-    }
-
-    // Special cleanup operation that only gets executed for pessimistic locking
-    sealed class SagaReleaseLock : SagaOperation, IReleaseLockOperation
-    {
-        static IReadOnlyList<PatchOperation> cleanupPatchOperations;
-
-        static IReadOnlyList<PatchOperation> CleanupPatchOperations => cleanupPatchOperations ??=
-        [
-            PatchOperation.Remove($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}")
-        ];
-
-        public SagaReleaseLock(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
-        {
-        }
-
-        public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
-        {
-            // only update if we have the same version as in CosmosDB
-            Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);
-            var requestOptions = new TransactionalBatchPatchItemRequestOptions
-            {
-                IfMatchEtag = updateEtag,
-                EnableContentResponseOnWrite = false
-            };
-
-            transactionalBatch.PatchItem(sagaData.Id.ToString(), CleanupPatchOperations, requestOptions);
-        }
-
-        public override void Conflict(TransactionalBatchOperationResult result)
-        {
-            // we do not care about possible conflicts since the cleanup is best effort
-        }
+        // we do not care about possible conflicts since the cleanup is best effort
     }
 }

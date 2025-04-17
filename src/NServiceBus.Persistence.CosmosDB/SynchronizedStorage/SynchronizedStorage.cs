@@ -1,31 +1,30 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB;
+
+using Features;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+class SynchronizedStorage : Feature
 {
-    using Features;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.DependencyInjection.Extensions;
+    public SynchronizedStorage() =>
+        // Depends on the core feature
+        DependsOn<Features.SynchronizedStorage>();
 
-    class SynchronizedStorage : Feature
+    protected override void Setup(FeatureConfigurationContext context)
     {
-        public SynchronizedStorage() =>
-            // Depends on the core feature
-            DependsOn<Features.SynchronizedStorage>();
+        context.Services.TryAddSingleton(context.Settings.Get<IProvideCosmosClient>());
 
-        protected override void Setup(FeatureConfigurationContext context)
+        string databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
+
+        ContainerInformation? defaultContainerInformation = null;
+        if (context.Settings.TryGet<ContainerInformation>(out ContainerInformation info))
         {
-            context.Services.TryAddSingleton(context.Settings.Get<IProvideCosmosClient>());
-
-            var databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
-
-            ContainerInformation? defaultContainerInformation = null;
-            if (context.Settings.TryGet<ContainerInformation>(out var info))
-            {
-                defaultContainerInformation = info;
-            }
-
-            context.Services.AddSingleton(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
-
-            context.Services.AddScoped<ICompletableSynchronizedStorageSession, CosmosSynchronizedStorageSession>();
-            context.Services.AddScoped(sp => (sp.GetService<ICompletableSynchronizedStorageSession>() as IWorkWithSharedTransactionalBatch)?.Create());
+            defaultContainerInformation = info;
         }
+
+        context.Services.AddSingleton(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
+
+        context.Services.AddScoped<ICompletableSynchronizedStorageSession, CosmosSynchronizedStorageSession>();
+        context.Services.AddScoped(sp => (sp.GetService<ICompletableSynchronizedStorageSession>() as IWorkWithSharedTransactionalBatch)?.Create());
     }
 }

@@ -8,9 +8,9 @@ class TransactionalBatchCounterHandler : RequestHandler
 
     public override async Task<ResponseMessage> SendAsync(RequestMessage request, CancellationToken cancellationToken = default)
     {
-        var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        ResponseMessage response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
-        if (request.Headers.TryGetValue("x-ms-cosmos-is-batch-request", out var _))
+        if (request.Headers.TryGetValue("x-ms-cosmos-is-batch-request", out _))
         {
             TotalTransactionalBatches++;
         }

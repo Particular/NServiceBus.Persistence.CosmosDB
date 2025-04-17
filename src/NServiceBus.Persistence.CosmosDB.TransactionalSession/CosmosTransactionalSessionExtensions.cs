@@ -1,21 +1,20 @@
-﻿namespace NServiceBus.TransactionalSession
-{
-    using Configuration.AdvancedExtensibility;
-    using Features;
+﻿namespace NServiceBus.TransactionalSession;
 
+using Configuration.AdvancedExtensibility;
+using Features;
+
+/// <summary>
+/// Enables the transactional session feature.
+/// </summary>
+public static class CosmosTransactionalSessionExtensions
+{
     /// <summary>
-    /// Enables the transactional session feature.
+    /// Enables transactional session for this endpoint.
     /// </summary>
-    public static class CosmosTransactionalSessionExtensions
+    public static PersistenceExtensions<CosmosPersistence> EnableTransactionalSession(
+        this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
     {
-        /// <summary>
-        /// Enables transactional session for this endpoint.
-        /// </summary>
-        public static PersistenceExtensions<CosmosPersistence> EnableTransactionalSession(
-            this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
-        {
-            persistenceExtensions.GetSettings().EnableFeatureByDefault<CosmosTransactionalSession>();
-            return persistenceExtensions;
-        }
+        persistenceExtensions.GetSettings().EnableFeatureByDefault<CosmosTransactionalSession>();
+        return persistenceExtensions;
     }
 }

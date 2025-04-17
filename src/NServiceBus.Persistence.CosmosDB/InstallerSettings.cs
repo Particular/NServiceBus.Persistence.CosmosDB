@@ -1,10 +1,9 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB;
+
+class InstallerSettings
 {
-    class InstallerSettings
-    {
-        public bool Disabled { get; set; }
-        public string ContainerName { get; set; }
-        public string PartitionKeyPath { get; set; }
-        public string DatabaseName { get; set; }
-    }
+    public bool Disabled { get; set; }
+    public string ContainerName { get; set; }
+    public string PartitionKeyPath { get; set; }
+    public string DatabaseName { get; set; }
 }
