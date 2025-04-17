@@ -178,7 +178,7 @@ dotnet_diagnostic.IDE0062.severity = suggestion
 csharp_prefer_static_local_function = true:suggestion
 
 dotnet_diagnostic.IDE0036.severity = error
-csharp_preferred_modifier_order = public, private, protected, internal, static, extern, new, virtual, abstract, sealed, override, readonly, unsafe, volatile, async:error
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:error
 
 # Code-block preferences
 dotnet_diagnostic.IDE0011.severity = error
