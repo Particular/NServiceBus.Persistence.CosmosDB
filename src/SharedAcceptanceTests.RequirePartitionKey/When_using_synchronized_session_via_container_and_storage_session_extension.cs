@@ -35,14 +35,8 @@ public class When_using_synchronized_session_via_container_and_storage_session_e
     {
         public Endpoint() => EndpointSetup<DefaultServer>();
 
-        public class MyHandlerUsingStorageSession : IHandleMessages<MyMessage>
+        public class MyHandlerUsingStorageSession(ICosmosStorageSession session, Context context) : IHandleMessages<MyMessage>
         {
-            public MyHandlerUsingStorageSession(ICosmosStorageSession session, Context context)
-            {
-                this.session = session;
-                this.context = context;
-            }
-
             public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
             {
                 session.Batch.CreateItem(new
@@ -55,9 +49,6 @@ public class When_using_synchronized_session_via_container_and_storage_session_e
 
                 return Task.CompletedTask;
             }
-
-            Context context;
-            ICosmosStorageSession session;
         }
 
         public class MyHandlerUsingExtensionMethod : IHandleMessages<MyMessage>

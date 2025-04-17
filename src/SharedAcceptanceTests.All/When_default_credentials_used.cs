@@ -50,10 +50,8 @@ public class When_default_credentials_used : NServiceBusAcceptanceTest
                 persistence.DefaultContainer(Environment.GetEnvironmentVariable("CosmosDBPersistence_ConnectionString_ContainerOrTableName"), "/id");
             });
 
-        public class JustASaga : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
+        public class JustASaga(Context testContext) : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
         {
-            public JustASaga(Context testContext) => this.testContext = testContext;
-
             public Task Handle(StartSaga1 message, IMessageHandlerContext context)
             {
                 Data.DataId = message.DataId;
@@ -64,8 +62,6 @@ public class When_default_credentials_used : NServiceBusAcceptanceTest
 
             protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper)
                 => mapper.ConfigureMapping<StartSaga1>(m => m.DataId).ToSaga(s => s.DataId);
-
-            readonly Context testContext;
         }
 
         public class JustASagaData : ContainSagaData

@@ -51,24 +51,14 @@ public partial class When_using_outbox_synchronized_session_via_container : NSer
                 });
             });
 
-        public class MyMessageHandler : IHandleMessages<MyMessage>
+        public class MyMessageHandler(MyRepository repository, Context context) : IHandleMessages<MyMessage>
         {
-            public MyMessageHandler(MyRepository repository, Context context)
-            {
-                this.context = context;
-                this.repository = repository;
-            }
-
-
             public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
             {
                 repository.DoSomething();
                 context.Done = true;
                 return Task.CompletedTask;
             }
-
-            Context context;
-            MyRepository repository;
         }
     }
 

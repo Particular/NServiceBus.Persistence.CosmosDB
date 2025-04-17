@@ -65,10 +65,8 @@ public class When_fluent_extractor_registered_via_api : NServiceBusAcceptanceTes
                 }, (Context)r.ScenarioContext);
             });
 
-        public class JustASaga : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
+        public class JustASaga(Context testContext) : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
         {
-            public JustASaga(Context testContext) => this.testContext = testContext;
-
             public Task Handle(StartSaga1 message, IMessageHandlerContext context)
             {
                 testContext.SagaReceivedMessage = true;
@@ -78,8 +76,6 @@ public class When_fluent_extractor_registered_via_api : NServiceBusAcceptanceTes
 
             protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) =>
                 mapper.ConfigureMapping<StartSaga1>(m => m.DataId).ToSaga(s => s.DataId);
-
-            readonly Context testContext;
         }
 
         public class JustASagaData : ContainSagaData

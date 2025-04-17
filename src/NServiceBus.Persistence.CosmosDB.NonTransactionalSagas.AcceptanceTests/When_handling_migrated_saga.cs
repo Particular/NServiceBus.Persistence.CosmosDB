@@ -72,12 +72,10 @@ class When_handling_migrated_saga : NServiceBusAcceptanceTest
             persistence.Sagas().EnableMigrationMode();
         });
 
-        public class MigratingSaga : Saga<MigratingFromAsp2SagaData>,
+        public class MigratingSaga(Context testContext) : Saga<MigratingFromAsp2SagaData>,
             IAmStartedByMessages<StartSaga>,
             IHandleMessages<CompleteSagaResponse>
         {
-            public MigratingSaga(Context testContext) => this.testContext = testContext;
-
             // This code path will never be executed
             public Task Handle(StartSaga message, IMessageHandlerContext context)
             {
@@ -94,8 +92,6 @@ class When_handling_migrated_saga : NServiceBusAcceptanceTest
             }
 
             protected override void ConfigureHowToFindSaga(SagaPropertyMapper<MigratingFromAsp2SagaData> mapper) => mapper.ConfigureMapping<StartSaga>(msg => msg.MyId).ToSaga(saga => saga.MyId);
-
-            readonly Context testContext;
         }
 
         public class MigratingFromAsp2SagaData : ContainSagaData

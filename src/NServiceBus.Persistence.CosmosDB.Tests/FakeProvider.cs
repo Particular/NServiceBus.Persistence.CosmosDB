@@ -2,8 +2,7 @@
 
 using Microsoft.Azure.Cosmos;
 
-class FakeProvider : IProvideCosmosClient
+class FakeProvider(CosmosClient fakeClient) : IProvideCosmosClient
 {
-    public FakeProvider(CosmosClient fakeClient) => Client = fakeClient;
-    public CosmosClient Client { get; }
+    public CosmosClient Client { get; } = fakeClient;
 }

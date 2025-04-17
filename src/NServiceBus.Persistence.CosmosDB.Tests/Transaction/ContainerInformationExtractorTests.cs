@@ -188,12 +188,8 @@ public class ContainerInformationExtractorTests
         });
     }
 
-    class CustomHeadersExtractor : IContainerInformationFromHeadersExtractor
+    class CustomHeadersExtractor(PartitionKeyPath partitionKeyPath) : IContainerInformationFromHeadersExtractor
     {
-        readonly PartitionKeyPath partitionKeyPath;
-
-        public CustomHeadersExtractor(PartitionKeyPath partitionKeyPath) => this.partitionKeyPath = partitionKeyPath;
-
         public bool TryExtract(IReadOnlyDictionary<string, string> headers,
             out ContainerInformation? containerInformation)
         {

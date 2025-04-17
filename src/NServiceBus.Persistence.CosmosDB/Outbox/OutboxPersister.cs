@@ -9,15 +9,9 @@ using Newtonsoft.Json;
 using Outbox;
 using Transport;
 
-class OutboxPersister : IOutboxStorage
+class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds)
+    : IOutboxStorage
 {
-    public OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds)
-    {
-        this.containerHolderResolver = containerHolderResolver;
-        this.serializer = serializer;
-        this.ttlInSeconds = ttlInSeconds;
-    }
-
     public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
     {
         var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
@@ -93,9 +87,5 @@ class OutboxPersister : IOutboxStorage
         await transactionalBatch.ExecuteOperationAsync(operation, containerHolder.PartitionKeyPath, cancellationToken).ConfigureAwait(false);
     }
 
-    readonly JsonSerializer serializer;
-    readonly int ttlInSeconds;
-
     internal static readonly string SchemaVersion = "1.0.0";
-    ContainerHolderResolver containerHolderResolver;
 }

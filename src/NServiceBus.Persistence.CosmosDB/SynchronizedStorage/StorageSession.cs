@@ -8,14 +8,8 @@ using System.Threading.Tasks;
 using Extensibility;
 using Microsoft.Azure.Cosmos;
 
-class StorageSession : IWorkWithSharedTransactionalBatch
+class StorageSession(ContainerHolderResolver resolver, ContextBag context) : IWorkWithSharedTransactionalBatch
 {
-    public StorageSession(ContainerHolderResolver resolver, ContextBag context)
-    {
-        CurrentContextBag = context;
-        ContainerHolder = resolver.ResolveAndSetIfAvailable(context);
-    }
-
     public void AddOperation(IOperation operation)
     {
         PartitionKey operationPartitionKey = operation.PartitionKey;
@@ -96,10 +90,10 @@ class StorageSession : IWorkWithSharedTransactionalBatch
         }
     }
 
-    public ContextBag CurrentContextBag { get; set; }
+    public ContextBag CurrentContextBag { get; set; } = context;
     public Container Container => ContainerHolder.Container;
     public PartitionKeyPath PartitionKeyPath => ContainerHolder.PartitionKeyPath;
-    public ContainerHolder ContainerHolder { get; set; }
+    public ContainerHolder ContainerHolder { get; set; } = resolver.ResolveAndSetIfAvailable(context);
 
     readonly Dictionary<PartitionKey, Dictionary<int, IOperation>> operations = [];
     Dictionary<PartitionKey, Dictionary<int, IReleaseLockOperation>> releaseLockOperations;

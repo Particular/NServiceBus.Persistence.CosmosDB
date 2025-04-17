@@ -7,14 +7,11 @@ using Microsoft.Azure.Cosmos;
 using Outbox;
 using Transport;
 
-class CosmosSynchronizedStorageSession : ICompletableSynchronizedStorageSession, IWorkWithSharedTransactionalBatch
+class CosmosSynchronizedStorageSession(ContainerHolderResolver containerHolderResolver) : ICompletableSynchronizedStorageSession, IWorkWithSharedTransactionalBatch
 {
-    readonly ContainerHolderResolver containerHolderResolver;
     StorageSession storageSession;
     bool commitOnComplete;
     bool disposed;
-
-    public CosmosSynchronizedStorageSession(ContainerHolderResolver containerHolderResolver) => this.containerHolderResolver = containerHolderResolver;
 
     public ValueTask<bool> TryOpen(IOutboxTransaction transaction, ContextBag context,
         CancellationToken cancellationToken = default)

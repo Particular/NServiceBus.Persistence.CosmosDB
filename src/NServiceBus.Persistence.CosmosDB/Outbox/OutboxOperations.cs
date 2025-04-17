@@ -7,9 +7,10 @@ using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-abstract class OutboxOperation : Operation
+abstract class OutboxOperation(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : Operation(partitionKey, serializer, context)
 {
-    protected readonly OutboxRecord record;
+    protected readonly OutboxRecord record = record;
     protected Stream stream = Stream.Null;
 
     static JObject metadata;
@@ -19,8 +20,6 @@ abstract class OutboxOperation : Operation
         { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
         { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
     };
-
-    protected OutboxOperation(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context) => this.record = record;
 
     protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
     {
@@ -38,12 +37,9 @@ abstract class OutboxOperation : Operation
     public override void Dispose() => stream.Dispose();
 }
 
-sealed class OutboxStore : OutboxOperation
+sealed class OutboxStore(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : OutboxOperation(record, partitionKey, serializer, context)
 {
-    public OutboxStore(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(record, partitionKey, serializer, context)
-    {
-    }
-
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
         JObject jObject = ToEnrichedJObject(partitionKeyPath);
@@ -55,12 +51,9 @@ sealed class OutboxStore : OutboxOperation
     }
 }
 
-sealed class OutboxDelete : OutboxOperation
+sealed class OutboxDelete(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, int ttlInSeconds, ContextBag context)
+    : OutboxOperation(record, partitionKey, serializer, context)
 {
-    readonly int ttlInSeconds;
-
-    public OutboxDelete(OutboxRecord record, PartitionKey partitionKey, JsonSerializer serializer, int ttlInSeconds, ContextBag context) : base(record, partitionKey, serializer, context) => this.ttlInSeconds = ttlInSeconds;
-
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
         JObject jObject = ToEnrichedJObject(partitionKeyPath);

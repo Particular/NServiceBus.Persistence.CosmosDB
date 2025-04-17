@@ -62,19 +62,9 @@ partial class ContainerInformationExtractor : IContainerInformationFromHeadersEx
         extractContainerInformationFromHeaders.Add(extractor);
     }
 
-    sealed class ContainerInformationFromFromHeaderExtractor<TArg> : IContainerInformationFromHeadersExtractor
+    sealed class ContainerInformationFromFromHeaderExtractor<TArg>(string headerName, Func<string, TArg, ContainerInformation> extractor, TArg extractorArgument = default)
+        : IContainerInformationFromHeadersExtractor
     {
-        readonly Func<string, TArg, ContainerInformation> extractor;
-        readonly TArg extractorArgument;
-        readonly string headerName;
-
-        public ContainerInformationFromFromHeaderExtractor(string headerName, Func<string, TArg, ContainerInformation> extractor, TArg extractorArgument = default)
-        {
-            this.headerName = headerName;
-            this.extractorArgument = extractorArgument;
-            this.extractor = extractor;
-        }
-
         public bool TryExtract(IReadOnlyDictionary<string, string> headers, out ContainerInformation? containerInformation)
         {
             if (headers.TryGetValue(headerName, out string headerValue))
@@ -88,17 +78,9 @@ partial class ContainerInformationExtractor : IContainerInformationFromHeadersEx
         }
     }
 
-    sealed class ContainerInformationFromHeadersExtractor<TArg> : IContainerInformationFromHeadersExtractor
+    sealed class ContainerInformationFromHeadersExtractor<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation?> extractor, TArg extractorArgument)
+        : IContainerInformationFromHeadersExtractor
     {
-        readonly Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation?> extractor;
-        readonly TArg extractorArgument;
-
-        public ContainerInformationFromHeadersExtractor(Func<IReadOnlyDictionary<string, string>, TArg, ContainerInformation?> extractor, TArg extractorArgument)
-        {
-            this.extractor = extractor;
-            this.extractorArgument = extractorArgument;
-        }
-
         public bool TryExtract(IReadOnlyDictionary<string, string> headers, out ContainerInformation? containerInformation)
         {
             containerInformation = extractor.Invoke(headers, extractorArgument);

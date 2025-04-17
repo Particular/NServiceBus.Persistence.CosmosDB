@@ -2,19 +2,8 @@
 
 using Extensibility;
 
-class ContainerHolderResolver
+class ContainerHolderResolver(IProvideCosmosClient provideCosmosClient, ContainerInformation? defaultContainerInformation, string databaseName)
 {
-    readonly IProvideCosmosClient provideCosmosClient;
-    readonly ContainerInformation? defaultContainerInformation;
-    readonly string databaseName;
-
-    public ContainerHolderResolver(IProvideCosmosClient provideCosmosClient, ContainerInformation? defaultContainerInformation, string databaseName)
-    {
-        this.databaseName = databaseName;
-        this.defaultContainerInformation = defaultContainerInformation;
-        this.provideCosmosClient = provideCosmosClient;
-    }
-
     public ContainerHolder ResolveAndSetIfAvailable(ContextBag context)
     {
         if (context.TryGet<ContainerHolder>(out ContainerHolder containerHolder))

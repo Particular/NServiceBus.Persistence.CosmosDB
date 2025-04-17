@@ -64,17 +64,9 @@ partial class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartit
         extractPartitionKeyFromMessages.Add(extractor);
     }
 
-    sealed class PartitionKeyFromMessageExtractor<TMessage, TArg> : IPartitionKeyFromMessageExtractor
+    sealed class PartitionKeyFromMessageExtractor<TMessage, TArg>(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg argument = default)
+        : IPartitionKeyFromMessageExtractor
     {
-        readonly Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor;
-        readonly TArg argument;
-
-        public PartitionKeyFromMessageExtractor(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg argument = default)
-        {
-            this.argument = argument;
-            this.extractor = extractor;
-        }
-
         public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
             if (message is TMessage typedMessage)

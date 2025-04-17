@@ -8,15 +8,10 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 
 // Makes sure delegate all operations to the storage session. Nothing is executed yet to avoid running into transaction timeouts.
-sealed class SharedTransactionalBatch : TransactionalBatch, ICosmosStorageSession
+sealed class SharedTransactionalBatch(IWorkWithSharedTransactionalBatch operationsHolder, PartitionKey partitionKey)
+    : TransactionalBatch, ICosmosStorageSession
 {
-    public SharedTransactionalBatch(IWorkWithSharedTransactionalBatch operationsHolder, PartitionKey partitionKey)
-    {
-        this.operationsHolder = operationsHolder;
-        PartitionKey = partitionKey;
-    }
-
-    public PartitionKey PartitionKey { get; }
+    public PartitionKey PartitionKey { get; } = partitionKey;
 
     public Container Container => operationsHolder.Container;
     public PartitionKeyPath PartitionKeyPath => operationsHolder.PartitionKeyPath;
@@ -101,6 +96,4 @@ sealed class SharedTransactionalBatch : TransactionalBatch, ICosmosStorageSessio
     public override Task<TransactionalBatchResponse> ExecuteAsync(CancellationToken cancellationToken = new()) => throw new InvalidOperationException("Storage Session will execute the transaction");
 
     public override Task<TransactionalBatchResponse> ExecuteAsync(TransactionalBatchRequestOptions requestOptions, CancellationToken cancellationToken = new()) => throw new InvalidOperationException("Storage Session will execute the transaction");
-
-    readonly IWorkWithSharedTransactionalBatch operationsHolder;
 }

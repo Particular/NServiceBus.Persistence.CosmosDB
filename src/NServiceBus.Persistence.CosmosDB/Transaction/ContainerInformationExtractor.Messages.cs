@@ -67,17 +67,9 @@ partial class ContainerInformationExtractor : IContainerInformationFromHeadersEx
         extractContainerInformationFromMessages.Add(extractor);
     }
 
-    sealed class ContainerInformationFromMessageExtractor<TMessage, TArg> : IContainerInformationFromMessagesExtractor
+    sealed class ContainerInformationFromMessageExtractor<TMessage, TArg>(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor, TArg argument = default)
+        : IContainerInformationFromMessagesExtractor
     {
-        readonly Func<TMessage, IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor;
-        readonly TArg argument;
-
-        public ContainerInformationFromMessageExtractor(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, ContainerInformation> extractor, TArg argument = default)
-        {
-            this.argument = argument;
-            this.extractor = extractor;
-        }
-
         public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out ContainerInformation? containerInformation)
         {
             if (message is TMessage typedMessage)

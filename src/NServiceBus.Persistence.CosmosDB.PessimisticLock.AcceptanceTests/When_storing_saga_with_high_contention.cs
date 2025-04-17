@@ -67,12 +67,8 @@ public class When_storing_saga_with_high_contention : NServiceBusAcceptanceTest
                 recoverability.Delayed(s => s.NumberOfRetries(0));
             });
 
-        class HighContentionSaga : Saga<HighContentionSaga.HighContentionSagaData>, IAmStartedByMessages<StartSaga>, IHandleMessages<ConcurrentMessage>
+        class HighContentionSaga(HighContentionScenario scenario) : Saga<HighContentionSaga.HighContentionSagaData>, IAmStartedByMessages<StartSaga>, IHandleMessages<ConcurrentMessage>
         {
-            readonly HighContentionScenario scenario;
-
-            public HighContentionSaga(HighContentionScenario scenario) => this.scenario = scenario;
-
             protected override void ConfigureHowToFindSaga(SagaPropertyMapper<HighContentionSagaData> mapper)
             {
                 mapper.ConfigureMapping<StartSaga>(message => message.SomeId).ToSaga(data => data.SomeId);
@@ -108,12 +104,8 @@ public class When_storing_saga_with_high_contention : NServiceBusAcceptanceTest
             }
         }
 
-        class DoneHandler : IHandleMessages<SagaCompleted>
+        class DoneHandler(HighContentionScenario scenario) : IHandleMessages<SagaCompleted>
         {
-            readonly HighContentionScenario scenario;
-
-            public DoneHandler(HighContentionScenario scenario) => this.scenario = scenario;
-
             public Task Handle(SagaCompleted message, IMessageHandlerContext context)
             {
                 scenario.SagaCompleted = true;

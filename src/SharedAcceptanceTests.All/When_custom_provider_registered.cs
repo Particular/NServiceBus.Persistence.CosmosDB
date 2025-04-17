@@ -37,10 +37,8 @@ public class When_custom_provider_registered : NServiceBusAcceptanceTest
                     c.AddSingleton<IProvideCosmosClient>(b => new CustomProvider(b.GetService<Context>())));
             });
 
-        public class JustASaga : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
+        public class JustASaga(Context testContext) : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
         {
-            public JustASaga(Context testContext) => this.testContext = testContext;
-
             public Task Handle(StartSaga1 message, IMessageHandlerContext context)
             {
                 Data.DataId = message.DataId;
@@ -50,14 +48,10 @@ public class When_custom_provider_registered : NServiceBusAcceptanceTest
             }
 
             protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) => mapper.ConfigureMapping<StartSaga1>(m => m.DataId).ToSaga(s => s.DataId);
-
-            readonly Context testContext;
         }
 
-        public class CustomProvider : IProvideCosmosClient
+        public class CustomProvider(Context testContext) : IProvideCosmosClient
         {
-            public CustomProvider(Context testContext) => this.testContext = testContext;
-
             public CosmosClient Client
             {
                 get
@@ -66,8 +60,6 @@ public class When_custom_provider_registered : NServiceBusAcceptanceTest
                     return SetupFixture.CosmosDbClient;
                 }
             }
-
-            readonly Context testContext;
         }
 
         public class JustASagaData : ContainSagaData

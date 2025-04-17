@@ -7,17 +7,9 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Pipeline;
 
-class TransactionInformationBeforeThePhysicalOutboxBehavior : IBehavior<ITransportReceiveContext, ITransportReceiveContext>
+class TransactionInformationBeforeThePhysicalOutboxBehavior(IPartitionKeyFromHeadersExtractor partitionKeyExtractor, IContainerInformationFromHeadersExtractor containerInformationExtractor)
+    : IBehavior<ITransportReceiveContext, ITransportReceiveContext>
 {
-    readonly IPartitionKeyFromHeadersExtractor partitionKeyExtractor;
-    readonly IContainerInformationFromHeadersExtractor containerInformationExtractor;
-
-    public TransactionInformationBeforeThePhysicalOutboxBehavior(IPartitionKeyFromHeadersExtractor partitionKeyExtractor, IContainerInformationFromHeadersExtractor containerInformationExtractor)
-    {
-        this.partitionKeyExtractor = partitionKeyExtractor;
-        this.containerInformationExtractor = containerInformationExtractor;
-    }
-
     public Task Invoke(ITransportReceiveContext context, Func<ITransportReceiveContext, Task> next)
     {
         if (partitionKeyExtractor.TryExtract(context.Message.Headers, out PartitionKey? partitionKey))
@@ -41,30 +33,24 @@ class TransactionInformationBeforeThePhysicalOutboxBehavior : IBehavior<ITranspo
         return next(context);
     }
 
-    public class RegisterStep : Pipeline.RegisterStep
-    {
-        public RegisterStep(
-            PartitionKeyExtractor partitionKeyExtractor, ContainerInformationExtractor containerInformationExtractor) :
-            base(nameof(TransactionInformationBeforeThePhysicalOutboxBehavior),
-                typeof(TransactionInformationBeforeThePhysicalOutboxBehavior),
-                "Populates the transaction information before the physical outbox.",
-                b =>
+    public class RegisterStep(PartitionKeyExtractor partitionKeyExtractor, ContainerInformationExtractor containerInformationExtractor)
+        : Pipeline.RegisterStep(nameof(TransactionInformationBeforeThePhysicalOutboxBehavior),
+            typeof(TransactionInformationBeforeThePhysicalOutboxBehavior),
+            "Populates the transaction information before the physical outbox.",
+            b =>
+            {
+                IEnumerable<IPartitionKeyFromHeadersExtractor> partitionKeyFromHeadersExtractors = b.GetServices<IPartitionKeyFromHeadersExtractor>();
+                foreach (IPartitionKeyFromHeadersExtractor extractor in partitionKeyFromHeadersExtractors)
                 {
-                    IEnumerable<IPartitionKeyFromHeadersExtractor> partitionKeyFromHeadersExtractors = b.GetServices<IPartitionKeyFromHeadersExtractor>();
-                    foreach (IPartitionKeyFromHeadersExtractor extractor in partitionKeyFromHeadersExtractors)
-                    {
-                        partitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor);
-                    }
+                    partitionKeyExtractor.ExtractPartitionKeyFromHeaders(extractor);
+                }
 
-                    IEnumerable<IContainerInformationFromHeadersExtractor> containerInformationFromHeadersExtractors = b.GetServices<IContainerInformationFromHeadersExtractor>();
-                    foreach (IContainerInformationFromHeadersExtractor extractor in containerInformationFromHeadersExtractors)
-                    {
-                        containerInformationExtractor.ExtractContainerInformationFromHeaders(extractor);
-                    }
+                IEnumerable<IContainerInformationFromHeadersExtractor> containerInformationFromHeadersExtractors = b.GetServices<IContainerInformationFromHeadersExtractor>();
+                foreach (IContainerInformationFromHeadersExtractor extractor in containerInformationFromHeadersExtractors)
+                {
+                    containerInformationExtractor.ExtractContainerInformationFromHeaders(extractor);
+                }
 
-                    return new TransactionInformationBeforeThePhysicalOutboxBehavior(partitionKeyExtractor, containerInformationExtractor);
-                })
-        {
-        }
-    }
+                return new TransactionInformationBeforeThePhysicalOutboxBehavior(partitionKeyExtractor, containerInformationExtractor);
+            });
 }

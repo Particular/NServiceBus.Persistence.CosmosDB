@@ -2,14 +2,8 @@
 
 using Microsoft.Azure.Cosmos;
 
-class ContainerHolder
+class ContainerHolder(Container container, PartitionKeyPath partitionKeyPath)
 {
-    public ContainerHolder(Container container, PartitionKeyPath partitionKeyPath)
-    {
-        Container = container;
-        PartitionKeyPath = partitionKeyPath;
-    }
-
-    public Container Container { get; set; }
-    public PartitionKeyPath PartitionKeyPath { get; set; }
+    public Container Container { get; set; } = container;
+    public PartitionKeyPath PartitionKeyPath { get; set; } = partitionKeyPath;
 }

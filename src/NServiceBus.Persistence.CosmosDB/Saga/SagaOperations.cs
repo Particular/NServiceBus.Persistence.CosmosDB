@@ -10,15 +10,13 @@ using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-abstract class SagaOperation : Operation
+abstract class SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : Operation(partitionKey, serializer, context)
 {
-    protected readonly IContainSagaData sagaData;
+    protected readonly IContainSagaData sagaData = sagaData;
     protected Stream stream = Stream.Null;
 
     static ConcurrentDictionary<Type, JObject> sagaMetaDataCache = new();
-
-    protected SagaOperation(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(partitionKey, serializer, context)
-        => this.sagaData = sagaData;
 
     public override void Success(TransactionalBatchOperationResult result)
     {
@@ -61,13 +59,9 @@ abstract class SagaOperation : Operation
     public override void Dispose() => stream.Dispose();
 }
 
-sealed class SagaSave : SagaOperation
+sealed class SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : SagaOperation(sagaData, partitionKey, serializer, context)
 {
-    public SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
-        : base(sagaData, partitionKey, serializer, context)
-    {
-    }
-
     public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
@@ -81,12 +75,9 @@ sealed class SagaSave : SagaOperation
     }
 }
 
-sealed class SagaUpdate : SagaOperation
+sealed class SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : SagaOperation(sagaData, partitionKey, serializer, context)
 {
-    public SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
-    {
-    }
-
     public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
@@ -107,12 +98,9 @@ sealed class SagaUpdate : SagaOperation
     }
 }
 
-sealed class SagaDelete : SagaOperation
+sealed class SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, ContextBag context)
+    : SagaOperation(sagaData, partitionKey, null, context)
 {
-    public SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, ContextBag context) : base(sagaData, partitionKey, null, context)
-    {
-    }
-
     public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
@@ -129,7 +117,8 @@ sealed class SagaDelete : SagaOperation
 }
 
 // Special cleanup operation that only gets executed for pessimistic locking
-sealed class SagaReleaseLock : SagaOperation, IReleaseLockOperation
+sealed class SagaReleaseLock(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : SagaOperation(sagaData, partitionKey, serializer, context), IReleaseLockOperation
 {
     static IReadOnlyList<PatchOperation> cleanupPatchOperations;
 
@@ -137,10 +126,6 @@ sealed class SagaReleaseLock : SagaOperation, IReleaseLockOperation
     [
         PatchOperation.Remove($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}")
     ];
-
-    public SagaReleaseLock(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context) : base(sagaData, partitionKey, serializer, context)
-    {
-    }
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {

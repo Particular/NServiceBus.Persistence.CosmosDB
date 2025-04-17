@@ -2,11 +2,7 @@
 
 using Microsoft.Azure.Cosmos;
 
-class FakeCosmosClient : CosmosClient
+class FakeCosmosClient(Container fakeContainer) : CosmosClient
 {
-    readonly Container fakeContainer;
-
-    public FakeCosmosClient(Container fakeContainer) => this.fakeContainer = fakeContainer;
-
     public override Container GetContainer(string databaseId, string containerId) => fakeContainer;
 }

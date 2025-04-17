@@ -21,11 +21,9 @@ public partial class PersistenceTestsConfiguration : IProvideCosmosClient
         OutboxVariants = new[] { new TestFixtureData(new TestVariant(new PersistenceConfiguration(false))).SetArgDisplayNames("Optimistic") };
     }
 
-    public class PersistenceConfiguration
+    public class PersistenceConfiguration(bool usePessimisticLocking)
     {
-        public readonly bool UsePessimisticLocking;
-
-        public PersistenceConfiguration(bool usePessimisticLocking) => UsePessimisticLocking = usePessimisticLocking;
+        public readonly bool UsePessimisticLocking = usePessimisticLocking;
     }
 
 

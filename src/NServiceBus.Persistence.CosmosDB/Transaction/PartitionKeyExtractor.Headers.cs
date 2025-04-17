@@ -75,19 +75,9 @@ partial class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartit
         extractPartitionKeyFromHeaders.Add(extractor);
     }
 
-    sealed class PartitionKeyFromFromHeaderExtractor<TArg> : IPartitionKeyFromHeadersExtractor
+    sealed class PartitionKeyFromFromHeaderExtractor<TArg>(string headerName, Func<string, TArg, PartitionKey> extractor, TArg extractorArgument = default)
+        : IPartitionKeyFromHeadersExtractor
     {
-        readonly Func<string, TArg, PartitionKey> extractor;
-        readonly TArg extractorArgument;
-        readonly string headerName;
-
-        public PartitionKeyFromFromHeaderExtractor(string headerName, Func<string, TArg, PartitionKey> extractor, TArg extractorArgument = default)
-        {
-            this.headerName = headerName;
-            this.extractorArgument = extractorArgument;
-            this.extractor = extractor;
-        }
-
         public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
             if (headers.TryGetValue(headerName, out string headerValue))
@@ -101,17 +91,9 @@ partial class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartit
         }
     }
 
-    sealed class PartitionKeyFromFromHeadersExtractor<TArg> : IPartitionKeyFromHeadersExtractor
+    sealed class PartitionKeyFromFromHeadersExtractor<TArg>(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey?> extractor, TArg extractorArgument)
+        : IPartitionKeyFromHeadersExtractor
     {
-        readonly Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey?> extractor;
-        readonly TArg extractorArgument;
-
-        public PartitionKeyFromFromHeadersExtractor(Func<IReadOnlyDictionary<string, string>, TArg, PartitionKey?> extractor, TArg extractorArgument)
-        {
-            this.extractor = extractor;
-            this.extractorArgument = extractorArgument;
-        }
-
         public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
             partitionKey = extractor.Invoke(headers, extractorArgument);

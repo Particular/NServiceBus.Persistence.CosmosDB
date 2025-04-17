@@ -7,17 +7,9 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Pipeline;
 
-class TransactionInformationBeforeTheLogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
+class TransactionInformationBeforeTheLogicalOutboxBehavior(IPartitionKeyFromMessageExtractor partitionKeyExtractor, IContainerInformationFromMessagesExtractor containerInformationExtractor)
+    : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
 {
-    readonly IPartitionKeyFromMessageExtractor partitionKeyExtractor;
-    readonly IContainerInformationFromMessagesExtractor containerInformationExtractor;
-
-    public TransactionInformationBeforeTheLogicalOutboxBehavior(IPartitionKeyFromMessageExtractor partitionKeyExtractor, IContainerInformationFromMessagesExtractor containerInformationExtractor)
-    {
-        this.partitionKeyExtractor = partitionKeyExtractor;
-        this.containerInformationExtractor = containerInformationExtractor;
-    }
-
     public Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
     {
         if (partitionKeyExtractor.TryExtract(context.Message.Instance, context.MessageHeaders, out PartitionKey? partitionKey))

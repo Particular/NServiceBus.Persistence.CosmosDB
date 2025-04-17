@@ -6,15 +6,13 @@ using Extensibility;
 using Microsoft.Azure.Cosmos;
 using Outbox;
 
-class CosmosOutboxTransaction : IOutboxTransaction
+class CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context) : IOutboxTransaction
 {
-    public StorageSession StorageSession { get; }
+    public StorageSession StorageSession { get; } = new(resolver, context);
     public PartitionKey? PartitionKey { get; set; }
 
     // By default, store and commit are enabled
     public bool AbandonStoreAndCommit { get; set; }
-
-    public CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context) => StorageSession = new StorageSession(resolver, context);
 
     public Task Commit(CancellationToken cancellationToken = default) =>
         AbandonStoreAndCommit ? Task.CompletedTask : StorageSession.Commit(cancellationToken);

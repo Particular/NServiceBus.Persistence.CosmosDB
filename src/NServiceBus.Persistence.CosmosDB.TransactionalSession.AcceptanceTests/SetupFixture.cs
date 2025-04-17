@@ -78,17 +78,11 @@ public class SetupFixture
     }
 }
 
-class Installer
+class Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
 {
-    public Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
-    {
-        installerSettings = settings;
-        this.clientProvider = clientProvider;
-    }
-
     public async Task Install(CancellationToken cancellationToken = default)
     {
-        if (installerSettings == null || installerSettings.Disabled)
+        if (settings == null || settings.Disabled)
         {
             return;
         }
@@ -106,13 +100,13 @@ class Installer
 
     async Task CreateContainerIfNotExists(CancellationToken cancellationToken)
     {
-        await clientProvider.Client.CreateDatabaseIfNotExistsAsync(installerSettings.DatabaseName, cancellationToken: cancellationToken)
+        await clientProvider.Client.CreateDatabaseIfNotExistsAsync(settings.DatabaseName, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        Database database = clientProvider.Client.GetDatabase(installerSettings.DatabaseName);
+        Database database = clientProvider.Client.GetDatabase(settings.DatabaseName);
 
         var containerProperties =
-            new ContainerProperties(installerSettings.ContainerName, installerSettings.PartitionKeyPath)
+            new ContainerProperties(settings.ContainerName, settings.PartitionKeyPath)
             {
                 // in order for individual items TTL to work (example outbox records)
                 DefaultTimeToLive = -1
@@ -122,9 +116,7 @@ class Installer
             .ConfigureAwait(false);
     }
 
-    InstallerSettings installerSettings;
     static ILog log = LogManager.GetLogger<Installer>();
-    readonly IProvideCosmosClient clientProvider;
 }
 
 class InstallerSettings

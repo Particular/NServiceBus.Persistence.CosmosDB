@@ -20,7 +20,8 @@ interface IOperation : IDisposable
     void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath);
 }
 
-abstract class Operation : IOperation
+abstract class Operation(PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
+    : IOperation
 {
     static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> partitionKeyPathAndSegments;
 
@@ -29,16 +30,9 @@ abstract class Operation : IOperation
     static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> PartitionKeyPathAndSegments =>
         partitionKeyPathAndSegments ??= new ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)>();
 
-    protected Operation(PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
-    {
-        PartitionKey = partitionKey;
-        Serializer = serializer;
-        Context = context;
-    }
-
-    public ContextBag Context { get; }
-    public PartitionKey PartitionKey { get; }
-    public JsonSerializer Serializer { get; }
+    public ContextBag Context { get; } = context;
+    public PartitionKey PartitionKey { get; } = partitionKey;
+    public JsonSerializer Serializer { get; } = serializer;
 
     public virtual void Success(TransactionalBatchOperationResult result)
     {

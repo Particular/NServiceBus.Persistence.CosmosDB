@@ -97,12 +97,8 @@ public class When_custom_container_is_overwritten : NServiceBusAcceptanceTest
                 }, (Context)r.ScenarioContext);
             });
 
-        public class OrderCompletedHandler : IHandleMessages<OrderCompleted>
+        public class OrderCompletedHandler(Context testContext) : IHandleMessages<OrderCompleted>
         {
-            readonly Context testContext;
-
-            public OrderCompletedHandler(Context testContext) => this.testContext = testContext;
-
             public Task Handle(OrderCompleted message, IMessageHandlerContext context)
             {
                 testContext.OrderProcessId = message.OrderProcessId.ToString();

@@ -4,109 +4,70 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Azure.Cosmos;
 
-abstract class UserOperation : Operation
+abstract class UserOperation(TransactionalBatchItemRequestOptions requestOptions, PartitionKey partitionKey)
+    : Operation(partitionKey, null, null)
 {
-    protected readonly TransactionalBatchItemRequestOptions options;
-
-    protected UserOperation(TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(partitionKey, null, null) => this.options = options;
+    protected readonly TransactionalBatchItemRequestOptions requestOptions = requestOptions;
 }
 
-abstract class StreamUserOperation : UserOperation
+abstract class StreamUserOperation(Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : UserOperation(options, partitionKey)
 {
-    protected readonly Stream streamPayload;
-
-    protected StreamUserOperation(Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey) => this.streamPayload = streamPayload;
+    protected readonly Stream streamPayload = streamPayload;
 
     public override void Dispose() => streamPayload.Dispose();
 }
 
-sealed class CreateItemOperation<T> : UserOperation
+sealed class CreateItemOperation<T>(T item, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : UserOperation(options, partitionKey)
 {
-    readonly T item;
-
-    public CreateItemOperation(T item, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey) => this.item = item;
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.CreateItem(item, options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.CreateItem(item, requestOptions);
 }
 
-sealed class CreateItemStreamOperation : StreamUserOperation
+sealed class CreateItemStreamOperation(Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : StreamUserOperation(streamPayload, options, partitionKey)
 {
-    public CreateItemStreamOperation(Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(streamPayload, options, partitionKey)
-    {
-    }
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.CreateItemStream(streamPayload, options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.CreateItemStream(streamPayload, requestOptions);
 }
 
-sealed class ReadItemOperation : UserOperation
+sealed class ReadItemOperation(string id, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : UserOperation(options, partitionKey)
 {
-    readonly string id;
-
-    public ReadItemOperation(string id, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey) => this.id = id;
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.ReadItem(id, options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.ReadItem(id, requestOptions);
 }
 
-sealed class UpsertItemOperation<T> : UserOperation
+sealed class UpsertItemOperation<T>(T item, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : UserOperation(options, partitionKey)
 {
-    readonly T item;
-
-    public UpsertItemOperation(T item, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey) => this.item = item;
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.UpsertItem(item, options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.UpsertItem(item, requestOptions);
 }
 
-sealed class UpsertItemStreamOperation : StreamUserOperation
+sealed class UpsertItemStreamOperation(Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : StreamUserOperation(streamPayload, options, partitionKey)
 {
-    public UpsertItemStreamOperation(Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(streamPayload, options, partitionKey)
-    {
-    }
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.UpsertItemStream(streamPayload, options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.UpsertItemStream(streamPayload, requestOptions);
 }
 
-sealed class ReplaceItemOperation<T> : UserOperation
+sealed class ReplaceItemOperation<T>(string id, T item, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : UserOperation(options, partitionKey)
 {
-    readonly T item;
-    readonly string id;
-
-    public ReplaceItemOperation(string id, T item, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey)
-    {
-        this.id = id;
-        this.item = item;
-    }
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.ReplaceItem(id, item, options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.ReplaceItem(id, item, requestOptions);
 }
 
-sealed class ReplaceItemStreamOperation : StreamUserOperation
+sealed class ReplaceItemStreamOperation(string id, Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : StreamUserOperation(streamPayload, options, partitionKey)
 {
-    readonly string id;
-
-    public ReplaceItemStreamOperation(string id, Stream streamPayload, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(streamPayload, options, partitionKey) => this.id = id;
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.ReplaceItemStream(id, streamPayload, options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.ReplaceItemStream(id, streamPayload, requestOptions);
 }
 
-sealed class DeleteItemOperation : UserOperation
+sealed class DeleteItemOperation(string id, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey)
+    : UserOperation(options, partitionKey)
 {
-    readonly string id;
-
-    public DeleteItemOperation(string id, TransactionalBatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey) => this.id = id;
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.DeleteItem(id, options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.DeleteItem(id, requestOptions);
 }
 
-sealed class PatchItemOperation : UserOperation
+sealed class PatchItemOperation(string id, IReadOnlyList<PatchOperation> patchOperations, TransactionalBatchPatchItemRequestOptions options, PartitionKey partitionKey)
+    : UserOperation(options, partitionKey)
 {
-    readonly string id;
-    readonly IReadOnlyList<PatchOperation> patchOperations;
-
-    public PatchItemOperation(string id, IReadOnlyList<PatchOperation> patchOperations, TransactionalBatchPatchItemRequestOptions options, PartitionKey partitionKey) : base(options, partitionKey)
-    {
-        this.id = id;
-        this.patchOperations = patchOperations;
-    }
-
-    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.PatchItem(id, patchOperations, (TransactionalBatchPatchItemRequestOptions)options);
+    public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath) => transactionalBatch.PatchItem(id, patchOperations, (TransactionalBatchPatchItemRequestOptions)requestOptions);
 }

@@ -42,10 +42,8 @@ public class When_custom_partition_key_extractor_from_headers_registered_via_di 
                     c.AddSingleton<IPartitionKeyFromHeadersExtractor>(b => new CustomExtractor(b.GetService<Context>())));
             });
 
-        public class JustASaga : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
+        public class JustASaga(Context testContext) : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
         {
-            public JustASaga(Context testContext) => this.testContext = testContext;
-
             public Task Handle(StartSaga1 message, IMessageHandlerContext context)
             {
                 Data.DataId = message.DataId;
@@ -55,15 +53,10 @@ public class When_custom_partition_key_extractor_from_headers_registered_via_di 
             }
 
             protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) => mapper.ConfigureMapping<StartSaga1>(m => m.DataId).ToSaga(s => s.DataId);
-
-            readonly Context testContext;
         }
 
-        public class CustomExtractor : IPartitionKeyFromHeadersExtractor
+        public class CustomExtractor(Context testContext) : IPartitionKeyFromHeadersExtractor
         {
-            readonly Context testContext;
-            public CustomExtractor(Context testContext) => this.testContext = testContext;
-
             public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
             {
                 partitionKey = new PartitionKey(testContext.TestRunId.ToString());

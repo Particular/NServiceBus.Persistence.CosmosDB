@@ -38,12 +38,8 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
     public Task Cleanup() => Task.CompletedTask;
 
-    class PartitionKeyProvider : IPartitionKeyFromMessageExtractor
+    class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromMessageExtractor
     {
-        readonly ScenarioContext scenarioContext;
-
-        public PartitionKeyProvider(ScenarioContext scenarioContext) => this.scenarioContext = scenarioContext;
-
         public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
             partitionKey = new PartitionKey(scenarioContext.TestRunId.ToString());

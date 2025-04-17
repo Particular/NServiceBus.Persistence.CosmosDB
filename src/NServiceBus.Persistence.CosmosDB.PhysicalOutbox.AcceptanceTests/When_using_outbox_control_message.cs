@@ -47,10 +47,8 @@ public class When_using_outbox_control_message : NServiceBusAcceptanceTest
                 config.Pipeline.Register(new ControlMessageBehavior(runDescriptor.ScenarioContext as Context), "Checks that the control message was processed successfully");
             });
 
-        class ControlMessageSender : FeatureStartupTask
+        class ControlMessageSender(IMessageDispatcher dispatcher) : FeatureStartupTask
         {
-            public ControlMessageSender(IMessageDispatcher dispatcher) => this.dispatcher = dispatcher;
-
             protected override Task OnStart(IMessageSession session, CancellationToken cancellationToken = default)
             {
                 OutgoingMessage controlMessage = ControlMessageFactory.Create(MessageIntent.Subscribe);
@@ -60,22 +58,16 @@ public class When_using_outbox_control_message : NServiceBusAcceptanceTest
             }
 
             protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken = default) => Task.CompletedTask;
-
-            readonly IMessageDispatcher dispatcher;
         }
 
-        class ControlMessageBehavior : Behavior<IIncomingPhysicalMessageContext>
+        class ControlMessageBehavior(Context testContext) : Behavior<IIncomingPhysicalMessageContext>
         {
-            public ControlMessageBehavior(Context testContext) => this.testContext = testContext;
-
             public override async Task Invoke(IIncomingPhysicalMessageContext context, Func<Task> next)
             {
                 await next();
 
                 testContext.ProcessedControlMessage = true;
             }
-
-            readonly Context testContext;
         }
     }
 }
