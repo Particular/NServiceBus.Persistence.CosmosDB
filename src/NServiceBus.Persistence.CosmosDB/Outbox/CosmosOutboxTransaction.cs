@@ -1,24 +1,23 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB;
+
+using System.Threading;
+using System.Threading.Tasks;
+using Extensibility;
+using Microsoft.Azure.Cosmos;
+using Outbox;
+
+class CosmosOutboxTransaction : IOutboxTransaction
 {
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Extensibility;
-    using Microsoft.Azure.Cosmos;
-    using Outbox;
+    public StorageSession StorageSession { get; }
+    public PartitionKey? PartitionKey { get; set; }
 
-    class CosmosOutboxTransaction : IOutboxTransaction
-    {
-        public StorageSession StorageSession { get; }
-        public PartitionKey? PartitionKey { get; set; }
+    // By default, store and commit are enabled
+    public bool AbandonStoreAndCommit { get; set; }
 
-        // By default, store and commit are enabled
-        public bool AbandonStoreAndCommit { get; set; }
+    public CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context) => StorageSession = new StorageSession(resolver, context);
 
-        public CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context) => StorageSession = new StorageSession(resolver, context);
+    public Task Commit(CancellationToken cancellationToken = default) =>
+        AbandonStoreAndCommit ? Task.CompletedTask : StorageSession.Commit(cancellationToken);
 
-        public Task Commit(CancellationToken cancellationToken = default) =>
-            AbandonStoreAndCommit ? Task.CompletedTask : StorageSession.Commit(cancellationToken);
-
-        public void Dispose() => StorageSession.Dispose();
-    }
+    public void Dispose() => StorageSession.Dispose();
 }

@@ -1,6 +1,5 @@
-﻿namespace NServiceBus.AcceptanceTests
+﻿namespace NServiceBus.AcceptanceTests;
+
+public sealed class DoNotRegisterDefaultContainerInformationProvider
 {
-    public sealed class DoNotRegisterDefaultContainerInformationProvider
-    {
-    }
 }

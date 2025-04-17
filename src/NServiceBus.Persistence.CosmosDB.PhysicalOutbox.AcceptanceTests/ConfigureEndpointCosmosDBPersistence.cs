@@ -18,7 +18,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             return Task.FromResult(0);
         }
 
-        var persistence = configuration.UsePersistence<CosmosPersistence>();
+        PersistenceExtensions<CosmosPersistence> persistence = configuration.UsePersistence<CosmosPersistence>();
         persistence.DisableContainerCreation();
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
@@ -27,6 +27,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         {
             configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
         }
+
         if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
         {
             configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromHeadersExtractor, ContainerInformationProvider>());
@@ -35,10 +36,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         return Task.FromResult(0);
     }
 
-    public Task Cleanup()
-    {
-        return Task.CompletedTask;
-    }
+    public Task Cleanup() => Task.CompletedTask;
 
     class PartitionKeyProvider : IPartitionKeyFromHeadersExtractor
     {

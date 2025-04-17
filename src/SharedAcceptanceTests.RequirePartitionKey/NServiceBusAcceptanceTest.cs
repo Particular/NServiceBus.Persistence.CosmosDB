@@ -1,13 +1,9 @@
-﻿namespace NServiceBus.AcceptanceTests
-{
-    using NUnit.Framework;
+﻿namespace NServiceBus.AcceptanceTests;
 
-    public abstract partial class NServiceBusAcceptanceTest
-    {
-        [TearDown]
-        public void Teardown()
-        {
-            TransactionalBatchCounterHandler.TotalTransactionalBatches = 0;
-        }
-    }
+using NUnit.Framework;
+
+public abstract partial class NServiceBusAcceptanceTest
+{
+    [TearDown]
+    public void Teardown() => TransactionalBatchCounterHandler.TotalTransactionalBatches = 0;
 }

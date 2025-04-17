@@ -1,9 +1,8 @@
-namespace NServiceBus.TransactionalSession.AcceptanceTests
-{
-    using System;
+namespace NServiceBus.TransactionalSession.AcceptanceTests;
 
-    public interface IInjectServiceProvider
-    {
-        IServiceProvider ServiceProvider { get; set; }
-    }
+using System;
+
+public interface IInjectServiceProvider
+{
+    IServiceProvider ServiceProvider { get; set; }
 }
