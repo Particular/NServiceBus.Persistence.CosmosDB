@@ -1,373 +1,369 @@
-namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction
+namespace NServiceBus.Persistence.CosmosDB.Tests.Transaction;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
+
+[TestFixture]
+public class ContainerInformationExtractorTests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using NUnit.Framework;
+    PartitionKeyPath fakePartitionKeyPath;
+    ContainerInformationExtractor extractor;
 
-    [TestFixture]
-    public class ContainerInformationExtractorTests
+    [SetUp]
+    public void SetUp()
     {
-        PartitionKeyPath fakePartitionKeyPath;
-        ContainerInformationExtractor extractor;
+        fakePartitionKeyPath = new PartitionKeyPath("/deep/down");
 
-        [SetUp]
-        public void SetUp()
+        extractor = new ContainerInformationExtractor();
+    }
+
+    [Test]
+    public void Should_not_extract_from_header_with_no_matching_key()
+    {
+        extractor.ExtractContainerInformationFromHeader("AnotherHeaderKey", value => new ContainerInformation());
+
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? partitionKey);
+
+        Assert.Multiple(() =>
         {
-            fakePartitionKeyPath = new PartitionKeyPath("/deep/down");
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(partitionKey, Is.Null);
+        });
+    }
 
-            extractor = new ContainerInformationExtractor();
-        }
+    [Test]
+    public void Should_extract_from_header_with_first_match_winning()
+    {
+        extractor.ExtractContainerInformationFromHeader("HeaderKey", value => new ContainerInformation(value, fakePartitionKeyPath));
+        extractor.ExtractContainerInformationFromHeader("AnotherHeaderKey", value => new ContainerInformation(value, fakePartitionKeyPath));
 
-        [Test]
-        public void Should_not_extract_from_header_with_no_matching_key()
+        var headers = new Dictionary<string, string>
         {
-            extractor.ExtractContainerInformationFromHeader("AnotherHeaderKey", value => new ContainerInformation());
+            { "AnotherHeaderKey", "AnotherHeaderValue" },
+            { "HeaderKey", "HeaderValue" }
+        };
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? partitionKey);
 
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.False);
-                Assert.That(partitionKey, Is.Null);
-            });
-        }
-
-        [Test]
-        public void Should_extract_from_header_with_first_match_winning()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeader("HeaderKey", value => new ContainerInformation(value, fakePartitionKeyPath));
-            extractor.ExtractContainerInformationFromHeader("AnotherHeaderKey", value => new ContainerInformation(value, fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var headers = new Dictionary<string, string>
-            {
-                { "AnotherHeaderKey", "AnotherHeaderValue" },
-                { "HeaderKey", "HeaderValue" }
-            };
+    [Test]
+    public void Should_extract_from_header_with_fixed_container()
+    {
+        extractor.ExtractContainerInformationFromHeader("HeaderKey", new ContainerInformation("FixedValue", fakePartitionKeyPath));
 
-            var wasExtracted = extractor.TryExtract(headers, out var partitionKey);
+        var headers = new Dictionary<string, string> { { "HeaderKey", "DOES NOT MATTER" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? containerInformation);
 
-        [Test]
-        public void Should_extract_from_header_with_fixed_container()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeader("HeaderKey", new ContainerInformation("FixedValue", fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "DOES NOT MATTER" } };
+    [Test]
+    public void Should_extract_from_header_with_key_and_extractor()
+    {
+        extractor.ExtractContainerInformationFromHeader("HeaderKey",
+            value => new ContainerInformation(value.Replace("__TOBEREMOVED__", string.Empty), fakePartitionKeyPath));
 
-            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? containerInformation);
 
-        [Test]
-        public void Should_extract_from_header_with_key_and_extractor()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeader("HeaderKey",
-                value => new ContainerInformation(value.Replace("__TOBEREMOVED__", string.Empty), fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+    [Test]
+    public void Should_extract_from_header_with_key_and_extractor_and_extractor_argument()
+    {
+        extractor.ExtractContainerInformationFromHeader("HeaderKey",
+            (value, toBeRemoved) => new ContainerInformation(value.Replace(toBeRemoved, string.Empty), fakePartitionKeyPath), "__TOBEREMOVED__");
 
-            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? containerInformation);
 
-        [Test]
-        public void Should_extract_from_header_with_key_and_extractor_and_extractor_argument()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeader("HeaderKey",
-                (value, toBeRemoved) => new ContainerInformation(value.Replace(toBeRemoved, string.Empty), fakePartitionKeyPath), "__TOBEREMOVED__");
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+    [Test]
+    public void Should_extract_from_headers_with_extractor()
+    {
+        extractor.ExtractContainerInformationFromHeaders(
+            hdrs => new ContainerInformation(hdrs["HeaderKey"], fakePartitionKeyPath));
 
-            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? containerInformation);
 
-        [Test]
-        public void Should_extract_from_headers_with_extractor()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeaders(
-                hdrs => new ContainerInformation(hdrs["HeaderKey"], fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+    [Test]
+    public void Should_extract_from_headers_with_extractor_and_allow_null()
+    {
+        extractor.ExtractContainerInformationFromHeaders(hdrs => null);
 
-            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? containerInformation);
 
-        [Test]
-        public void Should_extract_from_headers_with_extractor_and_allow_null()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeaders(hdrs => null);
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(containerInformation, Is.Null);
+        });
+    }
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+    [Test]
+    public void Should_extract_from_headers_with_extractor_and_extractor_argument()
+    {
+        extractor.ExtractContainerInformationFromHeaders(
+            (hdrs, toBeRemoved) => new ContainerInformation(hdrs["HeaderKey"].Replace(toBeRemoved, string.Empty), fakePartitionKeyPath), "__TOBEREMOVED__");
 
-            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.False);
-                Assert.That(containerInformation, Is.Null);
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? containerInformation);
 
-        [Test]
-        public void Should_extract_from_headers_with_extractor_and_extractor_argument()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeaders(
-                (hdrs, toBeRemoved) => new ContainerInformation(hdrs["HeaderKey"].Replace(toBeRemoved, string.Empty), fakePartitionKeyPath), "__TOBEREMOVED__");
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+    [Test]
+    public void Should_extract_from_headers_with_extractor_and_extractor_argument_and_allow_null()
+    {
+        extractor.ExtractContainerInformationFromHeaders((hdrs, toBeRemoved) => null, "__TOBEREMOVED__");
 
-            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? containerInformation);
 
-        [Test]
-        public void Should_extract_from_headers_with_extractor_and_extractor_argument_and_allow_null()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeaders((hdrs, toBeRemoved) => null, "__TOBEREMOVED__");
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(containerInformation, Is.Null);
+        });
+    }
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue__TOBEREMOVED__" } };
+    [Test]
+    public void Should_extract_from_headers_with_custom_implementation()
+    {
+        extractor.ExtractContainerInformationFromHeaders(new CustomHeadersExtractor(fakePartitionKeyPath));
 
-            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.False);
-                Assert.That(containerInformation, Is.Null);
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(headers, out ContainerInformation? containerInformation);
 
-        [Test]
-        public void Should_extract_from_headers_with_custom_implementation()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeaders(new CustomHeadersExtractor(fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
-
-            var wasExtracted = extractor.TryExtract(headers, out var containerInformation);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(containerInformation, Is.Not.Null.And.EqualTo(new ContainerInformation("HeaderValue", fakePartitionKeyPath)));
-            });
-        }
-
-        class CustomHeadersExtractor : IContainerInformationFromHeadersExtractor
+    class CustomHeadersExtractor(PartitionKeyPath partitionKeyPath) : IContainerInformationFromHeadersExtractor
+    {
+        public bool TryExtract(IReadOnlyDictionary<string, string> headers,
+            out ContainerInformation? containerInformation)
         {
-            readonly PartitionKeyPath partitionKeyPath;
-
-            public CustomHeadersExtractor(PartitionKeyPath partitionKeyPath) => this.partitionKeyPath = partitionKeyPath;
-
-            public bool TryExtract(IReadOnlyDictionary<string, string> headers,
-                out ContainerInformation? containerInformation)
-            {
-                containerInformation = new ContainerInformation(headers["HeaderKey"], partitionKeyPath);
-                return true;
-            }
+            containerInformation = new ContainerInformation(headers["HeaderKey"], partitionKeyPath);
+            return true;
         }
+    }
 
-        [Test]
-        public void Should_throw_when_header_is_already_mapped()
+    [Test]
+    public void Should_throw_when_header_is_already_mapped()
+    {
+        extractor.ExtractContainerInformationFromHeader("HeaderKey", value => new ContainerInformation());
+
+        ArgumentException exception = Assert.Throws<ArgumentException>(() => extractor.ExtractContainerInformationFromHeader("HeaderKey", value => new ContainerInformation()));
+
+        Assert.That(exception.Message, Contains.Substring("The header key 'HeaderKey' is already being handled by a container header extractor and cannot be processed by another one."));
+    }
+
+    [Test]
+    public void Should_not_extract_from_message_with_no_match()
+    {
+        extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+        extractor.ExtractContainerInformationFromMessage<MyOtherMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+
+        var message = new MyUnrelatedMessage();
+
+        bool wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out ContainerInformation? containerInformation);
+
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromHeader("HeaderKey", value => new ContainerInformation());
+            Assert.That(wasExtracted, Is.False);
+            Assert.That(containerInformation, Is.Null);
+        });
+    }
 
-            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractContainerInformationFromHeader("HeaderKey", value => new ContainerInformation()));
+    [Test]
+    public void Should_extract_from_message_with_first_match_winning()
+    {
+        extractor.ExtractContainerInformationFromMessage<IProvideSomeId>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+        extractor.ExtractContainerInformationFromMessage<MyMessageWithInterfaces>(m => new ContainerInformation(string.Join(";", Enumerable.Repeat(m.SomeId, 2)), fakePartitionKeyPath));
 
-            Assert.That(exception.Message, Contains.Substring("The header key 'HeaderKey' is already being handled by a container header extractor and cannot be processed by another one."));
-        }
+        var message = new MyMessageWithInterfaces { SomeId = "SomeValue" };
 
-        [Test]
-        public void Should_not_extract_from_message_with_no_match()
+        bool wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out ContainerInformation? partitionKey);
+
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
-            extractor.ExtractContainerInformationFromMessage<MyOtherMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var message = new MyUnrelatedMessage();
+    [Test]
+    public void Should_extract_from_message()
+    {
+        extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
 
-            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var containerInformation);
+        var message = new MyMessage { SomeId = "SomeValue" };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.False);
-                Assert.That(containerInformation, Is.Null);
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out ContainerInformation? partitionKey);
 
-        [Test]
-        public void Should_extract_from_message_with_first_match_winning()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromMessage<IProvideSomeId>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
-            extractor.ExtractContainerInformationFromMessage<MyMessageWithInterfaces>(m => new ContainerInformation(string.Join(";", Enumerable.Repeat(m.SomeId, 2)), fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var message = new MyMessageWithInterfaces { SomeId = "SomeValue" };
+    [Test]
+    public void Should_extract_from_message_with_fixed_container()
+    {
+        extractor.ExtractContainerInformationFromMessage<MyMessage>(new ContainerInformation("FixedValue", fakePartitionKeyPath));
 
-            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
+        var message = new MyMessage { SomeId = "SomeValue" };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out ContainerInformation? partitionKey);
 
-        [Test]
-        public void Should_extract_from_message()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var message = new MyMessage { SomeId = "SomeValue" };
+    [Test]
+    public void Should_extract_from_message_with_argument()
+    {
+        extractor.ExtractContainerInformationFromMessage<MyMessage, ArgumentHelper>((m, helper) => new ContainerInformation(helper.Upper(m.SomeId), fakePartitionKeyPath), new ArgumentHelper());
 
-            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
+        var message = new MyMessage { SomeId = "SomeValue" };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out ContainerInformation? partitionKey);
 
-        [Test]
-        public void Should_extract_from_message_with_fixed_container()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromMessage<MyMessage>(new ContainerInformation("FixedValue", fakePartitionKeyPath));
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE", fakePartitionKeyPath)));
+        });
+    }
 
-            var message = new MyMessage { SomeId = "SomeValue" };
+    [Test]
+    public void Should_extract_from_message_with_headers()
+    {
+        extractor.ExtractContainerInformationFromMessage<MyMessage, ArgumentHelper>((m, hdrs, helper) =>
+            new ContainerInformation($"{helper.Upper(m.SomeId)}_{hdrs["HeaderKey"]}", fakePartitionKeyPath), new ArgumentHelper());
 
-            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
+        var message = new MyMessage { SomeId = "SomeValue" };
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("FixedValue", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(message, headers, out ContainerInformation? partitionKey);
 
-        [Test]
-        public void Should_extract_from_message_with_argument()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromMessage<MyMessage, ArgumentHelper>((m, helper) => new ContainerInformation(helper.Upper(m.SomeId), fakePartitionKeyPath), new ArgumentHelper());
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE_HeaderValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var message = new MyMessage { SomeId = "SomeValue" };
+    [Test]
+    public void Should_extract_from_message_with_headers_and_argument()
+    {
+        extractor.ExtractContainerInformationFromMessage<MyMessage>((m, hdrs) =>
+            new ContainerInformation($"{m.SomeId}_{hdrs["HeaderKey"]}", fakePartitionKeyPath));
 
-            var wasExtracted = extractor.TryExtract(message, new Dictionary<string, string>(), out var partitionKey);
+        var message = new MyMessage { SomeId = "SomeValue" };
+        var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE", fakePartitionKeyPath)));
-            });
-        }
+        bool wasExtracted = extractor.TryExtract(message, headers, out ContainerInformation? partitionKey);
 
-        [Test]
-        public void Should_extract_from_message_with_headers()
+        Assert.Multiple(() =>
         {
-            extractor.ExtractContainerInformationFromMessage<MyMessage, ArgumentHelper>((m, hdrs, helper) =>
-                new ContainerInformation($"{helper.Upper(m.SomeId)}_{hdrs["HeaderKey"]}", fakePartitionKeyPath), new ArgumentHelper());
+            Assert.That(wasExtracted, Is.True);
+            Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue_HeaderValue", fakePartitionKeyPath)));
+        });
+    }
 
-            var message = new MyMessage { SomeId = "SomeValue" };
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+    [Test]
+    public void Should_throw_when_message_type_is_already_mapped()
+    {
+        extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
 
-            var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
+        ArgumentException exception = Assert.Throws<ArgumentException>(() => extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath)));
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SOMEVALUE_HeaderValue", fakePartitionKeyPath)));
-            });
-        }
+        Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.ContainerInformationExtractorTests+MyMessage' is already being handled by a container message extractor and cannot be processed by another one."));
+    }
 
-        [Test]
-        public void Should_extract_from_message_with_headers_and_argument()
-        {
-            extractor.ExtractContainerInformationFromMessage<MyMessage>((m, hdrs) =>
-                new ContainerInformation($"{m.SomeId}_{hdrs["HeaderKey"]}", fakePartitionKeyPath));
+    class MyMessage
+    {
+        public string SomeId { get; init; }
+    }
 
-            var message = new MyMessage { SomeId = "SomeValue" };
-            var headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } };
+    class MyOtherMessage
+    {
+        public string SomeId { get; set; }
+    }
 
-            var wasExtracted = extractor.TryExtract(message, headers, out var partitionKey);
+    class MyUnrelatedMessage
+    {
+        public string SomeId { get; set; }
+    }
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(wasExtracted, Is.True);
-                Assert.That(partitionKey, Is.Not.Null.And.EqualTo(new ContainerInformation("SomeValue_HeaderValue", fakePartitionKeyPath)));
-            });
-        }
+    class MyMessageWithInterfaces : IProvideSomeId
+    {
+        public string SomeId { get; set; }
+    }
 
-        [Test]
-        public void Should_throw_when_message_type_is_already_mapped()
-        {
-            extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath));
+    interface IProvideSomeId
+    {
+        string SomeId { get; set; }
+    }
 
-            var exception = Assert.Throws<ArgumentException>(() => extractor.ExtractContainerInformationFromMessage<MyMessage>(m => new ContainerInformation(m.SomeId.ToString(), fakePartitionKeyPath)));
-
-            Assert.That(exception.Message, Contains.Substring("The message type 'NServiceBus.Persistence.CosmosDB.Tests.Transaction.ContainerInformationExtractorTests+MyMessage' is already being handled by a container message extractor and cannot be processed by another one."));
-        }
-
-        class MyMessage
-        {
-            public string SomeId { get; set; }
-        }
-
-        class MyOtherMessage
-        {
-            public string SomeId { get; set; }
-        }
-
-        class MyUnrelatedMessage
-        {
-            public string SomeId { get; set; }
-        }
-
-        class MyMessageWithInterfaces : IProvideSomeId
-        {
-            public string SomeId { get; set; }
-        }
-        interface IProvideSomeId
-        {
-            string SomeId { get; set; }
-        }
-
-        // Just a silly helper to show that state can be passed
-        class ArgumentHelper
-        {
-            public string Upper(string input) => input.ToUpperInvariant();
-        }
+    // Just a silly helper to show that state can be passed
+    class ArgumentHelper
+    {
+        public string Upper(string input) => input.ToUpperInvariant();
     }
 }

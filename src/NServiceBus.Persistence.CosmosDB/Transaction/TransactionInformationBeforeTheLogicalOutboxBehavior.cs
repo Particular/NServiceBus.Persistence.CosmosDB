@@ -1,65 +1,61 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB;
+
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
+using Pipeline;
+
+class TransactionInformationBeforeTheLogicalOutboxBehavior(IPartitionKeyFromMessageExtractor partitionKeyExtractor, IContainerInformationFromMessagesExtractor containerInformationExtractor)
+    : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
 {
-    using System;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.DependencyInjection;
-    using Pipeline;
-
-    class TransactionInformationBeforeTheLogicalOutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
+    public Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
     {
-        readonly IPartitionKeyFromMessageExtractor partitionKeyExtractor;
-        readonly IContainerInformationFromMessagesExtractor containerInformationExtractor;
-
-        public TransactionInformationBeforeTheLogicalOutboxBehavior(IPartitionKeyFromMessageExtractor partitionKeyExtractor, IContainerInformationFromMessagesExtractor containerInformationExtractor)
+        if (partitionKeyExtractor.TryExtract(context.Message.Instance, context.MessageHeaders, out PartitionKey? partitionKey))
         {
-            this.partitionKeyExtractor = partitionKeyExtractor;
-            this.containerInformationExtractor = containerInformationExtractor;
+            // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
+            if (partitionKey.HasValue)
+            {
+                context.Extensions.Set(partitionKey.Value);
+            }
         }
 
-        public Task Invoke(IIncomingLogicalMessageContext context, Func<IIncomingLogicalMessageContext, Task> next)
+        if (containerInformationExtractor.TryExtract(context.Message.Instance, context.MessageHeaders, out ContainerInformation? containerInformation))
         {
-            if (partitionKeyExtractor.TryExtract(context.Message.Instance, context.MessageHeaders, out var partitionKey))
+            // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
+            if (containerInformation.HasValue)
             {
-                // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
-                if (partitionKey.HasValue)
-                {
-                    context.Extensions.Set(partitionKey.Value);
-                }
+                context.Extensions.Set(containerInformation.Value);
             }
-            if (containerInformationExtractor.TryExtract(context.Message.Instance, context.MessageHeaders, out var containerInformation))
-            {
-                // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
-                if (containerInformation.HasValue)
-                {
-                    context.Extensions.Set(containerInformation.Value);
-                }
-            }
-            return next(context);
         }
 
-        public class RegisterStep : Pipeline.RegisterStep
-        {
-            public RegisterStep(PartitionKeyExtractor partitionKeyExtractor,
-                ContainerInformationExtractor containerInformationExtractor) :
-                base(nameof(TransactionInformationBeforeTheLogicalOutboxBehavior),
+        return next(context);
+    }
+
+    public class RegisterStep : Pipeline.RegisterStep
+    {
+        public RegisterStep(PartitionKeyExtractor partitionKeyExtractor,
+            ContainerInformationExtractor containerInformationExtractor) :
+            base(nameof(TransactionInformationBeforeTheLogicalOutboxBehavior),
                 typeof(TransactionInformationBeforeTheLogicalOutboxBehavior),
                 "Populates the transaction information before the logical outbox.",
                 b =>
                 {
-                    var partitionKeyExtractors = b.GetServices<IPartitionKeyFromMessageExtractor>();
-                    foreach (var extractor in partitionKeyExtractors)
+                    IEnumerable<IPartitionKeyFromMessageExtractor> partitionKeyExtractors = b.GetServices<IPartitionKeyFromMessageExtractor>();
+                    foreach (IPartitionKeyFromMessageExtractor extractor in partitionKeyExtractors)
                     {
                         partitionKeyExtractor.ExtractPartitionKeyFromMessages(extractor);
                     }
 
-                    var containerInformationFromMessagesExtractors = b.GetServices<IContainerInformationFromMessagesExtractor>();
-                    foreach (var extractor in containerInformationFromMessagesExtractors)
+                    IEnumerable<IContainerInformationFromMessagesExtractor> containerInformationFromMessagesExtractors = b.GetServices<IContainerInformationFromMessagesExtractor>();
+                    foreach (IContainerInformationFromMessagesExtractor extractor in containerInformationFromMessagesExtractors)
                     {
                         containerInformationExtractor.ExtractContainerInformationFromMessage(extractor);
                     }
+
                     return new TransactionInformationBeforeTheLogicalOutboxBehavior(partitionKeyExtractor, containerInformationExtractor);
                 }) =>
-                InsertBeforeIfExists(nameof(LogicalOutboxBehavior));
-        }
+            InsertBeforeIfExists(nameof(LogicalOutboxBehavior));
     }
 }

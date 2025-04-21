@@ -3,6 +3,7 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Persistence.CosmosDB;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
 {
@@ -13,21 +14,18 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             return Task.FromResult(0);
         }
 
-        var persistence = configuration.UsePersistence<CosmosPersistence>();
+        PersistenceExtensions<CosmosPersistence> persistence = configuration.UsePersistence<CosmosPersistence>();
         persistence.DisableContainerCreation();
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
         persistence.DefaultContainer(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
 
-        var sagasConfiguration = persistence.Sagas();
+        SagaPersistenceConfiguration sagasConfiguration = persistence.Sagas();
         sagasConfiguration.UsePessimisticLocking();
 
         return Task.FromResult(0);
     }
 
-    public Task Cleanup()
-    {
-        return Task.CompletedTask;
-    }
+    public Task Cleanup() => Task.CompletedTask;
 }

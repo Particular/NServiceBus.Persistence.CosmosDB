@@ -1,7 +1,6 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB;
+
+static class SagaSchemaVersion
 {
-    static class SagaSchemaVersion
-    {
-        internal static readonly string Current = "1.0.0";
-    }
+    internal static readonly string Current = "1.0.0";
 }

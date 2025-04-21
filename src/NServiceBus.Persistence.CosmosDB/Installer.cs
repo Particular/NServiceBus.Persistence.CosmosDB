@@ -1,58 +1,50 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+﻿namespace NServiceBus.Persistence.CosmosDB;
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Installation;
+using Logging;
+using Microsoft.Azure.Cosmos;
+
+class Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
+    : INeedToInstallSomething
 {
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Installation;
-    using Logging;
-    using Microsoft.Azure.Cosmos;
-
-    class Installer : INeedToInstallSomething
+    public async Task Install(string identity, CancellationToken cancellationToken = default)
     {
-        public Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
+        if (settings == null || settings.Disabled)
         {
-            installerSettings = settings;
-            this.clientProvider = clientProvider;
+            return;
         }
 
-        public async Task Install(string identity, CancellationToken cancellationToken = default)
+        try
         {
-            if (installerSettings == null || installerSettings.Disabled)
-            {
-                return;
-            }
-
-            try
-            {
-                await CreateContainerIfNotExists(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
-            {
-                log.Error("Could not complete the installation. ", e);
-                throw;
-            }
+            await CreateContainerIfNotExists(cancellationToken).ConfigureAwait(false);
         }
-
-        async Task CreateContainerIfNotExists(CancellationToken cancellationToken)
+        catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
-            await clientProvider.Client.CreateDatabaseIfNotExistsAsync(installerSettings.DatabaseName, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            var database = clientProvider.Client.GetDatabase(installerSettings.DatabaseName);
-
-            var containerProperties =
-                new ContainerProperties(installerSettings.ContainerName, installerSettings.PartitionKeyPath)
-                {
-                    // in order for individual items TTL to work (example outbox records)
-                    DefaultTimeToLive = -1
-                };
-
-            await database.CreateContainerIfNotExistsAsync(containerProperties, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            log.Error("Could not complete the installation. ", e);
+            throw;
         }
-
-        InstallerSettings installerSettings;
-        static ILog log = LogManager.GetLogger<Installer>();
-        readonly IProvideCosmosClient clientProvider;
     }
+
+    async Task CreateContainerIfNotExists(CancellationToken cancellationToken)
+    {
+        await clientProvider.Client.CreateDatabaseIfNotExistsAsync(settings.DatabaseName, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        Database database = clientProvider.Client.GetDatabase(settings.DatabaseName);
+
+        var containerProperties =
+            new ContainerProperties(settings.ContainerName, settings.PartitionKeyPath)
+            {
+                // in order for individual items TTL to work (example outbox records)
+                DefaultTimeToLive = -1
+            };
+
+        await database.CreateContainerIfNotExistsAsync(containerProperties, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    static ILog log = LogManager.GetLogger<Installer>();
 }
