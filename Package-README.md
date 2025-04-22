@@ -8,7 +8,7 @@ Click the **Project website** link in the NuGet sidebar to access specific docum
 
 With NServiceBus, you can:
 
-- Focus on business logic, not on plumbing or infrastructure code
+- Focus on business logic, not on plumbing or infrastructure code 
 - Orchestrate long-running business processes with sagas
 - Run on-premises, in the cloud, in containers, or serverless
 - Monitor and respond to failures using included platform tooling
