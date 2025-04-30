@@ -51,7 +51,7 @@ public class When_using_outbox_send_only : NServiceBusAcceptanceTest
 
     class SendOnlyEndpoint : EndpointConfigurationBuilder
     {
-        public SendOnlyEndpoint() => EndpointSetup<DefaultServer>((c, runDescriptor) =>
+        public SendOnlyEndpoint() => EndpointSetup<DefaultServer>(c =>
         {
             var persistence = c.GetSettings().Get<PersistenceExtensions<CosmosPersistence>>();
 
@@ -81,7 +81,7 @@ public class When_using_outbox_send_only : NServiceBusAcceptanceTest
 
     class ProcessorEndpoint : EndpointConfigurationBuilder, IDoNotCaptureServiceProvider
     {
-        public ProcessorEndpoint() => EndpointSetup<TransactionSessionDefaultServer>((c, runDescriptor) =>
+        public ProcessorEndpoint() => EndpointSetup<TransactionSessionDefaultServer>(c =>
             {
                 c.Pipeline.Register(typeof(DiscoverControlMessagesBehavior), "Discovers control messages");
                 c.EnableOutbox();
