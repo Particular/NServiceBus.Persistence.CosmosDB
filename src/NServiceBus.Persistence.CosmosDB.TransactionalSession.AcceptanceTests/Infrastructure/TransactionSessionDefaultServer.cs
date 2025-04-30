@@ -7,12 +7,26 @@ using System.Threading.Tasks;
 using AcceptanceTesting;
 using AcceptanceTesting.Customization;
 using AcceptanceTesting.Support;
+using Configuration.AdvancedExtensibility;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Persistence.CosmosDB;
 
-public class TransactionSessionDefaultServer : IEndpointSetupTemplate
+public class TransactionSessionDefaultServer : DefaultServer
+{
+    public override async Task<EndpointConfiguration> GetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomization, Func<EndpointConfiguration, Task> configurationBuilderCustomization)
+    {
+        var endpointConfiguration = await base.GetConfiguration(runDescriptor, endpointCustomization, configurationBuilderCustomization);
+
+        endpointConfiguration.GetSettings().Get<PersistenceExtensions<CosmosPersistence>>()
+            .EnableTransactionalSession();
+
+        return endpointConfiguration;
+    }
+}
+
+public class DefaultServer : IEndpointSetupTemplate
 {
     public virtual async Task<EndpointConfiguration> GetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomization,
         Func<EndpointConfiguration, Task> configurationBuilderCustomization)
@@ -31,7 +45,9 @@ public class TransactionSessionDefaultServer : IEndpointSetupTemplate
 
         endpointConfiguration.UseTransport(new AcceptanceTestingTransport { StorageLocation = storageDir });
 
-        PersistenceExtensions<CosmosPersistence> persistence = endpointConfiguration.UsePersistence<CosmosPersistence>();
+        var persistence = endpointConfiguration.UsePersistence<CosmosPersistence>();
+
+        endpointConfiguration.GetSettings().Set(persistence);
         persistence.EnableTransactionalSession();
         persistence.DisableContainerCreation();
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
@@ -41,7 +57,10 @@ public class TransactionSessionDefaultServer : IEndpointSetupTemplate
 
         endpointConfiguration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
 
-        endpointConfiguration.RegisterStartupTask(sp => new CaptureServiceProviderStartupTask(sp, runDescriptor.ScenarioContext));
+        if (this is not IDoNotCaptureServiceProvider)
+        {
+            endpointConfiguration.RegisterStartupTask(sp => new CaptureServiceProviderStartupTask(sp, runDescriptor.ScenarioContext));
+        }
 
         await configurationBuilderCustomization(endpointConfiguration).ConfigureAwait(false);
 
@@ -59,4 +78,8 @@ public class TransactionSessionDefaultServer : IEndpointSetupTemplate
             return true;
         }
     }
+}
+
+public interface IDoNotCaptureServiceProvider
+{
 }
