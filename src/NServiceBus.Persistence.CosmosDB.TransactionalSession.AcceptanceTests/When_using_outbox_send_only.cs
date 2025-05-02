@@ -93,7 +93,7 @@ public class When_using_outbox_send_only : NServiceBusAcceptanceTest
         {
             public override async Task Invoke(ITransportReceiveContext context, Func<Task> next)
             {
-                if (context.Message.Headers.ContainsKey("todo"))
+                if (context.Message.Headers.ContainsKey("NServiceBus.TransactionalSession.CommitDelayIncrement"))
                 {
                     testContext.ControlMessageReceived = true;
                 }
