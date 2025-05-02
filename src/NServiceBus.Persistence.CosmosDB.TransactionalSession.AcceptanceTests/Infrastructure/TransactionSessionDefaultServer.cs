@@ -17,7 +17,3 @@ public class TransactionSessionDefaultServer : DefaultServer
         return endpointConfiguration;
     }
 }
-
-public interface IDoNotCaptureServiceProvider
-{
-}
