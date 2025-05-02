@@ -44,7 +44,7 @@ public class DefaultServer : IEndpointSetupTemplate
 
         endpointConfiguration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
 
-        if (this is not IDoNotCaptureServiceProvider)
+        if (!typeof(IDoNotCaptureServiceProvider).IsAssignableFrom(endpointCustomization.BuilderType))
         {
             endpointConfiguration.RegisterStartupTask(sp => new CaptureServiceProviderStartupTask(sp, runDescriptor.ScenarioContext));
         }
