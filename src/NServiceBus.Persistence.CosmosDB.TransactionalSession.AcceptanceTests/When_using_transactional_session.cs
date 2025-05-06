@@ -184,11 +184,10 @@ public class When_using_transactional_session : NServiceBusAcceptanceTest
         Assert.That(response.Resource.Data, Is.EqualTo("SomeData"));
     }
 
-    class Context : ScenarioContext, IInjectServiceProvider
+    class Context : TransactionalSessionTestContext
     {
         public bool MessageReceived { get; set; }
         public bool CompleteMessageReceived { get; set; }
-        public IServiceProvider ServiceProvider { get; set; }
     }
 
     class AnEndpoint : EndpointConfigurationBuilder

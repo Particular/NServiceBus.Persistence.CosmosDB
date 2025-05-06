@@ -44,9 +44,9 @@ public class DefaultServer : IEndpointSetupTemplate
 
         endpointConfiguration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
 
-        if (!typeof(IDoNotCaptureServiceProvider).IsAssignableFrom(endpointCustomization.BuilderType))
+        if (runDescriptor.ScenarioContext is TransactionalSessionTestContext testContext)
         {
-            endpointConfiguration.RegisterStartupTask(sp => new CaptureServiceProviderStartupTask(sp, runDescriptor.ScenarioContext));
+            endpointConfiguration.RegisterStartupTask(sp => new CaptureServiceProviderStartupTask(sp, testContext, endpointCustomization.EndpointName));
         }
 
         await configurationBuilderCustomization(endpointConfiguration).ConfigureAwait(false);
