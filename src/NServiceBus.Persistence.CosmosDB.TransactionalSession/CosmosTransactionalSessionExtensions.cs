@@ -3,6 +3,7 @@
 using System;
 using Configuration.AdvancedExtensibility;
 using Features;
+using Persistence.CosmosDB;
 
 /// <summary>
 /// Enables the transactional session feature.
@@ -28,6 +29,12 @@ public static class CosmosTransactionalSessionExtensions
         var settings = persistenceExtensions.GetSettings();
 
         settings.Set(transactionalSessionOptions);
+
+        if (!string.IsNullOrWhiteSpace(transactionalSessionOptions.ProcessorEndpoint))
+        {
+            settings.Set(OutboxStorage.ProcessorEndpointKey, transactionalSessionOptions.ProcessorEndpoint);
+        }
+
         settings.EnableFeatureByDefault<CosmosTransactionalSession>();
 
         return persistenceExtensions;

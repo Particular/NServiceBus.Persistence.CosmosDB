@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using Outbox;
 using Transport;
 
-class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds)
+class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds, string endpointName)
     : IOutboxStorage
 {
     public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
@@ -39,7 +39,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
                 return null;
             }
 
-            partitionKey = new PartitionKey(messageId);
+            partitionKey = new PartitionKey(endpointName);
             context.Set(partitionKey);
         }
 
