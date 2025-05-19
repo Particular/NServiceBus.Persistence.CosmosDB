@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB;
 
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +40,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
                 return null;
             }
 
-            partitionKey = new PartitionKey(endpointName);
+            partitionKey = new PartitionKey(messageId);
             context.Set(partitionKey);
         }
 
