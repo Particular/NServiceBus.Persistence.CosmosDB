@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB;
 
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +9,7 @@ using Newtonsoft.Json;
 using Outbox;
 using Transport;
 
-class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds, string endpointName)
+class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds)
     : IOutboxStorage
 {
     public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
