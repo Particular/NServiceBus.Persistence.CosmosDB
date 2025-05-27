@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.TransactionalSession
+namespace NServiceBus.TransactionalSession
 {
     public sealed class CosmosOpenSessionOptions : NServiceBus.TransactionalSession.OpenSessionOptions
     {
@@ -7,5 +7,6 @@
     public static class CosmosTransactionalSessionExtensions
     {
         public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> EnableTransactionalSession(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> EnableTransactionalSession(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, NServiceBus.TransactionalSession.TransactionalSessionOptions transactionalSessionOptions) { }
     }
 }
