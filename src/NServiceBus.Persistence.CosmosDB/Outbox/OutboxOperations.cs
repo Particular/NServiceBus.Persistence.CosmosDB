@@ -62,6 +62,7 @@ sealed class OutboxDelete(OutboxRecord record, PartitionKey partitionKey, JsonSe
 
         // has to be kept open
         stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(jObject)));
+        // deliberately not setting the ETag here because setting as dispatched is idempotent.
         var options = new TransactionalBatchItemRequestOptions { EnableContentResponseOnWrite = false };
         transactionalBatch.UpsertItemStream(stream, options);
     }
