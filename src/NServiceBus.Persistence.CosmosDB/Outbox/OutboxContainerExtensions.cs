@@ -4,29 +4,26 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Extensibility;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 
 static class OutboxContainerExtensions
 {
-    public static async Task<OutboxRecord> ReadOutboxRecord(this Container container, string messageId, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context, CancellationToken cancellationToken = default)
+    public static async Task<OutboxRecord> ReadOutboxRecord(this Container container, string messageId, PartitionKey partitionKey, JsonSerializer serializer, CancellationToken cancellationToken = default)
     {
         ResponseMessage responseMessage = await container.ReadItemStreamAsync(messageId, partitionKey, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+        if (responseMessage.StatusCode == HttpStatusCode.NotFound)
         {
-            return default;
+            return null;
         }
+
+        _ = responseMessage.EnsureSuccessStatusCode();
 
         using var streamReader = new StreamReader(responseMessage.Content);
         using var jsonReader = new JsonTextReader(streamReader);
 
-        OutboxRecord outboxRecord = serializer.Deserialize<OutboxRecord>(jsonReader);
-
-        context.Set($"cosmos_etag:{messageId}", responseMessage.Headers.ETag);
-
-        return outboxRecord;
+        return serializer.Deserialize<OutboxRecord>(jsonReader);
     }
 }
