@@ -46,7 +46,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
         setAsDispatchedHolder.PartitionKey = partitionKey;
 
-        OutboxRecord outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context, cancellationToken)
+        OutboxRecord outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, cancellationToken)
             .ConfigureAwait(false);
 
         return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
