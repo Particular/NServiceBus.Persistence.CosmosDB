@@ -115,7 +115,7 @@ class SagaPersister : ISagaPersister
         {
             Stream sagaStream = responseMessage.Content;
 
-            bool sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+            bool sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound;
 
             return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
         }
@@ -216,7 +216,7 @@ class SagaPersister : ISagaPersister
                         continue;
                     }
 
-                    bool sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+                    bool sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound;
 
                     return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
                 }
