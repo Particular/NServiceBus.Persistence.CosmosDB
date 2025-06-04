@@ -16,7 +16,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
     {
         var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
-        if (context.TryGet<PartitionKey>(out PartitionKey partitionKey))
+        if (context.TryGet(out PartitionKey partitionKey))
         {
             cosmosOutboxTransaction.PartitionKey = partitionKey;
         }
@@ -29,7 +29,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         var setAsDispatchedHolder = new SetAsDispatchedHolder { ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context) };
         context.Set(setAsDispatchedHolder);
 
-        if (!context.TryGet<PartitionKey>(out PartitionKey partitionKey))
+        if (!context.TryGet(out PartitionKey partitionKey))
         {
             // because of the transactional session we cannot assume the incoming message is always present
             if (!context.TryGet<IncomingMessage>(out IncomingMessage incomingMessage) ||
@@ -46,7 +46,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
         setAsDispatchedHolder.PartitionKey = partitionKey;
 
-        OutboxRecord outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context, cancellationToken)
+        OutboxRecord outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, cancellationToken)
             .ConfigureAwait(false);
 
         return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
