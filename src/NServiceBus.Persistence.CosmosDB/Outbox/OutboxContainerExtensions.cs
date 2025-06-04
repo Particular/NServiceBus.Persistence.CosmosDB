@@ -15,10 +15,12 @@ static class OutboxContainerExtensions
         ResponseMessage responseMessage = await container.ReadItemStreamAsync(messageId, partitionKey, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+        if (responseMessage.StatusCode == HttpStatusCode.NotFound)
         {
-            return default;
+            return null;
         }
+
+        responseMessage.EnsureSuccessStatusCode();
 
         using var streamReader = new StreamReader(responseMessage.Content);
         using var jsonReader = new JsonTextReader(streamReader);
