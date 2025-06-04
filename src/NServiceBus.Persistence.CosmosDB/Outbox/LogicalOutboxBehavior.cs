@@ -61,7 +61,7 @@
 
             setAsDispatchedHolder.ThrowIfContainerIsNotSet();
 
-            var outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.Extensions, context.CancellationToken)
+            var outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.CancellationToken)
                 .ConfigureAwait(false);
 
             if (outboxRecord is null)

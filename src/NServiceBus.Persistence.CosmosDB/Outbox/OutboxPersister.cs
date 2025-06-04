@@ -55,7 +55,7 @@
             setAsDispatchedHolder.ThrowIfContainerIsNotSet();
             setAsDispatchedHolder.PartitionKey = partitionKey;
 
-            var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, context, cancellationToken: cancellationToken)
+            var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
