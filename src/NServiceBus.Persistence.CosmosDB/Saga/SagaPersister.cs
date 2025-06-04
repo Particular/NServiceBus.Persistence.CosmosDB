@@ -195,7 +195,7 @@ class SagaPersister : ISagaPersister
             {
                 try
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(Random.Shared.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex.IsCausedBy(token))
                 {
@@ -257,5 +257,4 @@ class SagaPersister : ISagaPersister
     readonly int acquireLeaseLockRefreshMaximumDelayMilliseconds;
     readonly int acquireLeaseLockRefreshMinimumDelayMilliseconds;
     readonly TimeSpan acquireLeaseLockTimeout;
-    static readonly Random random = new();
 }
