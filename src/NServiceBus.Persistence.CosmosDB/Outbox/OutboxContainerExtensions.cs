@@ -20,7 +20,7 @@ static class OutboxContainerExtensions
             return null;
         }
 
-        responseMessage.EnsureSuccessStatusCode();
+        _ = responseMessage.EnsureSuccessStatusCode();
 
         using var streamReader = new StreamReader(responseMessage.Content);
         using var jsonReader = new JsonTextReader(streamReader);
