@@ -110,14 +110,11 @@
         async Task<(bool sagaNotFound, TSagaData sagaData)> ReadSagaData<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
             where TSagaData : class, IContainSagaData
         {
-            using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
-            {
-                var sagaStream = responseMessage.Content;
+            using ResponseMessage responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+            bool sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound;
 
-                return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
-            }
+            return (sagaNotFound, sagaNotFound ? null : ReadSagaFromStream<TSagaData>(context, responseMessage));
         }
 
         async Task<Guid?> FindSagaIdInMigrationMode(Guid sagaId, ContextBag context, Container container, CancellationToken cancellationToken)
@@ -155,90 +152,85 @@
         async Task<(bool sagaNotFound, TSagaData sagaData)> AcquireLease<TSagaData>(Guid sagaId, ContextBag context, Container container, PartitionKey partitionKey, CancellationToken cancellationToken)
             where TSagaData : class, IContainSagaData
         {
-            using (var timedTokenSource = new CancellationTokenSource(acquireLeaseLockTimeout))
-            using (var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(timedTokenSource.Token, cancellationToken))
+            using var timedTokenSource = new CancellationTokenSource(acquireLeaseLockTimeout);
+            using var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(timedTokenSource.Token, cancellationToken);
+            var token = combinedTokenSource.Token;
+            while (!token.IsCancellationRequested)
             {
-                var token = combinedTokenSource.Token;
-                while (!token.IsCancellationRequested)
+                // File time is using 100s nanoseconds which is a bit too granular for us but it is the simplest way to get
+                // a deterministic increasing time value
+                var now = DateTime.UtcNow.ToFileTimeUtc();
+                var reservedUntil = DateTime.UtcNow.Add(leaseLockTime).ToFileTimeUtc();
+
+                IReadOnlyList<PatchOperation> patchOperations =
+                [
+                    PatchOperation.Add($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}", reservedUntil)
+                ];
+                var requestOptions = new PatchItemRequestOptions
                 {
-                    // File time is using 100s nanoseconds which is a bit too granular for us but it is the simplest way to get
-                    // a deterministic increasing time value
-                    var now = DateTime.UtcNow.ToFileTimeUtc();
-                    var reservedUntil = DateTime.UtcNow.Add(leaseLockTime).ToFileTimeUtc();
+                    FilterPredicate =
+                        $"from c where (NOT IS_DEFINED(c[\"{MetadataExtensions.MetadataKey}\"][\"{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}\"]) OR c[\"{MetadataExtensions.MetadataKey}\"][\"{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}\"] < {now})"
+                };
 
-                    IReadOnlyList<PatchOperation> patchOperations =
-                    [
-                        PatchOperation.Add($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}", reservedUntil)
-                    ];
-                    var requestOptions = new PatchItemRequestOptions
-                    {
-                        FilterPredicate =
-                            $"from c where (NOT IS_DEFINED(c[\"{MetadataExtensions.MetadataKey}\"][\"{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}\"]) OR c[\"{MetadataExtensions.MetadataKey}\"][\"{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}\"] < {now})"
-                    };
+                using var responseMessage = await container.PatchItemStreamAsync(sagaId.ToString(), partitionKey,
+                    patchOperations, requestOptions, token).ConfigureAwait(false);
 
-                    using (var responseMessage = await container.PatchItemStreamAsync(sagaId.ToString(), partitionKey,
-                               patchOperations, requestOptions, token).ConfigureAwait(false))
-                    {
-                        var sagaStream = responseMessage.Content;
+                bool throttlingRequired = false;
+                int refreshMinimumDelayMilliseconds = acquireLeaseLockRefreshMinimumDelayMilliseconds;
+                int refreshMaximumDelayMilliseconds = acquireLeaseLockRefreshMaximumDelayMilliseconds;
 
-                        bool throttlingRequired = false;
-                        int refreshMinimumDelayMilliseconds = acquireLeaseLockRefreshMinimumDelayMilliseconds;
-                        int refreshMaximumDelayMilliseconds = acquireLeaseLockRefreshMaximumDelayMilliseconds;
-
-                        if (responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
-                        {
-                            throttlingRequired = true;
-                        }
-
-                        // In case of TooManyRequests we might be violating the AcquireLeaseLockRefreshMaximumDelayMilliseconds but that's OK
-                        if ((int)responseMessage.StatusCode == 429 && responseMessage.Headers.TryGetValue("x-ms-retry-after-ms",
-                                out var operationWaitTime)) // TooManyRequests
-                        {
-                            throttlingRequired = true;
-
-                            int retryOperationWaitTimeInMilliseconds = Convert.ToInt32(operationWaitTime);
-                            refreshMinimumDelayMilliseconds = Math.Max(retryOperationWaitTimeInMilliseconds, refreshMinimumDelayMilliseconds);
-                            refreshMaximumDelayMilliseconds = Math.Max(retryOperationWaitTimeInMilliseconds, refreshMaximumDelayMilliseconds);
-                        }
-
-                        if (throttlingRequired)
-                        {
-                            try
-                            {
-                                await Task.Delay(TimeSpan.FromMilliseconds(random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
-                            }
-                            catch (Exception ex) when (ex.IsCausedBy(token))
-                            {
-                                // intentionally swallowed because we want to avoid cancellation masking the fact that we were not able to acquire the lease lock in time
-                            }
-                            continue;
-                        }
-
-                        var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
-
-                        return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
-                    }
+                if (responseMessage.StatusCode == HttpStatusCode.PreconditionFailed)
+                {
+                    throttlingRequired = true;
                 }
 
-                throw new TimeoutException(
-                    $"Unable to acquire exclusive write lock for saga with id '{sagaId}' within allocated time '{leaseLockTime}'.");
+                // In case of TooManyRequests we might be violating the AcquireLeaseLockRefreshMaximumDelayMilliseconds but that's OK
+                if ((int)responseMessage.StatusCode == 429 && responseMessage.Headers.TryGetValue("x-ms-retry-after-ms",
+                        out var operationWaitTime)) // TooManyRequests
+                {
+                    throttlingRequired = true;
+
+                    int retryOperationWaitTimeInMilliseconds = Convert.ToInt32(operationWaitTime);
+                    refreshMinimumDelayMilliseconds = Math.Max(retryOperationWaitTimeInMilliseconds, refreshMinimumDelayMilliseconds);
+                    refreshMaximumDelayMilliseconds = Math.Max(retryOperationWaitTimeInMilliseconds, refreshMaximumDelayMilliseconds);
+                }
+
+                if (throttlingRequired)
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromMilliseconds(Random.Shared.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex.IsCausedBy(token))
+                    {
+                        // intentionally swallowed because we want to avoid cancellation masking the fact that we were not able to acquire the lease lock in time
+                    }
+                    continue;
+                }
+
+                var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound;
+
+                return (sagaNotFound, sagaNotFound ? null : ReadSagaFromStream<TSagaData>(context, responseMessage));
             }
+
+            throw new TimeoutException(
+                $"Unable to acquire exclusive write lock for saga with id '{sagaId}' within allocated time '{leaseLockTime}'.");
         }
 
-        TSagaData ReadSagaFromStream<TSagaData>(ContextBag context, Stream sagaStream, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
+        TSagaData ReadSagaFromStream<TSagaData>(ContextBag context, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
         {
-            using (sagaStream)
-            using (var streamReader = new StreamReader(sagaStream))
-            using (var jsonReader = new JsonTextReader(streamReader))
-            {
-                var sagaData = serializer.Deserialize<TSagaData>(jsonReader);
+            _ = responseMessage.EnsureSuccessStatusCode();
 
-                // we always require the etag even when using the pessimistic locking approach in order to have retries
-                // in rare edge cases like when another concurrent update has stolen the reservation
-                context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
+            using Stream sagaContentStream = responseMessage.Content;
+            using var streamReader = new StreamReader(sagaContentStream);
+            using var jsonReader = new JsonTextReader(streamReader);
+            TSagaData sagaData = serializer.Deserialize<TSagaData>(jsonReader);
 
-                return sagaData;
-            }
+            // we always require the etag even when using the pessimistic locking approach in order to have retries
+            // in rare edge cases like when another concurrent update has stolen the reservation
+            context.Set($"cosmos_etag:{sagaData.Id}", responseMessage.Headers.ETag);
+
+            return sagaData;
         }
 
         public Task Complete(IContainSagaData sagaData, ISynchronizedStorageSession session, ContextBag context, CancellationToken cancellationToken = default)
@@ -261,13 +253,12 @@
             return partitionKey;
         }
 
-        JsonSerializer serializer;
+        readonly JsonSerializer serializer;
         readonly bool migrationModeEnabled;
         readonly bool pessimisticLockingEnabled;
         readonly TimeSpan leaseLockTime;
         readonly int acquireLeaseLockRefreshMaximumDelayMilliseconds;
         readonly int acquireLeaseLockRefreshMinimumDelayMilliseconds;
         readonly TimeSpan acquireLeaseLockTimeout;
-        static readonly Random random = new Random();
     }
 }

@@ -1,36 +1,30 @@
-﻿namespace NServiceBus.Persistence.CosmosDB
+namespace NServiceBus.Persistence.CosmosDB
 {
     using System.IO;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Extensibility;
     using Microsoft.Azure.Cosmos;
     using Newtonsoft.Json;
 
     static class OutboxContainerExtensions
     {
-        public static async Task<OutboxRecord> ReadOutboxRecord(this Container container, string messageId, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context, CancellationToken cancellationToken = default)
+        public static async Task<OutboxRecord> ReadOutboxRecord(this Container container, string messageId, PartitionKey partitionKey, JsonSerializer serializer, CancellationToken cancellationToken = default)
         {
             var responseMessage = await container.ReadItemStreamAsync(messageId, partitionKey, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            if (responseMessage.StatusCode == HttpStatusCode.NotFound || responseMessage.Content == null)
+            if (responseMessage.StatusCode == HttpStatusCode.NotFound)
             {
-                return default;
+                return null;
             }
 
-            using (var streamReader = new StreamReader(responseMessage.Content))
-            {
-                using (var jsonReader = new JsonTextReader(streamReader))
-                {
-                    var outboxRecord = serializer.Deserialize<OutboxRecord>(jsonReader);
+            _ = responseMessage.EnsureSuccessStatusCode();
 
-                    context.Set($"cosmos_etag:{messageId}", responseMessage.Headers.ETag);
+            using var streamReader = new StreamReader(responseMessage.Content);
+            using var jsonReader = new JsonTextReader(streamReader);
 
-                    return outboxRecord;
-                }
-            }
+            return serializer.Deserialize<OutboxRecord>(jsonReader);
         }
     }
 }
