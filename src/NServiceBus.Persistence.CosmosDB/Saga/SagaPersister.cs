@@ -201,14 +201,10 @@
                         {
                             try
                             {
-                                long randomSleepMs;
 #if NETFRAMEWORK
-                                lock (random)
-                                {
-                                    randomSleepMs = random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds);
-                                }
+                                int randomSleepMs = random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds);
 #else
-                                randomSleepMs = Random.Shared.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds);
+                                int randomSleepMs = Random.Shared.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds);
 #endif
                                 await Task.Delay(TimeSpan.FromMilliseconds(randomSleepMs), token).ConfigureAwait(false);
                             }
