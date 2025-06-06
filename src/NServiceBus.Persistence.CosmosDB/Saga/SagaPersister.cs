@@ -201,7 +201,16 @@
                         {
                             try
                             {
-                                await Task.Delay(TimeSpan.FromMilliseconds(Random.Shared.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
+                                long randomSleepMs;
+#if NETFRAMEWORK
+                                lock (random)
+                                {
+                                    randomSleepMs = random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds);
+                                }
+#else
+                                randomSleepMs = Random.Shared.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds);
+#endif
+                                await Task.Delay(TimeSpan.FromMilliseconds(randomSleepMs), token).ConfigureAwait(false);
                             }
                             catch (Exception ex) when (ex.IsCausedBy(token))
                             {
@@ -266,5 +275,8 @@
         readonly int acquireLeaseLockRefreshMaximumDelayMilliseconds;
         readonly int acquireLeaseLockRefreshMinimumDelayMilliseconds;
         readonly TimeSpan acquireLeaseLockTimeout;
+#if NETFRAMEWORK
+        static readonly Random random = new Random();
+#endif
     }
 }
