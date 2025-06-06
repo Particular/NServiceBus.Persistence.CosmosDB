@@ -45,7 +45,11 @@ namespace NServiceBus.Persistence.CosmosDB.Tests
             var fakeContainer = new FakeContainer
             {
                 // not testing more status codes since we would effectively be testing EnsureSuccessfulStatus
+#if NETFRAMEWORK
+                ReadItemStreamOutboxRecord = () => new ResponseMessage((HttpStatusCode)429)
+#else
                 ReadItemStreamOutboxRecord = () => new ResponseMessage(HttpStatusCode.TooManyRequests)
+#endif
             };
 
             var partitionKey = new PartitionKey("somePartitionKey");
