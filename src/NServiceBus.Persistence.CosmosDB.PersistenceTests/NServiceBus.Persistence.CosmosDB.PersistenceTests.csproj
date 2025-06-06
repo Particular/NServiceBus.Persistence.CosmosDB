@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="8.2.4" GeneratePathProperty="true" />
+    <PackageReference Include="NServiceBus.PersistenceTests.Sources" Version="8.2.5" GeneratePathProperty="true" />
   </ItemGroup>
 
  </Project>
