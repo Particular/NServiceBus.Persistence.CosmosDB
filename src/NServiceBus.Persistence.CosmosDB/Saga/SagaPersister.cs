@@ -112,11 +112,9 @@
         {
             using (var responseMessage = await container.ReadItemStreamAsync(sagaId.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false))
             {
-                var sagaStream = responseMessage.Content;
+                var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound;
 
-                var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
-
-                return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
+                return (sagaNotFound, sagaNotFound ? null : ReadSagaFromStream<TSagaData>(context, responseMessage));
             }
         }
 
@@ -179,8 +177,6 @@
                     using (var responseMessage = await container.PatchItemStreamAsync(sagaId.ToString(), partitionKey,
                                patchOperations, requestOptions, token).ConfigureAwait(false))
                     {
-                        var sagaStream = responseMessage.Content;
-
                         bool throttlingRequired = false;
                         int refreshMinimumDelayMilliseconds = acquireLeaseLockRefreshMinimumDelayMilliseconds;
                         int refreshMaximumDelayMilliseconds = acquireLeaseLockRefreshMaximumDelayMilliseconds;
@@ -205,7 +201,12 @@
                         {
                             try
                             {
-                                await Task.Delay(TimeSpan.FromMilliseconds(random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds)), token).ConfigureAwait(false);
+#if NETFRAMEWORK
+                                int randomSleepMs = random.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds);
+#else
+                                int randomSleepMs = Random.Shared.Next(refreshMinimumDelayMilliseconds, refreshMaximumDelayMilliseconds);
+#endif
+                                await Task.Delay(TimeSpan.FromMilliseconds(randomSleepMs), token).ConfigureAwait(false);
                             }
                             catch (Exception ex) when (ex.IsCausedBy(token))
                             {
@@ -214,9 +215,9 @@
                             continue;
                         }
 
-                        var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound || sagaStream == null;
+                        var sagaNotFound = responseMessage.StatusCode == HttpStatusCode.NotFound;
 
-                        return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, sagaStream, responseMessage));
+                        return (sagaNotFound, sagaNotFound ? default : ReadSagaFromStream<TSagaData>(context, responseMessage));
                     }
                 }
 
@@ -225,9 +226,11 @@
             }
         }
 
-        TSagaData ReadSagaFromStream<TSagaData>(ContextBag context, Stream sagaStream, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
+        TSagaData ReadSagaFromStream<TSagaData>(ContextBag context, ResponseMessage responseMessage) where TSagaData : class, IContainSagaData
         {
-            using (sagaStream)
+            _ = responseMessage.EnsureSuccessStatusCode();
+
+            using var sagaStream = responseMessage.Content;
             using (var streamReader = new StreamReader(sagaStream))
             using (var jsonReader = new JsonTextReader(streamReader))
             {
@@ -261,13 +264,15 @@
             return partitionKey;
         }
 
-        JsonSerializer serializer;
+        readonly JsonSerializer serializer;
         readonly bool migrationModeEnabled;
         readonly bool pessimisticLockingEnabled;
         readonly TimeSpan leaseLockTime;
         readonly int acquireLeaseLockRefreshMaximumDelayMilliseconds;
         readonly int acquireLeaseLockRefreshMinimumDelayMilliseconds;
         readonly TimeSpan acquireLeaseLockTimeout;
+#if NETFRAMEWORK
         static readonly Random random = new Random();
+#endif
     }
 }
