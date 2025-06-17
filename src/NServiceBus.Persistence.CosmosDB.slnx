@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../.github/workflows/ci.yml" />
+    <File Path="../.github/workflows/release.yml" />
+    <File Path="../Package-README.md" />
+    <File Path="../README.md" />
+    <File Path="Custom.Build.props" />
+  </Folder>
+  <Project Path="NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests/NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests/NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB.PersistenceTests/NServiceBus.Persistence.CosmosDB.PersistenceTests.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB.PessimisticLock.AcceptanceTests/NServiceBus.Persistence.CosmosDB.PessimisticLock.AcceptanceTests.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests/NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB.Tests/NServiceBus.Persistence.CosmosDB.Tests.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests/NServiceBus.Persistence.CosmosDB.TransactionalSession.AcceptanceTests.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests/NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB.TransactionalSession/NServiceBus.Persistence.CosmosDB.TransactionalSession.csproj" />
+  <Project Path="NServiceBus.Persistence.CosmosDB/NServiceBus.Persistence.CosmosDB.csproj" />
+</Solution>
