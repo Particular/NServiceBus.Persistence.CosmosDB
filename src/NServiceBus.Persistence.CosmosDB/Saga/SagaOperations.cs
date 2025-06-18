@@ -62,7 +62,7 @@ abstract class SagaOperation(IContainSagaData sagaData, PartitionKey partitionKe
 sealed class SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
     : SagaOperation(sagaData, partitionKey, serializer, context)
 {
-    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
+    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be created. Response status code: {result.StatusCode}.", result);
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
@@ -78,7 +78,7 @@ sealed class SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, Json
 sealed class SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
     : SagaOperation(sagaData, partitionKey, serializer, context)
 {
-    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
+    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be updated. Response status code: {result.StatusCode}.", result);
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
@@ -101,7 +101,7 @@ sealed class SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, Js
 sealed class SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, ContextBag context)
     : SagaOperation(sagaData, partitionKey, null, context)
 {
-    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' can't be completed. Response status code: {result.StatusCode}.", result);
+    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be completed. Response status code: {result.StatusCode}.", result);
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
