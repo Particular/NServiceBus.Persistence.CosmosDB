@@ -120,12 +120,10 @@ sealed class SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, Co
 sealed class SagaReleaseLock(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
     : SagaOperation(sagaData, partitionKey, serializer, context), IReleaseLockOperation
 {
-    static IReadOnlyList<PatchOperation> cleanupPatchOperations;
-
-    static IReadOnlyList<PatchOperation> CleanupPatchOperations => cleanupPatchOperations ??=
-    [
-        PatchOperation.Remove($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}")
-    ];
+    static IReadOnlyList<PatchOperation> CleanupPatchOperations
+    {
+        get;
+    } = [PatchOperation.Remove($"/{MetadataExtensions.MetadataKey}/{MetadataExtensions.SagaDataContainerReservedUntilMetadataKey}")];
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {

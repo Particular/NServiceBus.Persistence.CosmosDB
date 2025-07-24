@@ -23,12 +23,12 @@ interface IOperation : IDisposable
 abstract class Operation(PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
     : IOperation
 {
-    static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> partitionKeyPathAndSegments;
-
     static readonly string[] PathSeparator = ["."];
 
-    static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> PartitionKeyPathAndSegments =>
-        partitionKeyPathAndSegments ??= new ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)>();
+    static ConcurrentDictionary<PartitionKeyPath, (string pathToMatch, string[] segments)> PartitionKeyPathAndSegments
+    {
+        get;
+    } = new();
 
     public ContextBag Context { get; } = context;
     public PartitionKey PartitionKey { get; } = partitionKey;
