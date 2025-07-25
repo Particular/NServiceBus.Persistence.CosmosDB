@@ -13,9 +13,10 @@ abstract class OutboxOperation(OutboxRecord record, PartitionKey partitionKey, J
     protected readonly OutboxRecord record = record;
     protected Stream stream = Stream.Null;
 
-    static JObject metadata;
-
-    static JObject Metadata => metadata ??= new JObject
+    static JObject Metadata
+    {
+        get;
+    } = new()
     {
         { MetadataExtensions.OutboxDataContainerSchemaVersionMetadataKey, OutboxPersister.SchemaVersion },
         { MetadataExtensions.OutboxDataContainerFullTypeNameMetadataKey, typeof(OutboxRecord).FullName }
