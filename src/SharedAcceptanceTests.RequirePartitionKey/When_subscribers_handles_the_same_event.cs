@@ -56,7 +56,7 @@ public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
                     context.Subscriber2Subscribed = true;
                 }
             });
-        });
+        }, metadata => metadata.RegisterSelfAsPublisherFor<MyEvent>(this));
     }
 
     public class Subscriber1 : EndpointConfigurationBuilder
