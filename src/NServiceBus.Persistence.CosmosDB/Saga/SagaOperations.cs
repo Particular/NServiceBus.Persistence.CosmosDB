@@ -22,7 +22,7 @@ abstract class SagaOperation(IContainSagaData sagaData, PartitionKey partitionKe
     {
         base.Success(result);
 
-        Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag);
+        Context.Set($"cosmos_etag:{sagaData.Id}", result.ETag ?? string.Empty);
     }
 
     protected JObject ToEnrichedJObject(PartitionKeyPath partitionKeyPath)
@@ -85,7 +85,7 @@ sealed class SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, Js
         JObject jObject = ToEnrichedJObject(partitionKeyPath);
 
         // only update if we have the same version as in CosmosDB
-        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out string updateEtag);
+        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);
         var options = new TransactionalBatchItemRequestOptions
         {
             IfMatchEtag = updateEtag,
@@ -106,7 +106,7 @@ sealed class SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, Co
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
         // only delete if we have the same version as in CosmosDB
-        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out string deleteEtag);
+        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var deleteEtag);
         var deleteOptions = new TransactionalBatchItemRequestOptions
         {
             IfMatchEtag = deleteEtag,
@@ -128,7 +128,7 @@ sealed class SagaReleaseLock(IContainSagaData sagaData, PartitionKey partitionKe
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
         // only update if we have the same version as in CosmosDB
-        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out string updateEtag);
+        Context.TryGet<string>($"cosmos_etag:{sagaData.Id}", out var updateEtag);
         var requestOptions = new TransactionalBatchPatchItemRequestOptions
         {
             IfMatchEtag = updateEtag,
