@@ -6,7 +6,7 @@ using Extensibility;
 using Microsoft.Azure.Cosmos;
 using Outbox;
 
-class CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context) : IOutboxTransaction
+sealed class CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag context) : IOutboxTransaction
 {
     public StorageSession StorageSession { get; } = new(resolver, context);
     public PartitionKey? PartitionKey { get; set; }
@@ -18,4 +18,6 @@ class CosmosOutboxTransaction(ContainerHolderResolver resolver, ContextBag conte
         AbandonStoreAndCommit ? Task.CompletedTask : StorageSession.Commit(cancellationToken);
 
     public void Dispose() => StorageSession.Dispose();
+
+    public ValueTask DisposeAsync() => StorageSession.DisposeAsync();
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Extensibility;
 using Microsoft.Azure.Cosmos;
 
-class StorageSession(ContainerHolderResolver resolver, ContextBag context) : IWorkWithSharedTransactionalBatch
+sealed class StorageSession(ContainerHolderResolver resolver, ContextBag context) : IWorkWithSharedTransactionalBatch, IDisposable, IAsyncDisposable
 {
     public void AddOperation(IOperation operation)
     {
@@ -70,6 +70,11 @@ class StorageSession(ContainerHolderResolver resolver, ContextBag context) : IWo
 
     public void Dispose()
     {
+        if (operations.Count == 0 && (releaseLockOperations?.Count == 0))
+        {
+            return;
+        }
+
         foreach (KeyValuePair<PartitionKey, Dictionary<int, IOperation>> batchOfOperations in operations)
         {
             foreach (IOperation operation in batchOfOperations.Value.Values)
@@ -77,6 +82,8 @@ class StorageSession(ContainerHolderResolver resolver, ContextBag context) : IWo
                 operation.Dispose();
             }
         }
+
+        operations.Clear();
 
         // The persistence tests to Get requests within a synchronized storage session scope that is completed at the end. Since these get requests never add
         // any operations there is nothing to commit (operations.Count == 0) and the release operations will not be cleaned making sure the acquired lock will be freed to not block
@@ -88,6 +95,14 @@ class StorageSession(ContainerHolderResolver resolver, ContextBag context) : IWo
             // We are optimistic and fire-and-forget the releasing of the lock and just continue. In case this fails the next message that needs to acquire the lock wil have to wait.
             _ = transactionalBatch.ExecuteAndDisposeOperationsAsync(batchOfReleaseLockOperations.Value, ContainerHolder.PartitionKeyPath, CancellationToken.None);
         }
+
+        releaseLockOperations?.Clear();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 
     public ContextBag CurrentContextBag { get; set; } = context;
