@@ -30,7 +30,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         context.Set(setAsDispatchedHolder);
 
         //TODO need to see what is setting this in the context bag as it's never null
-        if (!context.TryGet(out PartitionKey partitionKey))
+        if (!context.TryGet(out PartitionKey partitionKeyObject))
         {
             // because of the transactional session we cannot assume the incoming message is always present
             if (!context.TryGet(out IncomingMessage incomingMessage) ||
@@ -40,25 +40,25 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
                 return null;
             }
 
-            partitionKey = new PartitionKey($"{partitionKey}-{messageId}");
+            partitionKeyObject = new PartitionKey($"{partitionKey}-{messageId}");
             context.Set(partitionKey);
         }
 
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
 
         //find by synthetic key first
-        OutboxRecord outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, cancellationToken)
+        OutboxRecord outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKeyObject, serializer, cancellationToken)
             .ConfigureAwait(false);
 
         if (outboxRecord is null && readFallbackEnabled)
         {
             // fallback to the legacy single ID if the record wasn't found by the synthetic ID
-            partitionKey = new PartitionKey(messageId);
-            outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, cancellationToken)
+            partitionKeyObject = new PartitionKey(messageId);
+            outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKeyObject, serializer, cancellationToken)
                 .ConfigureAwait(false);
         }
 
-        setAsDispatchedHolder.PartitionKey = partitionKey;
+        setAsDispatchedHolder.PartitionKey = partitionKeyObject;
 
         return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
     }
