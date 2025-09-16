@@ -64,6 +64,8 @@ partial class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartit
         extractPartitionKeyFromMessages.Add(extractor);
     }
 
+    internal bool HasCustomMessageExtractors => extractPartitionKeyFromMessages.Count > 0;
+
     sealed class PartitionKeyFromMessageExtractor<TMessage, TArg>(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg argument = default)
         : IPartitionKeyFromMessageExtractor
     {

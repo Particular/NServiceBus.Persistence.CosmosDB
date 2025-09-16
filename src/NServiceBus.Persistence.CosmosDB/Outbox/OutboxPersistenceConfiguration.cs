@@ -16,7 +16,7 @@ sealed class OutboxPersistenceConfiguration
         }
     } = TimeSpan.FromDays(7);
 
-    public bool ReadFallbackEnabled { get; set; } = true;
+    public bool ReadFallbackEnabled { get; set; } = true; // default to true to not break existing users
 
     public string PartitionKey { get; set; } = null!; // will be set by defaults
 }
