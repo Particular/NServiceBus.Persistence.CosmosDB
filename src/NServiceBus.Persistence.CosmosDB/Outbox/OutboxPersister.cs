@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using Outbox;
 using Transport;
 
-class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKey, bool readFallbackEnabled, bool hasCustomPartitionKeyExtractors, int ttlInSeconds)
+class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKey, bool readFallbackEnabled, ExtractorConfiguration extractorConfig, int ttlInSeconds)
     : IOutboxStorage
 {
     public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
@@ -29,6 +29,19 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         var setAsDispatchedHolder = new SetAsDispatchedHolder { ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context) };
         context.Set(setAsDispatchedHolder);
 
+        // If message-based extractors during duplicate detection
+        // and there's no incoming message, we need to defer to the logical stage
+        if (extractorConfig.HasCustomMessageExtractors)
+        {
+            // because of the transactional session we cannot assume the incoming message is always present
+            if (!context.TryGet(out IncomingMessage incomingMessage) ||
+                !incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
+            {
+                // we return null here to enable outbox work at logical stage
+                return null;
+            }
+        }
+
         /* 
          * The PartitionKey can be overriden by TransactionInformationBeforeThePhysicalOutboxBehavior (from headers)
          * or TransactionInformationBeforeTheLogicalOutboxBehavior (from message instance).
@@ -38,42 +51,10 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
          * When custom partition key extractors are NOT used, we need to run with the default synthetic partition key strategy
          * to ensure outbox duplicate messages are unique for each processing endpoint.
         */
-
-        PartitionKey finalPartitionKey;
-        if (hasCustomPartitionKeyExtractors)
-        {
-            var hasCustomPartitionKey = context.TryGet(out PartitionKey partitionKeyObject);
-            if (!hasCustomPartitionKey)
-            {
-                // TODO: The below 'if' is always true and returns null. Is this correct? This ends up throwing an exception:
-                // "For the outbox to work a partition key must be provided either in the incoming physical or at latest in the logical message stage. Set one via 'TransactionInformation'."
-
-                // because of the transactional session we cannot assume the incoming message is always present                
-                if (!context.TryGet(out IncomingMessage incomingMessage) ||
-                    !incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
-                {
-                    // we return null here to enable outbox work at logical stage
-                    return null;
-                }
-
-                // if we reach here, it means the user has custom extractors but none could extract a partition key. e.g. incorrect header name
-                // TODO: default to synthetic strategy instead? Or throw? Defaulting will hide the fallback which is not ideal.
-                finalPartitionKey = new PartitionKey($"{partitionKey}-{messageId}");
-            }
-            else
-            {
-                // found a custom partition key
-                finalPartitionKey = partitionKeyObject;
-            }
-        }
-        else
-        {
-            // use the synthetic partition key strategy when custom extractors are not used (default).
-            finalPartitionKey = new PartitionKey($"{partitionKey}-{messageId}");
-        }
-
+        var finalPartitionKey = GetPartitionKey(messageId, context);
         context.Set(finalPartitionKey);
 
+        // TODO: throw if the container doesnt exist in cosmosDB. This can happen if the user has a custom extractor that extracts a container that doesnt exist.
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
 
         // If the user has overridden the default synthetic partition key strategy, then partitionKeyObject will be what they have set. If not, it will be the synthetic.
@@ -83,12 +64,17 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         // Only attempt the fallback if the user has NOT overridden the partition key strategy and the readFallbackEnabled flag is set.
         // Theres no point in trying to fallback if the user has specified their own partition key strategy and the record wasn't found.
         // This saves an unnecessary read.
-        if (outboxRecord is null && readFallbackEnabled && !hasCustomPartitionKeyExtractors)
+        if (outboxRecord is null && readFallbackEnabled && !extractorConfig.HasAnyCustomExtractors)
         {
             // fallback to the legacy single ID if the record wasn't found by the synthetic ID
             var fallbackPartitionKey = new PartitionKey(messageId);
             outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, fallbackPartitionKey, serializer, cancellationToken)
                 .ConfigureAwait(false);
+
+            if (outboxRecord is not null)
+            {
+                finalPartitionKey = fallbackPartitionKey;
+            }
         }
 
         setAsDispatchedHolder.PartitionKey = finalPartitionKey;
@@ -129,6 +115,36 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         TransactionalBatch transactionalBatch = containerHolder.Container.CreateTransactionalBatch(partitionKey);
 
         await transactionalBatch.ExecuteOperationAsync(operation, containerHolder.PartitionKeyPath, cancellationToken).ConfigureAwait(false);
+    }
+
+    PartitionKey GetPartitionKey(string messageId, ContextBag context)
+    {
+        PartitionKey finalPartitionKey;
+
+        // Is the user overriding the default synthetic partition key strategy using custom partition key extractors?
+        if (extractorConfig.HasAnyCustomExtractors) // yes
+        {
+            // The user is trying to extract a custom partition key using their extractors. Does the key exist in the context?
+            var hasCustomPartitionKey = context.TryGet(out PartitionKey partitionKeyObject);
+            if (!hasCustomPartitionKey) // no
+            {
+                // if we reach here, it means the user has custom extractors but none could extract a partition key. e.g. incorrect header name
+                // TODO: default to synthetic strategy instead? Or throw? Defaulting will hide the fallback which is not ideal.
+                finalPartitionKey = new PartitionKey($"{partitionKey}-{messageId}");
+            }
+            else // yes
+            {
+                // found a custom partition key
+                finalPartitionKey = partitionKeyObject;
+            }
+        }
+        else // no
+        {
+            // use the synthetic partition key strategy when custom extractors are not used (default).
+            finalPartitionKey = new PartitionKey($"{partitionKey}-{messageId}");
+        }
+
+        return finalPartitionKey;
     }
 
     internal static readonly string SchemaVersion = "1.0.0";

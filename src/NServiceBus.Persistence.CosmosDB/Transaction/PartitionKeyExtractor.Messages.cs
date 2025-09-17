@@ -64,6 +64,7 @@ partial class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartit
         extractPartitionKeyFromMessages.Add(extractor);
     }
 
+    // Used by the Outbox to determine if it needs to try and extract the partition key from messages.
     internal bool HasCustomMessageExtractors => extractPartitionKeyFromMessages.Count > 0;
 
     sealed class PartitionKeyFromMessageExtractor<TMessage, TArg>(Func<TMessage, IReadOnlyDictionary<string, string>, TArg, PartitionKey> extractor, TArg argument = default)
