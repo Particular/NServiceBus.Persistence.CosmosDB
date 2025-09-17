@@ -29,13 +29,17 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         var setAsDispatchedHolder = new SetAsDispatchedHolder { ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context) };
         context.Set(setAsDispatchedHolder);
 
-        // If message-based extractors during duplicate detection
-        // and there's no incoming message, we need to defer to the logical stage
-        if (extractorConfig.HasCustomMessageExtractors)
+        // If the partition key is not present in the context, and
+        // a custom message PK extractor is configured, it means the PK is expected to be extracted from the message
+        // and we sure defer the read to the logical stage.
+        if (!context.TryGet(out PartitionKey _) && extractorConfig.HasCustomMessageExtractors)
         {
             // because of the transactional session we cannot assume the incoming message is always present
-            if (!context.TryGet(out IncomingMessage incomingMessage) ||
-                !incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
+            var hasIncomingMessage = context.TryGet(out IncomingMessage incomingMessage);
+            var hasControlMessageHeader = hasIncomingMessage && incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader);
+
+            // if the incoming message is not present, defer the read to the logical stage
+            if (!hasIncomingMessage || !hasControlMessageHeader)
             {
                 // we return null here to enable outbox work at logical stage
                 return null;
