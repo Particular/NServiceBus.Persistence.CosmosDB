@@ -32,7 +32,8 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         // If the partition key is not present in the context, and
         // a custom message PK extractor is configured, it means the PK is expected to be extracted from the message
         // and we sure defer the read to the logical stage.
-        if (!context.TryGet(out PartitionKey _) && extractorConfig.HasCustomMessageExtractors)
+        //if (!context.TryGet(out PartitionKey _) && extractorConfig.HasCustomMessageExtractors)
+        if (!context.TryGet(out PartitionKey _))
         {
             // because of the transactional session we cannot assume the incoming message is always present
             var hasIncomingMessage = context.TryGet(out IncomingMessage incomingMessage);
