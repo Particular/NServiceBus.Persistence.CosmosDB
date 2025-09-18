@@ -27,6 +27,9 @@ partial class ContainerInformationExtractor : IContainerInformationFromHeadersEx
         return false;
     }
 
+    // Used by the Outbox to determine if it needs to try and extract the container from headers.
+    internal bool HasCustomHeaderExtractors => extractContainerInformationFromHeaders.Count > 0;
+
     public void ExtractContainerInformationFromHeader(string headerKey, ContainerInformation containerInformation) =>
         // When moving to CSharp 9 these can be static lambdas
         ExtractContainerInformationFromHeader(headerKey, (_, container) => container, containerInformation);

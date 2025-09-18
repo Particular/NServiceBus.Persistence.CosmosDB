@@ -34,7 +34,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
             // If the partition key is not present in the context at the physical stage (headers), and
             // a custom message PK extractor is configured, it means the PK is expected to be extracted from the message body
             // and we need to defer the read to the logical stage.
-            if (extractorConfig.HasCustomMessageExtractors)
+            if (extractorConfig.HasCustomPartitionMessageExtractors)
             {
                 return null;
             }
@@ -56,7 +56,12 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
 
         // Set the final partition key to be used. Either default synthetic or custom extracted.
         var finalPartitionKey = GetPartitionKey(messageId, context);
-        context.Set(finalPartitionKey);
+        //context.Set(finalPartitionKey);
+
+        if (!setAsDispatchedHolder.ContainerIsSet() && extractorConfig.HasCustomContainerMessageExtractors)
+        {
+            return null;
+        }
 
         // TODO: throw if the container doesnt exist in cosmosDB. This can happen if the user has a custom extractor that extracts a container that doesnt exist.
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
@@ -68,7 +73,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         // Only attempt the fallback if the user has NOT overridden the partition key strategy and the readFallbackEnabled flag is set.
         // Theres no point in trying to fallback if the user has specified their own partition key strategy and the record wasn't found.
         // This saves an unnecessary read.
-        if (outboxRecord is null && readFallbackEnabled && !extractorConfig.HasAnyCustomExtractors)
+        if (outboxRecord is null && readFallbackEnabled && !extractorConfig.HasAnyCustomPartitionExtractors)
         {
             // fallback to the legacy single ID if the record wasn't found by the synthetic ID
             var fallbackPartitionKey = new PartitionKey(messageId);
@@ -78,9 +83,11 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
             if (outboxRecord is not null)
             {
                 finalPartitionKey = fallbackPartitionKey;
+                context.Set(fallbackPartitionKey);
             }
         }
 
+        context.Set(finalPartitionKey);
         setAsDispatchedHolder.PartitionKey = finalPartitionKey;
 
         return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
@@ -126,7 +133,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         PartitionKey finalPartitionKey;
 
         // Is the user overriding the default synthetic partition key strategy using custom partition key extractors?
-        if (extractorConfig.HasAnyCustomExtractors) // yes
+        if (extractorConfig.HasAnyCustomPartitionExtractors) // yes
         {
             // The user is trying to extract a custom partition key using their extractors. Does the key exist in the context?
             var hasCustomPartitionKey = context.TryGet(out PartitionKey partitionKeyObject);

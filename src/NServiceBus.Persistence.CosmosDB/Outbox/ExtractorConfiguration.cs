@@ -5,8 +5,13 @@ namespace NServiceBus.Persistence.CosmosDB;
 /// </summary>
 class ExtractorConfiguration
 {
-    public bool HasCustomHeaderExtractors { get; init; } = false;
-    public bool HasCustomMessageExtractors { get; init; } = false;
+    public bool HasCustomPartitionHeaderExtractors { get; init; } = false;
+    public bool HasCustomPartitionMessageExtractors { get; init; } = false;
 
-    public bool HasAnyCustomExtractors => HasCustomHeaderExtractors || HasCustomMessageExtractors;
+    public bool HasAnyCustomPartitionExtractors => HasCustomPartitionHeaderExtractors || HasCustomPartitionMessageExtractors;
+
+    public bool HasCustomContainerHeaderExtractors { get; init; } = false;
+    public bool HasCustomContainerMessageExtractors { get; init; } = false;
+
+    public bool HasAnyCustomContainerExtractors => HasCustomContainerHeaderExtractors || HasCustomContainerMessageExtractors;
 }
