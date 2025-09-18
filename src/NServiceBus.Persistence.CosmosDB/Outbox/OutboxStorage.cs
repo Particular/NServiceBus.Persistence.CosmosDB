@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB;
 
+using System.Linq;
 using Features;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -33,15 +34,27 @@ class OutboxStorage : Feature
 
         // Check if custom PartitionKeyExtractors are used. If so, we need to adjust the Partition Key logic in OutboxPersister
         var transactionConfig = context.Settings.Get<TransactionInformationConfiguration>();
-        var extractorConfig = new ExtractorConfiguration
-        {
-            HasCustomPartitionHeaderExtractors = transactionConfig.PartitionKeyExtractor.HasCustomHeaderExtractors,
-            HasCustomPartitionMessageExtractors = transactionConfig.PartitionKeyExtractor.HasCustomMessageExtractors,
-            HasCustomContainerHeaderExtractors = transactionConfig.ContainerInformationExtractor.HasCustomHeaderExtractors,
-            HasCustomContainerMessageExtractors = transactionConfig.ContainerInformationExtractor.HasCustomMessageExtractors
-        };
 
-        context.Services.AddSingleton<IOutboxStorage>(builder => new OutboxPersister(builder.GetService<ContainerHolderResolver>(), serializer, configuration.PartitionKey, configuration.ReadFallbackEnabled, extractorConfig, (int)configuration.TimeToKeepDeduplicationData.TotalSeconds));
+        context.Services.AddSingleton<IOutboxStorage>(builder =>
+        {
+            // Check for DI-registered extractors in addition to API-registered ones
+            var extractorConfig = new ExtractorConfiguration
+            {
+                HasCustomPartitionHeaderExtractors = transactionConfig.PartitionKeyExtractor.HasCustomHeaderExtractors ||
+                                                        builder.GetServices<IPartitionKeyFromHeadersExtractor>().Any(),
+
+                HasCustomPartitionMessageExtractors = transactionConfig.PartitionKeyExtractor.HasCustomMessageExtractors ||
+                                                        builder.GetServices<IPartitionKeyFromMessageExtractor>().Any(),
+
+                HasCustomContainerHeaderExtractors = transactionConfig.ContainerInformationExtractor.HasCustomHeaderExtractors ||
+                                                        builder.GetServices<IContainerInformationFromHeadersExtractor>().Any(),
+
+                HasCustomContainerMessageExtractors = transactionConfig.ContainerInformationExtractor.HasCustomMessageExtractors ||
+                                                        builder.GetServices<IContainerInformationFromMessagesExtractor>().Any()
+            };
+
+            return new OutboxPersister(builder.GetService<ContainerHolderResolver>(), serializer, configuration.PartitionKey, configuration.ReadFallbackEnabled, extractorConfig, (int)configuration.TimeToKeepDeduplicationData.TotalSeconds);
+        });
         context.Pipeline.Register("LogicalOutboxBehavior", builder => new LogicalOutboxBehavior(builder.GetService<ContainerHolderResolver>(), serializer), "Behavior that mimics the outbox as part of the logical stage.");
     }
 

@@ -56,6 +56,7 @@ class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, Jso
 
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
 
+        // TODO: If using the default partition key, the fallback logic should be applied here as well
         OutboxRecord outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.CancellationToken)
             .ConfigureAwait(false);
 

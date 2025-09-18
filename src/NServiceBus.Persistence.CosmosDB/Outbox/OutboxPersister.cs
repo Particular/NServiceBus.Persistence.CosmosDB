@@ -16,9 +16,20 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
     {
         var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
+        // Only set partition key if:
+        // 1. We have one in context AND
+        // 2. We're not going to defer to logical stage for container extraction
         if (context.TryGet(out PartitionKey partitionKey))
         {
-            cosmosOutboxTransaction.PartitionKey = partitionKey;
+            // Check if we'll defer for container extraction
+            var containerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context);
+            bool willDeferForContainer = containerHolder == null && extractorConfig.HasCustomContainerMessageExtractors;
+
+            // Only set partition key if we won't defer
+            if (!willDeferForContainer)
+            {
+                cosmosOutboxTransaction.PartitionKey = partitionKey;
+            }
         }
 
         return Task.FromResult((IOutboxTransaction)cosmosOutboxTransaction);
@@ -29,36 +40,51 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         var setAsDispatchedHolder = new SetAsDispatchedHolder { ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context) };
         context.Set(setAsDispatchedHolder);
 
-        if (!context.TryGet(out PartitionKey _))
+        var havePartitionKeyInContext = context.TryGet(out PartitionKey extractedPartitionKey);
+        PartitionKey finalPartitionKey = PartitionKey.Null;
+        bool shouldDeferToLogicalStage = false;
+
+        // Determine if we should defer to logical stage for partition key extraction
+        if (!havePartitionKeyInContext)
         {
-            // If the partition key is not present in the context at the physical stage (headers), and
-            // a custom message PK extractor is configured, it means the PK is expected to be extracted from the message body
-            // and we need to defer the read to the logical stage.
             if (extractorConfig.HasCustomPartitionMessageExtractors)
             {
-                return null;
+                // Custom partition key extractors need the message body
+                shouldDeferToLogicalStage = true;
             }
-
-            // because of the transactional session we cannot assume the incoming message is always present
-            // If there is an incoming message, check if it's a control message. If it is, defer the read to the logical stage.
-            // Otherwise, proceed to set the default synthetic PK strategy.
-            if (context.TryGet(out IncomingMessage incomingMessage))
+            else if (context.TryGet(out IncomingMessage incomingMessage) &&
+                     incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
             {
-                // if the incoming message is a control message, defer the read to the logical stage
-                // as control messages don't have the user message body needed for physical extraction
-                if (incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
-                {
-                    // we return null here to enable outbox work at logical stage
-                    return null;
-                }
+                // Control messages need to defer to logical stage
+                shouldDeferToLogicalStage = true;
+            }
+            else if (!extractorConfig.HasAnyCustomPartitionExtractors)
+            {
+                // Use default synthetic partition key
+                finalPartitionKey = GetPartitionKey(extractedPartitionKey, messageId);
             }
         }
+        else
+        {
+            // We have a partition key from context (headers or previous extraction)
+            finalPartitionKey = extractedPartitionKey;
+        }
 
-        // Set the final partition key to be used. Either default synthetic or custom extracted.
-        var finalPartitionKey = GetPartitionKey(messageId, context);
-        //context.Set(finalPartitionKey);
-
+        // Check if we need to defer for container extraction
         if (!setAsDispatchedHolder.ContainerIsSet() && extractorConfig.HasCustomContainerMessageExtractors)
+        {
+            // When deferring for container extraction, ensure partition key is set in context
+            // Use the default synthetic key if no custom partition extractors are configured
+            if (!havePartitionKeyInContext && !extractorConfig.HasAnyCustomPartitionExtractors)
+            {
+                finalPartitionKey = GetPartitionKey(extractedPartitionKey, messageId);
+                context.Set(finalPartitionKey);
+            }
+            return null;
+        }
+
+        // If we determined we should defer for partition key extraction, do so now
+        if (shouldDeferToLogicalStage)
         {
             return null;
         }
@@ -83,11 +109,14 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
             if (outboxRecord is not null)
             {
                 finalPartitionKey = fallbackPartitionKey;
-                context.Set(fallbackPartitionKey);
             }
         }
 
-        context.Set(finalPartitionKey);
+        // Ensure the final partition key is set in context
+        if (finalPartitionKey != PartitionKey.Null)
+        {
+            context.Set(finalPartitionKey);
+        }
         setAsDispatchedHolder.PartitionKey = finalPartitionKey;
 
         return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
@@ -127,35 +156,18 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
 
         await transactionalBatch.ExecuteOperationAsync(operation, containerHolder.PartitionKeyPath, cancellationToken).ConfigureAwait(false);
     }
-
-    PartitionKey GetPartitionKey(string messageId, ContextBag context)
+    PartitionKey GetPartitionKey(PartitionKey extractedPartitionKey, string messageId)
     {
-        PartitionKey finalPartitionKey;
-
-        // Is the user overriding the default synthetic partition key strategy using custom partition key extractors?
-        if (extractorConfig.HasAnyCustomPartitionExtractors) // yes
+        // If we have an extracted partition key (from headers or message body), use it.
+        if (extractedPartitionKey != PartitionKey.Null)
         {
-            // The user is trying to extract a custom partition key using their extractors. Does the key exist in the context?
-            var hasCustomPartitionKey = context.TryGet(out PartitionKey partitionKeyObject);
-            if (!hasCustomPartitionKey) // no
-            {
-                // if we reach here, it means the user has custom extractors but none could extract a partition key. e.g. incorrect header name
-                // TODO: default to synthetic strategy instead? Or throw? Defaulting will hide the fallback which is not ideal.
-                finalPartitionKey = new PartitionKey($"{partitionKey}-{messageId}");
-            }
-            else // yes
-            {
-                // found a custom partition key
-                finalPartitionKey = partitionKeyObject;
-            }
+            return extractedPartitionKey;
         }
-        else // no
+        else
         {
-            // use the synthetic partition key strategy when custom extractors are not used (default).
-            finalPartitionKey = new PartitionKey($"{partitionKey}-{messageId}");
+            // Use the default synthetic partition key strategy when no extracted PK is present.
+            return new PartitionKey($"{partitionKey}-{messageId}");
         }
-
-        return finalPartitionKey;
     }
 
     internal static readonly string SchemaVersion = "1.0.0";
