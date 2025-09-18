@@ -25,7 +25,11 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
+            configuration.RegisterComponents(services =>
+                services.AddSingleton<IPartitionKeyFromHeadersExtractor>(provider =>
+                    new PartitionKeyProvider(provider.GetRequiredService<ScenarioContext>(), endpointName)
+                )
+            );
         }
 
         if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
@@ -38,11 +42,11 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
     public Task Cleanup() => Task.CompletedTask;
 
-    class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromHeadersExtractor
+    class PartitionKeyProvider(ScenarioContext scenarioContext, string endpointName) : IPartitionKeyFromHeadersExtractor
     {
         public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
-            partitionKey = new PartitionKey(scenarioContext.TestRunId.ToString());
+            partitionKey = new PartitionKey($"{endpointName}-{headers["NServiceBus.MessageId"]}");
             return true;
         }
     }

@@ -35,8 +35,10 @@ class OutboxStorage : Feature
         var transactionConfig = context.Settings.Get<TransactionInformationConfiguration>();
         var extractorConfig = new ExtractorConfiguration
         {
-            HasCustomHeaderExtractors = transactionConfig.PartitionKeyExtractor.HasCustomHeaderExtractors,
-            HasCustomMessageExtractors = transactionConfig.PartitionKeyExtractor.HasCustomMessageExtractors
+            HasCustomPartitionHeaderExtractors = transactionConfig.PartitionKeyExtractor.HasCustomHeaderExtractors,
+            HasCustomPartitionMessageExtractors = transactionConfig.PartitionKeyExtractor.HasCustomMessageExtractors,
+            HasCustomContainerHeaderExtractors = transactionConfig.ContainerInformationExtractor.HasCustomHeaderExtractors,
+            HasCustomContainerMessageExtractors = transactionConfig.ContainerInformationExtractor.HasCustomMessageExtractors
         };
 
         context.Services.AddSingleton<IOutboxStorage>(builder => new OutboxPersister(builder.GetService<ContainerHolderResolver>(), serializer, configuration.PartitionKey, configuration.ReadFallbackEnabled, extractorConfig, (int)configuration.TimeToKeepDeduplicationData.TotalSeconds));

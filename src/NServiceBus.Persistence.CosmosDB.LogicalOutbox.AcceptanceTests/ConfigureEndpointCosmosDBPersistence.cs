@@ -46,7 +46,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
     {
         public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
-            partitionKey = new PartitionKey($"{endpointName}-{scenarioContext.TestRunId}");
+            partitionKey = new PartitionKey($"{endpointName}-{headers["NServiceBus.MessageId"]}");
             return true;
         }
     }
