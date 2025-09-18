@@ -29,33 +29,32 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         var setAsDispatchedHolder = new SetAsDispatchedHolder { ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context) };
         context.Set(setAsDispatchedHolder);
 
-        // If the partition key is not present in the context, and
-        // a custom message PK extractor is configured, it means the PK is expected to be extracted from the message
-        // and we sure defer the read to the logical stage.
-        //if (!context.TryGet(out PartitionKey _) && extractorConfig.HasCustomMessageExtractors)
         if (!context.TryGet(out PartitionKey _))
         {
-            // because of the transactional session we cannot assume the incoming message is always present
-            var hasIncomingMessage = context.TryGet(out IncomingMessage incomingMessage);
-            var hasControlMessageHeader = hasIncomingMessage && incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader);
-
-            // if the incoming message is not present, defer the read to the logical stage
-            if (!hasIncomingMessage || !hasControlMessageHeader)
+            // If the partition key is not present in the context at the physical stage (headers), and
+            // a custom message PK extractor is configured, it means the PK is expected to be extracted from the message body
+            // and we need to defer the read to the logical stage.
+            if (extractorConfig.HasCustomMessageExtractors)
             {
-                // we return null here to enable outbox work at logical stage
                 return null;
+            }
+
+            // because of the transactional session we cannot assume the incoming message is always present
+            // If there is an incoming message, check if it's a control message. If it is, defer the read to the logical stage.
+            // Otherwise, proceed to set the default synthetic PK strategy.
+            if (context.TryGet(out IncomingMessage incomingMessage))
+            {
+                // if the incoming message is a control message, defer the read to the logical stage
+                // as control messages don't have the user message body needed for physical extraction
+                if (incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
+                {
+                    // we return null here to enable outbox work at logical stage
+                    return null;
+                }
             }
         }
 
-        /* 
-         * The PartitionKey can be overriden by TransactionInformationBeforeThePhysicalOutboxBehavior (from headers)
-         * or TransactionInformationBeforeTheLogicalOutboxBehavior (from message instance).
-         *
-         * When custom partition key extractors are used, the default partition key strategy (synthetic) will NOT be used.
-         * 
-         * When custom partition key extractors are NOT used, we need to run with the default synthetic partition key strategy
-         * to ensure outbox duplicate messages are unique for each processing endpoint.
-        */
+        // Set the final partition key to be used. Either default synthetic or custom extracted.
         var finalPartitionKey = GetPartitionKey(messageId, context);
         context.Set(finalPartitionKey);
 
