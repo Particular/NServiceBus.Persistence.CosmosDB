@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using NServiceBus;
-using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Configuration.AdvancedExtensibility;
@@ -25,11 +24,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
-            configuration.RegisterComponents(services =>
-                services.AddSingleton<IPartitionKeyFromHeadersExtractor>(provider =>
-                    new PartitionKeyProvider(provider.GetRequiredService<ScenarioContext>(), endpointName)
-                )
-            );
+            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor>(new PartitionKeyProvider(endpointName)));
         }
 
         if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
@@ -42,7 +37,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
     public Task Cleanup() => Task.CompletedTask;
 
-    class PartitionKeyProvider(ScenarioContext scenarioContext, string endpointName) : IPartitionKeyFromHeadersExtractor
+    class PartitionKeyProvider(string endpointName) : IPartitionKeyFromHeadersExtractor
     {
         public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
