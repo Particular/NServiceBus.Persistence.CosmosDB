@@ -24,10 +24,10 @@ public partial class When_using_outbox_synchronized_session_via_container : NSer
             Assert.That(context.RepositoryHasBatch, Is.True);
             Assert.That(context.RepositoryHasContainer, Is.True);
         });
-        AssertPartitionPart(context);
+        AssertPartitionPart(context, "UsingOutboxSynchronizedSessionViaContainer.Endpoint");
     }
 
-    partial void AssertPartitionPart(Context scenarioContext);
+    partial void AssertPartitionPart(Context scenarioContext, string endpointName);
 
     public class Context : ScenarioContext
     {
