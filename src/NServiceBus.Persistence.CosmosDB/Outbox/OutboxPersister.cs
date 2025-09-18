@@ -29,7 +29,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         var setAsDispatchedHolder = new SetAsDispatchedHolder { ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context) };
         context.Set(setAsDispatchedHolder);
 
-        if (!context.TryGet(out PartitionKey _))
+        if (!context.TryGet(out PartitionKey extractedPartitionKey))
         {
             // If the partition key is not present in the context at the physical stage (headers), and
             // a custom message PK extractor is configured, it means the PK is expected to be extracted from the message body
@@ -55,7 +55,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         }
 
         // Set the final partition key to be used. Either default synthetic or custom extracted.
-        var finalPartitionKey = GetPartitionKey(messageId, context);
+        var finalPartitionKey = GetPartitionKey(extractedPartitionKey, messageId);
         context.Set(finalPartitionKey);
 
         // TODO: throw if the container doesnt exist in cosmosDB. This can happen if the user has a custom extractor that extracts a container that doesnt exist.
@@ -121,34 +121,18 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         await transactionalBatch.ExecuteOperationAsync(operation, containerHolder.PartitionKeyPath, cancellationToken).ConfigureAwait(false);
     }
 
-    PartitionKey GetPartitionKey(string messageId, ContextBag context)
+    PartitionKey GetPartitionKey(PartitionKey extractedPartitionKey, string messageId)
     {
-        PartitionKey finalPartitionKey;
-
-        // Is the user overriding the default synthetic partition key strategy using custom partition key extractors?
-        if (extractorConfig.HasAnyCustomExtractors) // yes
+        // If we have an extracted partition key (from headers or message body), use it.
+        if (extractedPartitionKey != PartitionKey.Null)
         {
-            // The user is trying to extract a custom partition key using their extractors. Does the key exist in the context?
-            var hasCustomPartitionKey = context.TryGet(out PartitionKey partitionKeyObject);
-            if (!hasCustomPartitionKey) // no
-            {
-                // if we reach here, it means the user has custom extractors but none could extract a partition key. e.g. incorrect header name
-                // TODO: default to synthetic strategy instead? Or throw? Defaulting will hide the fallback which is not ideal.
-                finalPartitionKey = new PartitionKey($"{partitionKey}-{messageId}");
-            }
-            else // yes
-            {
-                // found a custom partition key
-                finalPartitionKey = partitionKeyObject;
-            }
+            return extractedPartitionKey;
         }
-        else // no
+        else
         {
-            // use the synthetic partition key strategy when custom extractors are not used (default).
-            finalPartitionKey = new PartitionKey($"{partitionKey}-{messageId}");
+            // Use the default synthetic partition key strategy when no extracted PK is present.
+            return new PartitionKey($"{partitionKey}-{messageId}");
         }
-
-        return finalPartitionKey;
     }
 
     internal static readonly string SchemaVersion = "1.0.0";
