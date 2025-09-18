@@ -55,6 +55,17 @@ class CosmosSynchronizedStorageSession(ContainerHolderResolver containerHolderRe
         disposed = true;
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        if (!commitOnComplete || disposed)
+        {
+            return;
+        }
+
+        await storageSession.DisposeAsync().ConfigureAwait(false);
+        disposed = true;
+    }
+
     public void AddOperation(IOperation operation) => storageSession.AddOperation(operation);
 
     public ContextBag CurrentContextBag
