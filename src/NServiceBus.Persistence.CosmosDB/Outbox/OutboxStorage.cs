@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB;
 
-using System.Linq;
 using Features;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
