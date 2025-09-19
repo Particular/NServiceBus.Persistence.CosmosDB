@@ -15,7 +15,8 @@ class TransactionInformationBeforeTheLogicalOutboxBehavior(IPartitionKeyFromMess
         if (partitionKeyExtractor.TryExtract(context.Message.Instance, context.MessageHeaders, out PartitionKey? partitionKey))
         {
             // once we move to nullable reference type we can annotate the partition key with NotNullWhenAttribute and get rid of this check
-            if (partitionKey.HasValue)
+            // Null check to cover the scenario where a custom message extractor is configured, but the message field is null.
+            if (partitionKey.HasValue && partitionKey.Value != PartitionKey.Null)
             {
                 context.Extensions.Set(partitionKey.Value);
             }

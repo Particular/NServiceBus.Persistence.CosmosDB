@@ -16,13 +16,22 @@ class SynchronizedStorage : Feature
 
         string databaseName = context.Settings.Get<string>(SettingsKeys.DatabaseName);
 
-        ContainerInformation? defaultContainerInformation = null;
-        if (context.Settings.TryGet<ContainerInformation>(out ContainerInformation info))
+        context.Services.AddSingleton(b =>
         {
-            defaultContainerInformation = info;
-        }
+            ContainerInformation? defaultContainerInformation = null;
 
-        context.Services.AddSingleton(b => new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName));
+            // Only set the defaultContainerInformation if there are no custom extractors
+            var extractorConfigHolder = b.GetService<ExtractorConfigurationHolder>();
+            bool hasCustomExtractors = extractorConfigHolder != null &&
+                                      extractorConfigHolder.Configuration.HasAnyCustomContainerExtractors;
+
+            if (!hasCustomExtractors && context.Settings.TryGet<ContainerInformation>(out ContainerInformation info))
+            {
+                defaultContainerInformation = info;
+            }
+
+            return new ContainerHolderResolver(b.GetService<IProvideCosmosClient>(), defaultContainerInformation, databaseName);
+        });
 
         context.Services.AddScoped<ICompletableSynchronizedStorageSession, CosmosSynchronizedStorageSession>();
         context.Services.AddScoped(sp => (sp.GetService<ICompletableSynchronizedStorageSession>() as IWorkWithSharedTransactionalBatch)?.Create());
