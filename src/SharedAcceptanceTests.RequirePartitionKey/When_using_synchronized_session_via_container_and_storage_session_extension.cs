@@ -42,7 +42,7 @@ public class When_using_synchronized_session_via_container_and_storage_session_e
                 session.Batch.CreateItem(new
                 {
                     id = Context.Item1_Id,
-                    deep = new { down = $"UsingSynchronizedSessionViaContainerAndStorageSessionExtension.Endpoint-{context.TestRunId}" }
+                    deep = new { down = context.TestRunId.ToString() }
                 });
 
                 context.FirstHandlerIsDone = true;
@@ -62,7 +62,7 @@ public class When_using_synchronized_session_via_container_and_storage_session_e
                 session.Batch.CreateItem(new
                 {
                     id = Context.Item2_Id,
-                    deep = new { down = $"UsingSynchronizedSessionViaContainerAndStorageSessionExtension.Endpoint-{context.TestRunId}" }
+                    deep = new { down = context.TestRunId.ToString() }
                 });
 
                 context.SecondHandlerIsDone = true;

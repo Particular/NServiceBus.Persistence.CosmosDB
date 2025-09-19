@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB;
 
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,6 +47,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         context.Set(setAsDispatchedHolder);
 
         var havePartitionKeyInContext = context.TryGet(out PartitionKey extractedPartitionKey);
+
         PartitionKey finalPartitionKey = PartitionKey.Null;
         bool shouldDeferToLogicalStage = false;
 
@@ -62,6 +64,11 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
             {
                 // Control messages need to defer to logical stage
                 shouldDeferToLogicalStage = true;
+            }
+            else if (extractorConfig.HasCustomPartitionHeaderExtractors)
+            {
+                // If we dont have a partition key here, but expect to via a custom header extractor, we need to throw
+                throw new Exception($"For the outbox to work a partition key must be provided either in the incoming physical or at latest in the logical message stage. Set one via '{nameof(CosmosPersistenceConfig.TransactionInformation)}'.");
             }
             else if (!extractorConfig.HasAnyCustomPartitionExtractors)
             {

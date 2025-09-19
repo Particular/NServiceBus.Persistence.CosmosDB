@@ -24,17 +24,16 @@ public partial class When_using_outbox_synchronized_session_via_container : NSer
             Assert.That(context.RepositoryHasBatch, Is.True);
             Assert.That(context.RepositoryHasContainer, Is.True);
         });
-        AssertPartitionPart(context, $"UsingOutboxSynchronizedSessionViaContainer.Endpoint-{context.MessageId}");
+        AssertPartitionPart(context);
     }
 
-    partial void AssertPartitionPart(Context scenarioContext, string partitionKeyValue);
+    partial void AssertPartitionPart(Context scenarioContext);
 
     public class Context : ScenarioContext
     {
         public bool Done { get; set; }
         public bool RepositoryHasBatch { get; set; }
         public bool RepositoryHasContainer { get; set; }
-        public string MessageId { get; set; }
         public PartitionKey PartitionKey { get; set; }
         public PartitionKeyPath PartitionKeyPath { get; set; }
     }
@@ -58,7 +57,6 @@ public partial class When_using_outbox_synchronized_session_via_container : NSer
             {
                 repository.DoSomething();
                 context.Done = true;
-                context.MessageId = handlerContext.MessageId;
                 return Task.CompletedTask;
             }
         }
