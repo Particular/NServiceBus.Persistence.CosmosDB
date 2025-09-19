@@ -9,9 +9,11 @@ using Newtonsoft.Json;
 using Outbox;
 using Transport;
 
-class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKey, bool readFallbackEnabled, ExtractorConfiguration extractorConfig, int ttlInSeconds)
+class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKey, bool readFallbackEnabled, ExtractorConfigurationHolder extractorConfigHolder, int ttlInSeconds)
     : IOutboxStorage
 {
+    readonly ExtractorConfiguration extractorConfig = extractorConfigHolder?.Configuration ?? new ExtractorConfiguration();
+
     public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
     {
         var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
@@ -37,7 +39,10 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
 
     public async Task<OutboxMessage> Get(string messageId, ContextBag context, CancellationToken cancellationToken = default)
     {
-        var setAsDispatchedHolder = new SetAsDispatchedHolder { ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context) };
+        var setAsDispatchedHolder = new SetAsDispatchedHolder
+        {
+            ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context)
+        };
         context.Set(setAsDispatchedHolder);
 
         var havePartitionKeyInContext = context.TryGet(out PartitionKey extractedPartitionKey);
