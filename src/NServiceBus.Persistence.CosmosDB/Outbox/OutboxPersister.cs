@@ -59,12 +59,6 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
                 // Custom partition key extractors need the message body
                 shouldDeferToLogicalStage = true;
             }
-            else if (context.TryGet(out IncomingMessage incomingMessage) &&
-                     incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
-            {
-                // Control messages need to defer to logical stage
-                shouldDeferToLogicalStage = true;
-            }
             else if (extractorConfig.HasCustomPartitionHeaderExtractors)
             {
                 // If we dont have a partition key here, but expect to via a custom header extractor, we need to throw

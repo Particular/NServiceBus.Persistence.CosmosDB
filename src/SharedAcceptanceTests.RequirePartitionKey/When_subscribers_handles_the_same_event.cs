@@ -7,14 +7,19 @@ using AcceptanceTesting.Customization;
 using AcceptanceTests;
 using EndpointTemplates;
 using Features;
+using NServiceBus.AcceptanceTesting.Support;
 using NUnit.Framework;
 
 public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
 {
     [Test]
-    public async Task Should_be_processed_by_all_subscribers()
+    public async Task Should_be_processed_by_all_subscribers_using_default_synthetic_key()
     {
         Requires.OutboxPersistence();
+
+        var runSettings = new RunSettings();
+        runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+        runSettings.TestExecutionTimeout = TimeSpan.FromSeconds(30);
 
         var context = await Scenario.Define<Context>()
             .WithEndpoint<Publisher>(b =>
@@ -47,7 +52,7 @@ public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
                 }
             }))
             .Done(c => c.Subscriber1GotTheEvent && c.Subscriber2GotTheEvent)
-            .Run(TimeSpan.FromSeconds(10));
+            .Run(runSettings);
 
         Assert.Multiple(() =>
         {
