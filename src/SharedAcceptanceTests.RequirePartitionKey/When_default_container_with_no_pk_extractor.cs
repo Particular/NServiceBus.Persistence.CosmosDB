@@ -1,4 +1,5 @@
 namespace NServiceBus.AcceptanceTests;
+
 using System.Threading.Tasks;
 using AcceptanceTesting;
 using EndpointTemplates;
