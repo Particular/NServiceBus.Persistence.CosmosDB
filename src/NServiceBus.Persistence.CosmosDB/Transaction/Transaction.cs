@@ -12,12 +12,8 @@ sealed class Transaction : Feature
     {
         TransactionInformationConfiguration configuration = context.Settings.Get<TransactionInformationConfiguration>();
 
-        // Register the ExtractorConfigurationHolder as a singleton with initial configuration
-        // The configuration will be updated by the behaviors as they discover DI-registered extractors
         context.Services.AddSingleton(provider =>
         {
-            // At this point we can only know about API-registered extractors
-            // DI-registered extractors will be discovered and added by the behaviors
             return new ExtractorConfigurationHolder
             {
                 Configuration = new ExtractorConfiguration
@@ -30,7 +26,6 @@ sealed class Transaction : Feature
             };
         });
 
-        // TODO: Dont add these if no custom extractors were added
         context.Pipeline.Register(new TransactionInformationBeforeTheLogicalOutboxBehavior.RegisterStep(configuration.PartitionKeyExtractor, configuration.ContainerInformationExtractor));
         context.Pipeline.Register(new TransactionInformationBeforeThePhysicalOutboxBehavior.RegisterStep(configuration.PartitionKeyExtractor, configuration.ContainerInformationExtractor));
     }
