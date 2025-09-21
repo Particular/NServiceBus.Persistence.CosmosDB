@@ -8,7 +8,6 @@ using Extensibility;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using Outbox;
-using Transport;
 
 class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKey, bool readFallbackEnabled, ExtractorConfigurationHolder extractorConfigHolder, int ttlInSeconds)
     : IOutboxStorage

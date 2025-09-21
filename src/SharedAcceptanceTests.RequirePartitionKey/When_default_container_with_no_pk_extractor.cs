@@ -1,15 +1,9 @@
 namespace NServiceBus.AcceptanceTests;
-
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using AcceptanceTesting;
 using EndpointTemplates;
-using Faults;
 using Microsoft.Azure.Cosmos;
 using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.Configuration.AdvancedExtensibility;
-using NServiceBus.Settings;
 using NUnit.Framework;
 
 [TestFixture]
