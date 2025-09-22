@@ -10,10 +10,10 @@ using NServiceBus.Persistence.CosmosDB;
 using NUnit.Framework;
 
 [TestFixture]
-public class When_default_container_with_pk_message_extractor : NServiceBusAcceptanceTest
+public class When_default_container_with_pk_extractor : NServiceBusAcceptanceTest
 {
     [Test]
-    public async Task Pk_in_message_is_used()
+    public async Task Pk_in_extractor_is_used()
     {
         var runSettings = new RunSettings();
         runSettings.DoNotRegisterDefaultContainerInformationProvider();
