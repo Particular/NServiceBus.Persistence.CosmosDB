@@ -33,6 +33,11 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromHeadersExtractor, ContainerInformationProvider>());
         }
 
+        if (settings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
+        {
+            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, FaultyPartitionKeyProvider>());
+        }
+
         return Task.FromResult(0);
     }
 
@@ -53,6 +58,15 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         {
             containerInformation = new ContainerInformation(SetupFixture.ContainerName, new PartitionKeyPath(SetupFixture.PartitionPathKey));
             return true;
+        }
+    }
+
+    class FaultyPartitionKeyProvider() : IPartitionKeyFromHeadersExtractor
+    {
+        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
+        {
+            partitionKey = null;
+            return false;
         }
     }
 }
