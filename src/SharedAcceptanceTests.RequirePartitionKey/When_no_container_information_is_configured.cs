@@ -12,10 +12,16 @@ using NUnit.Framework;
 public class When_no_container_information_is_configured : NServiceBusAcceptanceTest
 {
     [Test]
-    public async Task Should_throw_meaningful_exception()
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_throw_meaningful_exception(bool usePKExtractor)
     {
         var runSettings = new RunSettings();
         runSettings.DoNotRegisterDefaultContainerInformationProvider();
+        if (!usePKExtractor)
+        {
+            runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+        }
 
         Context context = await Scenario.Define<Context>()
             .WithEndpoint<Endpoint>(b =>
