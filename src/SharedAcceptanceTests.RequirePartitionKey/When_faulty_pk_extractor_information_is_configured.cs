@@ -29,6 +29,14 @@ public class When_faulty_pk_extractor_information_is_configured : NServiceBusAcc
             .WithEndpoint<Endpoint>(b =>
             {
                 b.DoNotFailOnErrorMessages();
+                if (!useContainerExtractor)
+                {
+                    b.CustomConfig(cfg =>
+                    {
+                        PersistenceExtensions<CosmosPersistence> persistence = cfg.UsePersistence<CosmosPersistence>();
+                        persistence.DefaultContainer(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
+                    });
+                }
                 b.When(s => s.SendLocal(new MyMessage()));
             })
             .Done(c => c.FailedMessages.Any())
