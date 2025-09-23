@@ -48,6 +48,7 @@ class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, Jso
             if (!extractorConfig.HasAnyCustomPartitionExtractors)
             {
                 // Use the default synthetic partition key
+                // TODO: Fix. This isnt the synthetic PK
                 partitionKey = new PartitionKey(context.MessageId);
                 context.Extensions.Set(partitionKey);
             }

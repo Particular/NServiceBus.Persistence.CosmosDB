@@ -18,17 +18,10 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
     {
         var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
-        // Only set partition key if:
-        // 1. We have one in context AND
-        // 2. We're not going to defer to logical stage for container extraction
         if (context.TryGet(out PartitionKey partitionKey))
         {
-            // Check if we'll defer for container extraction
-            var containerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context);
-            bool willDeferForContainer = containerHolder == null && extractorConfig.HasCustomContainerMessageExtractors;
-
             // Only set partition key if we won't defer
-            if (!willDeferForContainer)
+            if (!extractorConfig.HasCustomContainerMessageExtractors)
             {
                 cosmosOutboxTransaction.PartitionKey = partitionKey;
             }
@@ -75,17 +68,18 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
             finalPartitionKey = extractedPartitionKey;
         }
 
-        // Check if we need to defer for container extraction
-        if (!setAsDispatchedHolder.ContainerIsSet() && extractorConfig.HasCustomContainerMessageExtractors)
+        // Check if we need to defer for container extraction. If both a header and message extractor is added, we defer to logical stage.
+        if ((!setAsDispatchedHolder.ContainerIsSet() && extractorConfig.HasCustomContainerMessageExtractors) ||
+            (extractorConfig.HasCustomContainerMessageExtractors && extractorConfig.HasCustomContainerHeaderExtractors))
         {
             // When deferring for container extraction, ensure partition key is set in context
             // Use the default synthetic key if no custom partition extractors are configured
             if (!havePartitionKeyInContext && !extractorConfig.HasAnyCustomPartitionExtractors)
             {
-                finalPartitionKey = GetPartitionKey(extractedPartitionKey, messageId);
                 context.Set(finalPartitionKey);
             }
-            return null;
+
+            shouldDeferToLogicalStage = true;
         }
 
         // If we determined we should defer for partition key extraction, do so now

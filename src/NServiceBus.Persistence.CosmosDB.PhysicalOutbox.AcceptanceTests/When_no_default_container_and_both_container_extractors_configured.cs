@@ -42,7 +42,7 @@ public class When_no_default_container_and_both_container_extractors_configured 
     }
 
     [Test]
-    public async Task Header_extractor_should_be_used()
+    public async Task Message_extractor_should_be_used()
     {
         var runSettings = new RunSettings();
         runSettings.DoNotRegisterDefaultContainerInformationProvider();
@@ -58,8 +58,8 @@ public class When_no_default_container_and_both_container_extractors_configured 
 
         Assert.Multiple(() =>
         {
-            Assert.That(context.HeaderExtractorWasCalled, Is.True);
-            Assert.That(context.Container.Id, Is.EqualTo(SetupFixture.ContainerName));
+            Assert.That(context.MessageExtractorWasCalled, Is.True);
+            Assert.That(context.Container.Id, Is.EqualTo(messageContainerName));
         });
     }
 
