@@ -9,7 +9,7 @@ using NServiceBus.AcceptanceTesting.Support;
 using NUnit.Framework;
 
 [TestFixture]
-public class When_faulty_container_extractor_information_is_configured : NServiceBusAcceptanceTest
+public class When_no_default_container_and_faulty_container_extractor_information_is_configured : NServiceBusAcceptanceTest
 {
     [Test]
     [TestCase(true)]
