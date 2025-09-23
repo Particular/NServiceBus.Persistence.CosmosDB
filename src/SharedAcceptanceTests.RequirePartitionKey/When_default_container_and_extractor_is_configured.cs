@@ -35,7 +35,7 @@ public class When_default_container_and_extractor_is_configured : NServiceBusAcc
     }
 
     [TearDown]
-    public async Task Teardown()
+    public new async Task Teardown()
     {
         await defaultContainer.DeleteContainerStreamAsync();
     }

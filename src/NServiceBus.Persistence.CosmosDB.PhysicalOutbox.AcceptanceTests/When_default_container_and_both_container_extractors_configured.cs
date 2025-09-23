@@ -51,7 +51,7 @@ public class When_default_container_and_both_container_extractors_configured : N
     }
 
     [TearDown]
-    public async Task Teardown()
+    public new async Task Teardown()
     {
         await defaultContainer.DeleteContainerStreamAsync();
         await messageContainer.DeleteContainerStreamAsync();
