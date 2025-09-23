@@ -8,15 +8,18 @@ using NServiceBus.AcceptanceTesting.Support;
 using NUnit.Framework;
 
 [TestFixture]
-public class When_container_information_is_configured_via_defaults_and_extractor : NServiceBusAcceptanceTest
+public class When_no_default_container_and_extractor_is_configured : NServiceBusAcceptanceTest
 {
-    static string defaultContainerName = "testContainer";
-
     [Test]
-    public async Task Should_overwrite_default_with_extractor_container()
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_use_container_from_extractor(bool usePKExtractor)
     {
         var runSettings = new RunSettings();
-        runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+        if (!usePKExtractor)
+        {
+            runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+        }
 
         Context context = await Scenario.Define<Context>()
             .WithEndpoint<Endpoint>(b =>
@@ -27,12 +30,23 @@ public class When_container_information_is_configured_via_defaults_and_extractor
             .Run(runSettings);
 
         Assert.That(context.Container.Id, Is.EqualTo(SetupFixture.ContainerName));
+        if (!usePKExtractor)
+        {
+            Assert.That(context.PartitionKey, Is.EqualTo(new PartitionKey($"{context.EndpointName}-{context.MessageId}")));
+        }
+        else
+        {
+            Assert.That(context.PartitionKey, Is.EqualTo(new PartitionKey(context.TestRunId.ToString())));
+        }
     }
 
     class Context : ScenarioContext
     {
         public bool Done { get; set; }
         public Container Container { get; set; }
+        public string MessageId { get; set; }
+        public string EndpointName { get; set; }
+        public PartitionKey PartitionKey { get; set; }
     }
 
     class Endpoint : EndpointConfigurationBuilder
@@ -42,8 +56,6 @@ public class When_container_information_is_configured_via_defaults_and_extractor
             {
                 config.EnableOutbox();
                 config.ConfigureTransport().TransportTransactionMode = TransportTransactionMode.ReceiveOnly;
-                PersistenceExtensions<CosmosPersistence> persistence = config.UsePersistence<CosmosPersistence>();
-                persistence.DefaultContainer(defaultContainerName, SetupFixture.PartitionPathKey);
             });
 
         class MyMessageHandler : IHandleMessages<MyMessage>
@@ -55,8 +67,11 @@ public class When_container_information_is_configured_via_defaults_and_extractor
             }
             public Task Handle(MyMessage message, IMessageHandlerContext handlerContext)
             {
-                context.Done = true;
+                context.PartitionKey = session.PartitionKey;
                 context.Container = session.Container;
+                context.MessageId = handlerContext.MessageId;
+                context.Done = true;
+                context.EndpointName = handlerContext.MessageHeaders["NServiceBus.ReplyToAddress"];
                 return Task.CompletedTask;
             }
 
