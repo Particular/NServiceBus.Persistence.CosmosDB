@@ -10,7 +10,35 @@ using NUnit.Framework;
 [TestFixture]
 public class When_default_container_and_extractor_is_configured : NServiceBusAcceptanceTest
 {
-    static string defaultContainerName = "testContainer";
+    static string defaultContainerName = $"{SetupFixture.ContainerName}_nonDefault";
+    Container defaultContainer;
+
+    [SetUp]
+    public async Task Setup()
+    {
+        await SetupFixture.CosmosDbClient.CreateDatabaseIfNotExistsAsync(SetupFixture.DatabaseName)
+            .ConfigureAwait(false);
+
+        Database database = SetupFixture.CosmosDbClient.GetDatabase(SetupFixture.DatabaseName);
+
+        var containerProperties =
+            new ContainerProperties(defaultContainerName, SetupFixture.PartitionPathKey)
+            {
+                // in order for individual items TTL to work (example outbox records)
+                DefaultTimeToLive = -1
+            };
+
+        await database.CreateContainerIfNotExistsAsync(containerProperties)
+            .ConfigureAwait(false);
+
+        defaultContainer = database.GetContainer(defaultContainerName);
+    }
+
+    [TearDown]
+    public async Task Teardown()
+    {
+        await defaultContainer.DeleteContainerStreamAsync();
+    }
 
     [Test]
     public async Task Should_overwrite_default_with_extractor_container()
