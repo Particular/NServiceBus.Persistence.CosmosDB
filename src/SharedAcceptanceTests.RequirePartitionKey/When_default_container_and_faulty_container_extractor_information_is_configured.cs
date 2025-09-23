@@ -17,6 +17,7 @@ public class When_default_container_and_faulty_container_extractor_information_i
     {
         var runSettings = new RunSettings();
         runSettings.RegisterFaultyContainerInformationProvider();
+        runSettings.DoNotRegisterDefaultContainerInformationProvider();
 
         if (!usePKExtractor)
         {
