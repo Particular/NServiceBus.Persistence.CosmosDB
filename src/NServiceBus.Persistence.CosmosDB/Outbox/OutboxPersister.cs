@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Extensibility;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
+using NServiceBus.Transport;
 using Outbox;
 
 class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKey, bool readFallbackEnabled, ExtractorConfigurationHolder extractorConfigHolder, int ttlInSeconds)
@@ -46,7 +47,15 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         // Determine if we should defer to logical stage for partition key extraction
         if (!havePartitionKeyInContext)
         {
-            if (extractorConfig.HasCustomPartitionMessageExtractors)
+            // If this is a control message but still doesnt have a partition key at this point,
+            // we need to set it to the default synthetic key.
+            if (context.TryGet(out IncomingMessage incomingMessage) &&
+                incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
+            {
+                // Use default synthetic partition key
+                finalPartitionKey = GetPartitionKey(extractedPartitionKey, messageId);
+            }
+            else if (extractorConfig.HasCustomPartitionMessageExtractors)
             {
                 // Custom partition key extractors need the message body
                 shouldDeferToLogicalStage = true;
