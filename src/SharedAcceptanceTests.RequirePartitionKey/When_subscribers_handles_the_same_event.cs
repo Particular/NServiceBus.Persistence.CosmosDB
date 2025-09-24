@@ -18,6 +18,7 @@ public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
         Requires.OutboxPersistence();
 
         var runSettings = new RunSettings();
+        //NOTE this call is required to ensure that the default synthetic partition key is used. The override uses the TestRunId as the partition key which will cause this test to fail
         runSettings.DoNotRegisterDefaultPartitionKeyProvider();
         runSettings.TestExecutionTimeout = TimeSpan.FromSeconds(30);
 
