@@ -44,18 +44,7 @@ class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, Jso
         // Outbox operating at the logical stage
         if (!context.Extensions.TryGet(out PartitionKey partitionKey))
         {
-            // Check if we should use the synthetic key when no custom extractors are configured
-            if (!extractorConfig.HasAnyCustomPartitionExtractors)
-            {
-                // Use the default synthetic partition key
-                // TODO: Fix. This isnt the synthetic PK
-                partitionKey = new PartitionKey(context.MessageId);
-                context.Extensions.Set(partitionKey);
-            }
-            else
-            {
-                throw new Exception($"For the outbox to work a partition key must be provided either in the incoming physical or at latest in the logical message stage. Set one via '{nameof(CosmosPersistenceConfig.TransactionInformation)}'.");
-            }
+            throw new Exception($"For the outbox to work a partition key must be provided either in the incoming physical or at latest in the logical message stage. Set one via '{nameof(CosmosPersistenceConfig.TransactionInformation)}'.");
         }
 
         ContainerHolder containerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context.Extensions);
