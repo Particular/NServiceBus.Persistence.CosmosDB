@@ -10,7 +10,7 @@ using NUnit.Framework;
 [TestFixture]
 public class When_default_container_and_extractor_is_configured : NServiceBusAcceptanceTest
 {
-    static string defaultContainerName = $"{SetupFixture.ContainerName}_nonDefault";
+    static string defaultContainerName = $"{SetupFixture.ContainerName}_default";
     Container defaultContainer;
 
     [SetUp]
