@@ -76,7 +76,11 @@ public partial class PersistenceTestsConfiguration : IProvideCosmosClient
         var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
         var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);
         SagaStorage = new SagaPersister(serializer, sagaPersistenceConfiguration);
-        OutboxStorage = new OutboxPersister(resolver, serializer, "SomeProcessingEndpoint", true, new ExtractorConfigurationHolder { Configuration = new ExtractorConfiguration { HasCustomPartitionHeaderExtractors = true } }, OutboxTimeToLiveInSeconds);
+
+        var transactionConfiguration = new TransactionInformationConfiguration();
+        transactionConfiguration.ExtractPartitionKeyFromHeaders(static (_, partitionKey) => new PartitionKey(partitionKey), partitionKey);
+
+        OutboxStorage = new OutboxPersister(resolver, serializer, "SomeProcessingEndpoint", true, transactionConfiguration, OutboxTimeToLiveInSeconds);
 
         GetContextBagForSagaStorage = () =>
         {

@@ -28,26 +28,21 @@ class OutboxStorage : Feature
         };
 
         var configuration = context.Settings.Get<OutboxPersistenceConfiguration>();
+        var transactionConfiguration = context.Settings.Get<TransactionInformationConfiguration>();
 
-        context.Services.AddSingleton<IOutboxStorage>(builder =>
-        {
-            return new OutboxPersister(
-                builder.GetService<ContainerHolderResolver>(),
-                serializer,
-                configuration.PartitionKey,
-                configuration.ReadFallbackEnabled,
-                builder.GetService<ExtractorConfigurationHolder>(),
-                (int)configuration.TimeToKeepDeduplicationData.TotalSeconds);
-        });
+        context.Services.AddSingleton<IOutboxStorage>(builder => new OutboxPersister(
+            builder.GetService<ContainerHolderResolver>(),
+            serializer,
+            configuration.PartitionKey,
+            configuration.ReadFallbackEnabled,
+            transactionConfiguration,
+            (int)configuration.TimeToKeepDeduplicationData.TotalSeconds));
 
-        context.Pipeline.Register("LogicalOutboxBehavior", builder =>
-        {
-            return new LogicalOutboxBehavior(
-                builder.GetService<ContainerHolderResolver>(),
-                serializer,
-                builder.GetService<ExtractorConfigurationHolder>(),
-                configuration.ReadFallbackEnabled);
-        }, "Behavior that mimics the outbox as part of the logical stage.");
+        context.Pipeline.Register("LogicalOutboxBehavior", builder => new LogicalOutboxBehavior(
+            builder.GetService<ContainerHolderResolver>(),
+            serializer,
+            transactionConfiguration,
+            configuration.ReadFallbackEnabled), "Behavior that mimics the outbox as part of the logical stage.");
     }
 
     internal const string ProcessorEndpointKey = "CosmosDB.TransactionalSession.ProcessorEndpoint";

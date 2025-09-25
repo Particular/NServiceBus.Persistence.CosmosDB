@@ -8,6 +8,9 @@ using System.Collections.Generic;
 /// </summary>
 public partial class TransactionInformationConfiguration
 {
+    internal bool HasCustomContainerHeaderExtractors => ContainerInformationExtractor.HasCustomHeaderExtractors;
+    internal bool HasCustomContainerMessageExtractors => ContainerInformationExtractor.HasCustomMessageExtractors;
+
     /// <summary>
     /// Adds an extraction rule that provides the same container information when the given <paramref name="headerKey"/> exists.
     /// </summary>
