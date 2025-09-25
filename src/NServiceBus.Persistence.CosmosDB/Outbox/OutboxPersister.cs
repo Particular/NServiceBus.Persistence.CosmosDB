@@ -41,7 +41,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
 
         var havePartitionKeyInContext = context.TryGet(out PartitionKey extractedPartitionKey);
 
-        PartitionKey finalPartitionKey = PartitionKey.Null;
+        var finalPartitionKey = PartitionKey.Null;
         bool shouldDeferToLogicalStage = false;
 
         // Determine if we should defer to logical stage for partition key extraction
