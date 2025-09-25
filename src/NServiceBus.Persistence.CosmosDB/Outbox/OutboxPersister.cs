@@ -163,6 +163,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
 
         await transactionalBatch.ExecuteOperationAsync(operation, containerHolder.PartitionKeyPath, cancellationToken).ConfigureAwait(false);
     }
+
     PartitionKey GetPartitionKey(PartitionKey extractedPartitionKey, string messageId)
     {
         // If we have an extracted partition key (from headers or message body), use it.
