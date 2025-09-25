@@ -10,11 +10,9 @@ using Newtonsoft.Json;
 using NServiceBus.Transport;
 using Outbox;
 
-class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKey, bool readFallbackEnabled, ExtractorConfigurationHolder extractorConfigHolder, int ttlInSeconds)
+class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKey, bool readFallbackEnabled, TransactionInformationConfiguration transactionConfiguration, int ttlInSeconds)
     : IOutboxStorage
 {
-    readonly ExtractorConfiguration extractorConfig = extractorConfigHolder?.Configuration ?? new ExtractorConfiguration();
-
     public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
     {
         var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
@@ -22,7 +20,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         if (context.TryGet(out PartitionKey partitionKey))
         {
             // Only set partition key if we won't defer
-            if (!extractorConfig.HasCustomContainerMessageExtractors)
+            if (!transactionConfiguration.HasCustomContainerMessageExtractors)
             {
                 cosmosOutboxTransaction.PartitionKey = partitionKey;
             }
@@ -55,17 +53,17 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
                 // Use default synthetic partition key
                 finalPartitionKey = GetPartitionKey(extractedPartitionKey, messageId);
             }
-            else if (extractorConfig.HasCustomPartitionMessageExtractors)
+            else if (transactionConfiguration.HasCustomPartitionMessageExtractors)
             {
                 // Custom partition key extractors need the message body
                 shouldDeferToLogicalStage = true;
             }
-            else if (extractorConfig.HasCustomPartitionHeaderExtractors)
+            else if (transactionConfiguration.HasCustomPartitionHeaderExtractors)
             {
                 // If we dont have a partition key here, but expect to via a custom header extractor, we need to throw
                 throw new Exception($"For the outbox to work a partition key must be provided either in the incoming physical or at latest in the logical message stage. Set one via '{nameof(CosmosPersistenceConfig.TransactionInformation)}'.");
             }
-            else if (!extractorConfig.HasAnyCustomPartitionExtractors)
+            else if (!transactionConfiguration.HasAnyCustomPartitionExtractors)
             {
                 // Use default synthetic partition key
                 finalPartitionKey = GetPartitionKey(extractedPartitionKey, messageId);
@@ -78,12 +76,12 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         }
 
         // Check if we need to defer for container extraction. If both a header and message extractor is added, we defer to logical stage.
-        if ((!setAsDispatchedHolder.ContainerIsSet() && extractorConfig.HasCustomContainerMessageExtractors) ||
-            (extractorConfig.HasCustomContainerMessageExtractors && extractorConfig.HasCustomContainerHeaderExtractors))
+        if ((!setAsDispatchedHolder.ContainerIsSet() && transactionConfiguration.HasCustomContainerMessageExtractors) ||
+            (transactionConfiguration.HasCustomContainerMessageExtractors && transactionConfiguration.HasCustomContainerHeaderExtractors))
         {
             // When deferring for container extraction, ensure partition key is set in context
             // Use the default synthetic key if no custom partition extractors are configured
-            if (!havePartitionKeyInContext && !extractorConfig.HasAnyCustomPartitionExtractors)
+            if (!havePartitionKeyInContext && !transactionConfiguration.HasAnyCustomPartitionExtractors)
             {
                 context.Set(finalPartitionKey);
             }
@@ -106,7 +104,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         // Only attempt the fallback if the user has NOT overridden the partition key strategy and the readFallbackEnabled flag is set.
         // There's no point in trying to fallback if the user has specified their own partition key strategy and the record wasn't found.
         // This saves an unnecessary read.
-        if (outboxRecord is null && readFallbackEnabled && !extractorConfig.HasAnyCustomPartitionExtractors)
+        if (outboxRecord is null && readFallbackEnabled && !transactionConfiguration.HasAnyCustomPartitionExtractors)
         {
             // fallback to the legacy single ID if the record wasn't found by the synthetic ID
             var fallbackPartitionKey = new PartitionKey(messageId);
