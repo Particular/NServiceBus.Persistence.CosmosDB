@@ -62,7 +62,7 @@ class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, Jso
             .ConfigureAwait(false);
 
         // Only attempt the fallback if the user has NOT overridden the partition key strategy and the readFallbackEnabled flag is set.
-        // Theres no point in trying to fallback if the user has specified their own partition key strategy and the record wasn't found.
+        // There's no point in trying to fallback if the user has specified their own partition key strategy and the record wasn't found.
         // This saves an unnecessary read.
         if (outboxRecord is null && readFallbackEnabled && !extractorConfig.HasAnyCustomPartitionExtractors)
         {
