@@ -97,7 +97,6 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
             return null;
         }
 
-        // TODO: throw if the container doesnt exist in cosmosDB. This can happen if the user has a custom extractor that extracts a container that doesnt exist.
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
 
         // If the user has overridden the default synthetic partition key strategy, then partitionKeyObject will be what they have set. If not, it will be the synthetic.
