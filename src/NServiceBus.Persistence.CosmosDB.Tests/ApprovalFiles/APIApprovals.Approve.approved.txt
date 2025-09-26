@@ -15,6 +15,7 @@ namespace NServiceBus
     }
     public static class CosmosOutboxSettingsExtensions
     {
+        public static NServiceBus.Outbox.OutboxSettings DisableReadFallback(this NServiceBus.Outbox.OutboxSettings outboxSettings) { }
         public static void TimeToKeepOutboxDeduplicationData(this NServiceBus.Outbox.OutboxSettings outboxSettings, System.TimeSpan timeToKeepOutboxDeduplicationData) { }
     }
     public class CosmosPersistence : NServiceBus.Persistence.PersistenceDefinition { }

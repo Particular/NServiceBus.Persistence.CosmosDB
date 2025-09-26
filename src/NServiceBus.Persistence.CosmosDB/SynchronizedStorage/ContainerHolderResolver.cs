@@ -6,13 +6,29 @@ class ContainerHolderResolver(IProvideCosmosClient provideCosmosClient, Containe
 {
     public ContainerHolder ResolveAndSetIfAvailable(ContextBag context)
     {
-        if (context.TryGet<ContainerHolder>(out ContainerHolder containerHolder))
+        var hasContainerHolder = context.TryGet<ContainerHolder>(out ContainerHolder containerHolder);
+        var hasContainerInfoInContext = context.TryGet<ContainerInformation>(out ContainerInformation containerInformation);
+
+        // If a custom extractor has successfully extracted container information from the message or headers,
+        // we always honor that over any existing container holder in context or the default container information.
+        if (hasContainerInfoInContext && hasContainerHolder)
+        {
+            if (containerInformation.ContainerName != containerHolder.Container.Id)
+            {
+                containerHolder = new ContainerHolder(provideCosmosClient.Client.GetContainer(databaseName, containerInformation.ContainerName), containerInformation.PartitionKeyPath);
+                context.Set(containerHolder);
+                return containerHolder;
+            }
+        }
+
+        if (hasContainerHolder)
         {
             return containerHolder;
         }
 
         ContainerInformation? information;
-        if (context.TryGet<ContainerInformation>(out ContainerInformation containerInformation))
+
+        if (hasContainerInfoInContext)
         {
             information = containerInformation;
         }

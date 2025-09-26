@@ -48,7 +48,7 @@ public class LogicalOutboxBehaviorTests
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
             new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
 
-        var behavior = new LogicalOutboxBehavior(containerHolderHolderResolver, new JsonSerializer());
+        var behavior = new LogicalOutboxBehavior(containerHolderHolderResolver, new JsonSerializer(), new TransactionInformationConfiguration(), true);
 
         var testableContext = new TestableIncomingLogicalMessageContext();
 

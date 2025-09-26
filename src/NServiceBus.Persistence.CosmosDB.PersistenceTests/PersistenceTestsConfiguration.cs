@@ -50,6 +50,7 @@ public partial class PersistenceTestsConfiguration : IProvideCosmosClient
     public Task Configure(CancellationToken cancellationToken = default)
     {
         // with this we have a partition key per run which makes things naturally isolated
+        // setting this essentialy means overriding the default synthetic partition key strategy
         partitionKey = Guid.NewGuid().ToString();
 
         var serializer = new JsonSerializer
@@ -75,7 +76,11 @@ public partial class PersistenceTestsConfiguration : IProvideCosmosClient
         var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
         var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);
         SagaStorage = new SagaPersister(serializer, sagaPersistenceConfiguration);
-        OutboxStorage = new OutboxPersister(resolver, serializer, OutboxTimeToLiveInSeconds);
+
+        var transactionConfiguration = new TransactionInformationConfiguration();
+        transactionConfiguration.ExtractPartitionKeyFromHeaders(static (_, partitionKey) => new PartitionKey(partitionKey), partitionKey);
+
+        OutboxStorage = new OutboxPersister(resolver, serializer, "SomeProcessingEndpoint", true, transactionConfiguration, OutboxTimeToLiveInSeconds);
 
         GetContextBagForSagaStorage = () =>
         {

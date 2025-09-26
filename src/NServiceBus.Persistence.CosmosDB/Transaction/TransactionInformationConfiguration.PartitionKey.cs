@@ -9,6 +9,11 @@ using Microsoft.Azure.Cosmos;
 /// </summary>
 public partial class TransactionInformationConfiguration
 {
+    internal bool HasCustomPartitionHeaderExtractors => PartitionKeyExtractor.HasCustomHeaderExtractors;
+    internal bool HasCustomPartitionMessageExtractors => PartitionKeyExtractor.HasCustomMessageExtractors;
+
+    internal bool HasAnyCustomPartitionExtractors => HasCustomPartitionHeaderExtractors || HasCustomPartitionMessageExtractors;
+
     /// <summary>
     /// Adds an instance of <see cref="IPartitionKeyFromHeadersExtractor"/> to the list of header extractors.
     /// </summary>

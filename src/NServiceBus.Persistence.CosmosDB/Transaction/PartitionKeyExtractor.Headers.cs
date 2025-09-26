@@ -75,6 +75,9 @@ partial class PartitionKeyExtractor : IPartitionKeyFromHeadersExtractor, IPartit
         extractPartitionKeyFromHeaders.Add(extractor);
     }
 
+    // Used by the Outbox to determine if it needs to try and extract the partition key from headers.
+    internal bool HasCustomHeaderExtractors => extractPartitionKeyFromHeaders.Count > 0;
+
     sealed class PartitionKeyFromFromHeaderExtractor<TArg>(string headerName, Func<string, TArg, PartitionKey> extractor, TArg extractorArgument = default)
         : IPartitionKeyFromHeadersExtractor
     {

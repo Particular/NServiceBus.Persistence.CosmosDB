@@ -14,7 +14,7 @@ using TransportOperation = Transport.TransportOperation;
 /// <summary>
 /// Mimics the outbox behavior as part of the logical phase.
 /// </summary>
-class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer)
+class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, TransactionInformationConfiguration transactionConfiguration, bool readFallbackEnabled)
     : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
 {
     /// <inheritdoc />
@@ -58,6 +58,23 @@ class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, Jso
 
         OutboxRecord outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.CancellationToken)
             .ConfigureAwait(false);
+
+        // Only attempt the fallback if the user has NOT overridden the partition key strategy and the readFallbackEnabled flag is set.
+        // There's no point in trying to fallback if the user has specified their own partition key strategy and the record wasn't found.
+        // This saves an unnecessary read.
+        if (outboxRecord is null && readFallbackEnabled && !transactionConfiguration.HasAnyCustomPartitionExtractors)
+        {
+            // fallback to the legacy single ID if the record wasn't found by the synthetic ID
+            var fallbackPartitionKey = new PartitionKey(context.MessageId);
+            outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(context.MessageId, fallbackPartitionKey, serializer, context.CancellationToken)
+                .ConfigureAwait(false);
+
+            if (outboxRecord is not null)
+            {
+                setAsDispatchedHolder.PartitionKey = fallbackPartitionKey;
+                outboxTransaction.PartitionKey = fallbackPartitionKey;
+            }
+        }
 
         if (outboxRecord is null)
         {

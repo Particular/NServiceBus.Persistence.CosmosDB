@@ -9,7 +9,7 @@ using NServiceBus.AcceptanceTesting.Support;
 using NUnit.Framework;
 
 [TestFixture]
-public class When_no_container_information_is_configured : NServiceBusAcceptanceTest
+public class When_no_default_container_and_faulty_container_extractor_information_is_configured : NServiceBusAcceptanceTest
 {
     [Test]
     [TestCase(true)]
@@ -18,6 +18,8 @@ public class When_no_container_information_is_configured : NServiceBusAcceptance
     {
         var runSettings = new RunSettings();
         runSettings.DoNotRegisterDefaultContainerInformationProvider();
+        runSettings.RegisterFaultyContainerInformationProvider();
+
         if (!usePKExtractor)
         {
             runSettings.DoNotRegisterDefaultPartitionKeyProvider();
