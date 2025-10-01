@@ -9,24 +9,34 @@ using NServiceBus.AcceptanceTesting.Support;
 using NUnit.Framework;
 
 [TestFixture]
-public class When_no_container_information_is_configured : NServiceBusAcceptanceTest
+public class When_faulty_pk_extractor_information_is_configured : NServiceBusAcceptanceTest
 {
     [Test]
     [TestCase(true)]
     [TestCase(false)]
-    public async Task Should_throw_meaningful_exception(bool usePKExtractor)
+    public async Task Should_throw_meaningful_exception(bool useContainerExtractor)
     {
         var runSettings = new RunSettings();
-        runSettings.DoNotRegisterDefaultContainerInformationProvider();
-        if (!usePKExtractor)
+        runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+        runSettings.RegisterFaultyPartitionKeyProvider();
+
+        if (!useContainerExtractor)
         {
-            runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+            runSettings.DoNotRegisterDefaultContainerInformationProvider();
         }
 
         Context context = await Scenario.Define<Context>()
             .WithEndpoint<Endpoint>(b =>
             {
                 b.DoNotFailOnErrorMessages();
+                if (!useContainerExtractor)
+                {
+                    b.CustomConfig(cfg =>
+                    {
+                        PersistenceExtensions<CosmosPersistence> persistence = cfg.UsePersistence<CosmosPersistence>();
+                        persistence.DefaultContainer(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
+                    });
+                }
                 b.When(s => s.SendLocal(new MyMessage()));
             })
             .Done(c => c.FailedMessages.Any())
@@ -35,7 +45,7 @@ public class When_no_container_information_is_configured : NServiceBusAcceptance
         FailedMessage failure = context.FailedMessages.FirstOrDefault()
             .Value.First();
 
-        Assert.That(failure.Exception.Message, Does.Contain("container"));
+        Assert.That(failure.Exception.Message, Does.Contain("partition key"));
     }
 
     class Context : ScenarioContext
