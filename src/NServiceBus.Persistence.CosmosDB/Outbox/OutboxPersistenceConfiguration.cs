@@ -4,17 +4,18 @@ using System;
 
 sealed class OutboxPersistenceConfiguration
 {
+    TimeSpan timeToKeepDeduplicationData = TimeSpan.FromDays(7);
     public TimeSpan TimeToKeepDeduplicationData
     {
-        get => field;
+        get => timeToKeepDeduplicationData;
         set
         {
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
 
             var seconds = Math.Ceiling(value.TotalSeconds);
-            field = TimeSpan.FromSeconds(seconds);
+            timeToKeepDeduplicationData = TimeSpan.FromSeconds(seconds);
         }
-    } = TimeSpan.FromDays(7);
+    }
 
     public bool ReadFallbackEnabled { get; set; } = true; // default to true to not break existing users
 
