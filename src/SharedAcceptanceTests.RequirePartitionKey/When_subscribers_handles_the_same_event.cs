@@ -91,7 +91,7 @@ public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
                     context.AddTrace($"{subscriber2} is now subscribed");
                 }
             });
-        }, metadata => metadata.RegisterSelfAsPublisherFor<MyEvent>(this));
+        }, metadata => metadata.RegisterPublisherFor<MyEvent>(typeof(DefaultPublisher)));
     }
 
     public class Subscriber1 : EndpointConfigurationBuilder
