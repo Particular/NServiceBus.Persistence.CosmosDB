@@ -8,9 +8,9 @@ sealed class Transaction : Feature
 
     protected override void Setup(FeatureConfigurationContext context)
     {
-        TransactionInformationConfiguration configuration = context.Settings.Get<TransactionInformationConfiguration>();
+        var transactionConfiguration = context.Settings.Get<TransactionInformationConfiguration>();
 
-        context.Pipeline.Register(new TransactionInformationBeforeTheLogicalOutboxBehavior.RegisterStep(configuration.PartitionKeyExtractor, configuration.ContainerInformationExtractor));
-        context.Pipeline.Register(new TransactionInformationBeforeThePhysicalOutboxBehavior.RegisterStep(configuration.PartitionKeyExtractor, configuration.ContainerInformationExtractor));
+        context.Pipeline.Register(new TransactionInformationBeforeTheLogicalOutboxBehavior.RegisterStep(transactionConfiguration.PartitionKeyExtractor, transactionConfiguration.ContainerInformationExtractor));
+        context.Pipeline.Register(new TransactionInformationBeforeThePhysicalOutboxBehavior.RegisterStep(transactionConfiguration.PartitionKeyExtractor, transactionConfiguration.ContainerInformationExtractor));
     }
 }

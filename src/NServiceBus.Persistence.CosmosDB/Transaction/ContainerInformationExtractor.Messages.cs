@@ -60,6 +60,9 @@ partial class ContainerInformationExtractor : IContainerInformationFromHeadersEx
         }
     }
 
+    // Used by the Outbox to determine if it needs to try and extract the container from messages.
+    internal bool HasCustomMessageExtractors => extractContainerInformationFromMessages.Count > 0;
+
     public void ExtractContainerInformationFromMessage(IContainerInformationFromMessagesExtractor extractor)
     {
         ArgumentNullException.ThrowIfNull(extractor);

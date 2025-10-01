@@ -17,10 +17,26 @@ using NUnit.Framework;
 public class When_using_outbox_control_message : NServiceBusAcceptanceTest
 {
     [Test]
-    public async Task Should_work()
+    public async Task Should_work_with_no_extractors()
     {
         var runSettings = new RunSettings();
         runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+
+        Context context = await Scenario.Define<Context>()
+            .WithEndpoint<Endpoint>()
+            .Done(c => c.ProcessedControlMessage)
+            .Run(runSettings)
+            .ConfigureAwait(false);
+
+        Assert.That(context.ProcessedControlMessage, Is.True);
+    }
+
+    [Test]
+    public async Task Should_work_with_faulty_extractor()
+    {
+        var runSettings = new RunSettings();
+        runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+        runSettings.RegisterFaultyPartitionKeyProvider();
 
         Context context = await Scenario.Define<Context>()
             .WithEndpoint<Endpoint>()
