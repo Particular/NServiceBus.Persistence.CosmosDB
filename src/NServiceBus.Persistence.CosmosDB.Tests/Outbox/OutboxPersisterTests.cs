@@ -27,7 +27,7 @@ public class OutboxPersisterTests
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
             new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
 
-        var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), 0);
+        var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), "SomeProcessingEndpoint", true, new TransactionInformationConfiguration(), 0);
 
         var contextBag = new ContextBag();
         contextBag.Set(new PartitionKey("somePartitionKey"));
@@ -49,7 +49,7 @@ public class OutboxPersisterTests
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
             new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
 
-        var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), 0);
+        var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), "SomeProcessingEndpoint", true, new TransactionInformationConfiguration(), 0);
 
         var contextBag = new ContextBag();
         contextBag.Set(new PartitionKey("somePartitionKey"));
