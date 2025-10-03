@@ -25,6 +25,10 @@ namespace NServiceBus
         public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> DatabaseName(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, string databaseName) { }
         public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> DefaultContainer(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions, string containerName, string partitionKeyPath) { }
         public static void DisableContainerCreation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
+        [System.Obsolete("Using extracted container information from the incoming message will become the d" +
+            "efault behavior starting in version 4.0, making this API redundant. Will be remo" +
+            "ved in version 5.0.0.", true)]
+        public static NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> EnableContainerFromMessageExtractor(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
         public static NServiceBus.Persistence.CosmosDB.SagaPersistenceConfiguration Sagas(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
         public static NServiceBus.Persistence.CosmosDB.TransactionInformationConfiguration TransactionInformation(this NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence> persistenceExtensions) { }
     }
