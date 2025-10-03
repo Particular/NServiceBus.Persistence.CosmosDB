@@ -31,10 +31,11 @@
     /// <remarks>Can be renamed back to LogicalOutboxBehavior once the type is gone from the public API.</remarks>
     class OutboxBehavior : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
     {
-        internal OutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer)
+        internal OutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, bool readFallbackEnabled)
         {
             this.containerHolderResolver = containerHolderResolver;
             this.serializer = serializer;
+            this.readFallbackEnabled = readFallbackEnabled;
         }
 
         /// <inheritdoc />
@@ -79,6 +80,21 @@
             var outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.CancellationToken)
                 .ConfigureAwait(false);
 
+            // Only attempt the fallback if the readFallbackEnabled flag is set.
+            if (outboxRecord is null && readFallbackEnabled)
+            {
+                // fallback to the legacy single ID if the record wasn't found by the synthetic ID
+                var fallbackPartitionKey = new PartitionKey(context.MessageId);
+                outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(context.MessageId, fallbackPartitionKey, serializer, context.CancellationToken)
+                    .ConfigureAwait(false);
+
+                if (outboxRecord is not null)
+                {
+                    setAsDispatchedHolder.PartitionKey = fallbackPartitionKey;
+                    outboxTransaction.PartitionKey = fallbackPartitionKey;
+                }
+            }
+
             if (outboxRecord is null)
             {
                 await next(context).ConfigureAwait(false);
@@ -121,5 +137,6 @@
 
         readonly JsonSerializer serializer;
         readonly ContainerHolderResolver containerHolderResolver;
+        readonly bool readFallbackEnabled;
     }
 }

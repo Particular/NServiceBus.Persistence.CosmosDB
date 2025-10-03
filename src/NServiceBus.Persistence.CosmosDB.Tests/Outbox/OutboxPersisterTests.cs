@@ -27,7 +27,7 @@ namespace NServiceBus.Persistence.CosmosDB.Tests
             var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
                 new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
 
-            var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), 0);
+            var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), "SomeProcessingEndpoint", true, 0);
 
             var contextBag = new ContextBag();
             contextBag.Set(new PartitionKey("somePartitionKey"));
@@ -53,7 +53,7 @@ namespace NServiceBus.Persistence.CosmosDB.Tests
             var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
                 new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
 
-            var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), 0);
+            var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), "SomeProcessingEndpoint", true, 0);
 
             var contextBag = new ContextBag();
             contextBag.Set(new PartitionKey("somePartitionKey"));

@@ -12,20 +12,22 @@
 
     class OutboxPersister : IOutboxStorage
     {
-        public OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds)
+        public OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKeyString, bool readFallbackEnabled, int ttlInSeconds)
         {
             this.containerHolderResolver = containerHolderResolver;
             this.serializer = serializer;
             this.ttlInSeconds = ttlInSeconds;
+            this.partitionKeyString = partitionKeyString;
+            this.readFallbackEnabled = readFallbackEnabled;
         }
 
         public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
         {
             var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
-            if (context.TryGet<PartitionKey>(out var partitionKey))
+            if (context.TryGet<PartitionKey>(out var contextPartitionKey))
             {
-                cosmosOutboxTransaction.PartitionKey = partitionKey;
+                cosmosOutboxTransaction.PartitionKey = contextPartitionKey;
             }
 
             return Task.FromResult((IOutboxTransaction)cosmosOutboxTransaction);
@@ -39,7 +41,7 @@
             };
             context.Set(setAsDispatchedHolder);
 
-            if (!context.TryGet<PartitionKey>(out var partitionKey))
+            if (!context.TryGet<PartitionKey>(out var contextPartitionKey))
             {
                 // because of the transactional session we cannot assume the incoming message is always present
                 if (!context.TryGet<IncomingMessage>(out var incomingMessage) ||
@@ -49,15 +51,32 @@
                     return null;
                 }
 
-                partitionKey = new PartitionKey(messageId);
-                context.Set(partitionKey);
+                // for control messages, use the synthetic partition key strategy to avoid concurreny conflicts
+                // in pub sub scenarios
+                contextPartitionKey = new PartitionKey($"{partitionKeyString}-{messageId}");
+                context.Set(contextPartitionKey);
             }
 
             setAsDispatchedHolder.ThrowIfContainerIsNotSet();
-            setAsDispatchedHolder.PartitionKey = partitionKey;
+            setAsDispatchedHolder.PartitionKey = contextPartitionKey;
 
-            var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, cancellationToken: cancellationToken)
+            var outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, contextPartitionKey, serializer, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
+
+            // Only attempt the fallback if the user has the readFallbackEnabled flag is set.
+            if (outboxRecord is null && readFallbackEnabled)
+            {
+                // fallback to the legacy single ID if the record wasn't found by the synthetic ID
+                var fallbackPartitionKey = new PartitionKey(messageId);
+                outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, fallbackPartitionKey, serializer, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (outboxRecord is not null)
+                {
+                    context.Set(fallbackPartitionKey);
+                    setAsDispatchedHolder.PartitionKey = fallbackPartitionKey;
+                }
+            }
 
             return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
         }
@@ -103,6 +122,8 @@
 
         readonly JsonSerializer serializer;
         readonly int ttlInSeconds;
+        readonly string partitionKeyString;
+        readonly bool readFallbackEnabled;
 
         internal static readonly string SchemaVersion = "1.0.0";
         ContainerHolderResolver containerHolderResolver;
