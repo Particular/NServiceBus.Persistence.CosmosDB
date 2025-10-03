@@ -42,7 +42,7 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
             // for control messages, use the synthetic partition key strategy to avoid concurreny conflicts
             // in pub sub scenarios
             contextPartitionKey = new PartitionKey($"{partitionKeyString}-{messageId}");
-            context.Set(partitionKeyString);
+            context.Set(contextPartitionKey);
         }
 
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
