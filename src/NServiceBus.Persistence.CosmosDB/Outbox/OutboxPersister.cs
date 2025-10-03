@@ -9,16 +9,16 @@ using Newtonsoft.Json;
 using Outbox;
 using Transport;
 
-class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, int ttlInSeconds)
+class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, string partitionKeyString, bool readFallbackEnabled, int ttlInSeconds)
     : IOutboxStorage
 {
     public Task<IOutboxTransaction> BeginTransaction(ContextBag context, CancellationToken cancellationToken = default)
     {
         var cosmosOutboxTransaction = new CosmosOutboxTransaction(containerHolderResolver, context);
 
-        if (context.TryGet(out PartitionKey partitionKey))
+        if (context.TryGet(out PartitionKey contextPartitionKey))
         {
-            cosmosOutboxTransaction.PartitionKey = partitionKey;
+            cosmosOutboxTransaction.PartitionKey = contextPartitionKey;
         }
 
         return Task.FromResult((IOutboxTransaction)cosmosOutboxTransaction);
@@ -29,25 +29,42 @@ class OutboxPersister(ContainerHolderResolver containerHolderResolver, JsonSeria
         var setAsDispatchedHolder = new SetAsDispatchedHolder { ContainerHolder = containerHolderResolver.ResolveAndSetIfAvailable(context) };
         context.Set(setAsDispatchedHolder);
 
-        if (!context.TryGet(out PartitionKey partitionKey))
+        if (!context.TryGet(out PartitionKey contextPartitionKey))
         {
             // because of the transactional session we cannot assume the incoming message is always present
-            if (!context.TryGet<IncomingMessage>(out IncomingMessage incomingMessage) ||
+            if (!context.TryGet(out IncomingMessage incomingMessage) ||
                 !incomingMessage.Headers.ContainsKey(NServiceBus.Headers.ControlMessageHeader))
             {
                 // we return null here to enable outbox work at logical stage
                 return null;
             }
 
-            partitionKey = new PartitionKey(messageId);
-            context.Set(partitionKey);
+            // for control messages, use the synthetic partition key strategy to avoid concurreny conflicts
+            // in pub sub scenarios
+            contextPartitionKey = new PartitionKey($"{partitionKeyString}-{messageId}");
+            context.Set(partitionKeyString);
         }
 
         setAsDispatchedHolder.ThrowIfContainerIsNotSet();
-        setAsDispatchedHolder.PartitionKey = partitionKey;
+        setAsDispatchedHolder.PartitionKey = contextPartitionKey;
 
-        OutboxRecord outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, partitionKey, serializer, cancellationToken)
+        OutboxRecord outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, contextPartitionKey, serializer, cancellationToken)
             .ConfigureAwait(false);
+
+        // Only attempt the fallback if the user has the readFallbackEnabled flag is set.
+        if (outboxRecord is null && readFallbackEnabled)
+        {
+            // fallback to the legacy single ID if the record wasn't found by the synthetic ID
+            var fallbackPartitionKey = new PartitionKey(messageId);
+            outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(messageId, fallbackPartitionKey, serializer, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (outboxRecord is not null)
+            {
+                context.Set(fallbackPartitionKey);
+                setAsDispatchedHolder.PartitionKey = fallbackPartitionKey;
+            }
+        }
 
         return outboxRecord != null ? new OutboxMessage(outboxRecord.Id, outboxRecord.TransportOperations?.Select(op => op.ToTransportType()).ToArray()) : null;
     }
