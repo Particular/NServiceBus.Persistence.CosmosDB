@@ -74,7 +74,7 @@ public partial class PersistenceTestsConfiguration : IProvideCosmosClient
         }
 
         var partitionKeyPath = new PartitionKeyPath(SetupFixture.PartitionPathKey);
-        var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName);
+        var resolver = new ContainerHolderResolver(this, new ContainerInformation(SetupFixture.ContainerName, partitionKeyPath), SetupFixture.DatabaseName, true);
         SagaStorage = new SagaPersister(serializer, sagaPersistenceConfiguration);
 
         var transactionConfiguration = new TransactionInformationConfiguration();

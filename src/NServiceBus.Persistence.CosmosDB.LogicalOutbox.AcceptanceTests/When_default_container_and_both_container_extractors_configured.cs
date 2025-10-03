@@ -65,7 +65,7 @@ public class When_default_container_and_both_container_extractors_configured : N
         runSettings.DoNotRegisterDefaultPartitionKeyProvider();
 
         Context context = await Scenario.Define<Context>()
-            .WithEndpoint<EndpointWithCustomExtractors>(b =>
+            .WithEndpoint(new EndpointWithCustomExtractors(true), b =>
             {
                 b.When(s => s.SendLocal(new MyMessage()));
             })
@@ -79,6 +79,28 @@ public class When_default_container_and_both_container_extractors_configured : N
         });
     }
 
+    [Test]
+    public async Task Header_extractor_should_be_used()
+    {
+        var runSettings = new RunSettings();
+        runSettings.DoNotRegisterDefaultContainerInformationProvider();
+        runSettings.DoNotRegisterDefaultPartitionKeyProvider();
+
+        Context context = await Scenario.Define<Context>()
+            .WithEndpoint(new EndpointWithCustomExtractors(false), b =>
+            {
+                b.When(s => s.SendLocal(new MyMessage()));
+            })
+            .Done(c => c.Done)
+            .Run(runSettings);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(context.HeaderExtractorWasCalled, Is.True);
+            Assert.That(context.Container.Id, Is.EqualTo(SetupFixture.ContainerName));
+        });
+    }
+
     public class Context : ScenarioContext
     {
         public bool Done { get; set; }
@@ -89,14 +111,20 @@ public class When_default_container_and_both_container_extractors_configured : N
 
     public class EndpointWithCustomExtractors : EndpointConfigurationBuilder
     {
-        public EndpointWithCustomExtractors() =>
+        public EndpointWithCustomExtractors(bool enableContainerFromMessageExtractor) =>
             EndpointSetup<DefaultServer>((config, r) =>
             {
                 config.EnableOutbox();
                 config.ConfigureTransport().TransportTransactionMode = TransportTransactionMode.ReceiveOnly;
-                PersistenceExtensions<CosmosPersistence> persistence = config.UsePersistence<CosmosPersistence>();
+                var persistence = config.UsePersistence<CosmosPersistence>();
                 persistence.DefaultContainer(defaultContainerName, SetupFixture.PartitionPathKey);
-                TransactionInformationConfiguration transactionInformation = persistence.TransactionInformation();
+                if (enableContainerFromMessageExtractor)
+                {
+#pragma warning disable CS0618 // Type or member is obsolete
+                    _ = persistence.EnableContainerFromMessageExtractor();
+#pragma warning restore CS0618 // Type or member is obsolete
+                }
+                var transactionInformation = persistence.TransactionInformation();
                 transactionInformation.ExtractContainerInformationFromMessage(new CustomMessageExtractor((Context)r.ScenarioContext));
                 transactionInformation.ExtractContainerInformationFromHeaders(new CustomHeadersExtractor((Context)r.ScenarioContext));
             });

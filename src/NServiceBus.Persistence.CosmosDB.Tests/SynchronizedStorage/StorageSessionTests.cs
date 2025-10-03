@@ -23,7 +23,7 @@ public class StorageSessionTests
     {
         var fakeCosmosClient = new FakeCosmosClient(null);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
 
@@ -53,7 +53,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
 
@@ -96,7 +96,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransactionContextBag = new ContextBag();
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, outboxTransactionContextBag);
@@ -112,7 +112,7 @@ public class StorageSessionTests
     public async Task Should_throw_on_complete_when_no_container_available()
     {
         var fakeCosmosClient = new FakeCosmosClient(null);
-        var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient), null, "fakeDatabase");
+        var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient), null, "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -127,7 +127,7 @@ public class StorageSessionTests
     public async Task Should_throw_on_outbox_transaction_commit_when_no_container_available()
     {
         var fakeCosmosClient = new FakeCosmosClient(null);
-        var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient), null, "fakeDatabase");
+        var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient), null, "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -144,7 +144,7 @@ public class StorageSessionTests
     public async Task Should_dispose_operations()
     {
         var fakeCosmosClient = new FakeCosmosClient(null);
-        var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient), null, "fakeDatabase");
+        var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient), null, "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -169,7 +169,7 @@ public class StorageSessionTests
     public async Task Should_dispose_operations_when_outbox_transaction_disposes()
     {
         var fakeCosmosClient = new FakeCosmosClient(null);
-        var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient), null, "fakeDatabase");
+        var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient), null, "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -208,7 +208,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -234,7 +234,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -273,7 +273,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -299,7 +299,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -338,7 +338,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -365,7 +365,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -405,7 +405,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -431,7 +431,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -467,7 +467,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -496,7 +496,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -542,7 +542,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer { TransactionalBatchFactory = () => new ThrowsOnExecuteAsyncTransactionalBatch() };
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -570,7 +570,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer { TransactionalBatchFactory = () => new ThrowsOnExecuteAsyncTransactionalBatch() };
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -601,7 +601,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -630,7 +630,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
@@ -676,7 +676,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
         await storageSession.Open(new ContextBag());
@@ -700,7 +700,7 @@ public class StorageSessionTests
         var fakeContainer = new FakeContainer();
         var fakeCosmosClient = new FakeCosmosClient(fakeContainer);
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("/deep/down")), "fakeDatabase", true);
 
         var outboxTransaction = new CosmosOutboxTransaction(containerHolderHolderResolver, new ContextBag());
         var storageSession = new CosmosSynchronizedStorageSession(containerHolderHolderResolver);
