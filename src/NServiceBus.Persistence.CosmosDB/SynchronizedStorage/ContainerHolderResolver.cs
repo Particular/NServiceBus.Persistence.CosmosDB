@@ -6,8 +6,8 @@ class ContainerHolderResolver(IProvideCosmosClient provideCosmosClient, Containe
 {
     public ContainerHolder ResolveAndSetIfAvailable(ContextBag context)
     {
-        var hasContainerHolder = context.TryGet<ContainerHolder>(out ContainerHolder containerHolder);
-        var hasContainerInfoInContext = context.TryGet<ContainerInformation>(out ContainerInformation containerInformation);
+        var hasContainerHolder = context.TryGet(out ContainerHolder containerHolder);
+        var hasContainerInfoInContext = context.TryGet(out ContainerInformation containerInformation);
 
         // If a custom extractor has successfully extracted container information from the message or headers,
         // we always honor that over any existing container holder in context or the default container information.
@@ -26,16 +26,7 @@ class ContainerHolderResolver(IProvideCosmosClient provideCosmosClient, Containe
             return containerHolder;
         }
 
-        ContainerInformation? information;
-
-        if (hasContainerInfoInContext)
-        {
-            information = containerInformation;
-        }
-        else
-        {
-            information = defaultContainerInformation;
-        }
+        ContainerInformation? information = hasContainerInfoInContext ? containerInformation : defaultContainerInformation;
 
         if (!information.HasValue)
         {
