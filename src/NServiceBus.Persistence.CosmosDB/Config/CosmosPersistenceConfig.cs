@@ -58,7 +58,7 @@ public static class CosmosPersistenceConfig
             Message = "The EnableContainerFromMessageExtractor will become default behavior from v4.0",
             RemoveInVersion = "5",
             TreatAsErrorFromVersion = "4")]
-    [Obsolete("The EnableContainerFromMessageExtractor will become default behavior from v4.0. Will be removed in version 5.0.0.", false)]
+    [Obsolete("The EnableContainerFromMessageExtractor will become default behavior from v4.0. Will be treated as an error from version 4.0.0. Will be removed in version 5.0.0.", false)]
     public static PersistenceExtensions<CosmosPersistence> EnableContainerFromMessageExtractor(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
     {
         ArgumentNullException.ThrowIfNull(persistenceExtensions);
