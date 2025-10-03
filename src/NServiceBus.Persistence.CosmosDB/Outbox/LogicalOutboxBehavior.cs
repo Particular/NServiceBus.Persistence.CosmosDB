@@ -14,7 +14,7 @@ using TransportOperation = Transport.TransportOperation;
 /// <summary>
 /// Mimics the outbox behavior as part of the logical phase.
 /// </summary>
-class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer)
+class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, JsonSerializer serializer, bool readFallbackEnabled)
     : IBehavior<IIncomingLogicalMessageContext, IIncomingLogicalMessageContext>
 {
     /// <inheritdoc />
@@ -58,6 +58,21 @@ class LogicalOutboxBehavior(ContainerHolderResolver containerHolderResolver, Jso
 
         OutboxRecord outboxRecord = await containerHolder.Container.ReadOutboxRecord(context.MessageId, outboxTransaction.PartitionKey.Value, serializer, context.CancellationToken)
             .ConfigureAwait(false);
+
+        // Only attempt the fallback if the readFallbackEnabled flag is set.
+        if (outboxRecord is null && readFallbackEnabled)
+        {
+            // fallback to the legacy single ID if the record wasn't found by the synthetic ID
+            var fallbackPartitionKey = new PartitionKey(context.MessageId);
+            outboxRecord = await setAsDispatchedHolder.ContainerHolder.Container.ReadOutboxRecord(context.MessageId, fallbackPartitionKey, serializer, context.CancellationToken)
+                .ConfigureAwait(false);
+
+            if (outboxRecord is not null)
+            {
+                setAsDispatchedHolder.PartitionKey = fallbackPartitionKey;
+                outboxTransaction.PartitionKey = fallbackPartitionKey;
+            }
+        }
 
         if (outboxRecord is null)
         {

@@ -32,6 +32,7 @@ public static class CosmosTransactionalSessionExtensions
 
         if (!string.IsNullOrWhiteSpace(transactionalSessionOptions.ProcessorEndpoint))
         {
+            settings.GetOrCreate<OutboxPersistenceConfiguration>().PartitionKey = transactionalSessionOptions.ProcessorEndpoint;
             settings.Set(OutboxStorage.ProcessorEndpointKey, transactionalSessionOptions.ProcessorEndpoint);
         }
 
