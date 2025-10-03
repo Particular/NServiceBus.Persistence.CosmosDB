@@ -3,7 +3,6 @@
 using System;
 using Configuration.AdvancedExtensibility;
 using Microsoft.Azure.Cosmos;
-using Particular.Obsoletes;
 using Persistence.CosmosDB;
 
 /// <summary>
@@ -54,11 +53,6 @@ public static class CosmosPersistenceConfig
     /// <summary>
     /// Enables using extracted container information from the incoming message. Without this setting, only extracted container information from incoming message headers will be used
     /// </summary>
-    [ObsoleteMetadata(
-            Message = "The EnableContainerFromMessageExtractor will become default behavior from v4.0",
-            RemoveInVersion = "5",
-            TreatAsErrorFromVersion = "4")]
-    [Obsolete("The EnableContainerFromMessageExtractor will become default behavior from v4.0. Will be treated as an error from version 4.0.0. Will be removed in version 5.0.0.", false)]
     [ObsoleteEx(
         Message = "The EnableContainerFromMessageExtractor will become default behavior from v4.0. Will be treated as an error from version 4.0.0. Will be removed in version 5.0.0.",
         RemoveInVersion = "5.0.0",
