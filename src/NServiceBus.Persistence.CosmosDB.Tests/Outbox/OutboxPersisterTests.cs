@@ -25,7 +25,7 @@ public class OutboxPersisterTests
         });
 
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase", true);
 
         var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), "SomeProcessingEndpoint", true, new TransactionInformationConfiguration(), 0);
 
@@ -47,7 +47,7 @@ public class OutboxPersisterTests
         });
 
         var containerHolderHolderResolver = new ContainerHolderResolver(new FakeProvider(fakeCosmosClient),
-            new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase");
+            new ContainerInformation("fakeContainer", new PartitionKeyPath("")), "fakeDatabase", true);
 
         var persister = new OutboxPersister(containerHolderHolderResolver, JsonSerializer.Create(), "SomeProcessingEndpoint", true, new TransactionInformationConfiguration(), 0);
 

@@ -3,6 +3,7 @@
 using System;
 using Configuration.AdvancedExtensibility;
 using Microsoft.Azure.Cosmos;
+using Particular.Obsoletes;
 using Persistence.CosmosDB;
 
 /// <summary>
@@ -10,6 +11,8 @@ using Persistence.CosmosDB;
 /// </summary>
 public static class CosmosPersistenceConfig
 {
+    internal const string EnableContainerFromMessageExtractorKey = "NServiceBus.Persistence.CosmosDB.EnableContainerFromMessageExtractor";
+
     /// <summary>
     /// Override the default CosmosClient creation by providing a pre-configured CosmosClient
     /// </summary>
@@ -44,6 +47,23 @@ public static class CosmosPersistenceConfig
         ArgumentNullException.ThrowIfNull(persistenceExtensions);
 
         persistenceExtensions.GetSettings().Set(new ContainerInformation(containerName, new PartitionKeyPath(partitionKeyPath)));
+
+        return persistenceExtensions;
+    }
+
+    /// <summary>
+    /// Enables using extracted container information from the incoming message. Without this setting, only extracted container information from incoming message headers will be used
+    /// </summary>
+    [ObsoleteMetadata(
+            Message = "The EnableContainerFromMessageExtractor will become default behavior from v4.0",
+            RemoveInVersion = "5",
+            TreatAsErrorFromVersion = "4")]
+    [Obsolete("The EnableContainerFromMessageExtractor will become default behavior from v4.0. Will be removed in version 5.0.0.", false)]
+    public static PersistenceExtensions<CosmosPersistence> EnableContainerFromMessageExtractor(this PersistenceExtensions<CosmosPersistence> persistenceExtensions)
+    {
+        ArgumentNullException.ThrowIfNull(persistenceExtensions);
+
+        persistenceExtensions.GetSettings().Set(EnableContainerFromMessageExtractorKey, true);
 
         return persistenceExtensions;
     }
