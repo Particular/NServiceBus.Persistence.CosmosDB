@@ -8,7 +8,7 @@ using Persistence.CosmosDB;
 /// <summary>
 /// Configuration extensions for Cosmos DB Core API Persistence
 /// </summary>
-public static class CosmosPersistenceConfig
+public static partial class CosmosPersistenceConfig
 {
     /// <summary>
     /// Override the default CosmosClient creation by providing a pre-configured CosmosClient
