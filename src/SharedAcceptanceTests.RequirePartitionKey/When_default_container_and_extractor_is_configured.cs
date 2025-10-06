@@ -8,7 +8,7 @@ using NServiceBus.AcceptanceTesting.Support;
 using NUnit.Framework;
 
 [TestFixture]
-public class When_default_container_and_extractor_is_configured : NServiceBusAcceptanceTest
+public partial class When_default_container_and_extractor_is_configured : NServiceBusAcceptanceTest
 {
     static string defaultContainerName = $"{SetupFixture.ContainerName}_default";
     Container defaultContainer;
@@ -47,7 +47,7 @@ public class When_default_container_and_extractor_is_configured : NServiceBusAcc
         runSettings.DoNotRegisterDefaultPartitionKeyProvider();
 
         Context context = await Scenario.Define<Context>()
-            .WithEndpoint<Endpoint>(b =>
+            .WithEndpoint(new Endpoint(true), b =>
             {
                 b.When(s => s.SendLocal(new MyMessage()));
             })
@@ -65,13 +65,19 @@ public class When_default_container_and_extractor_is_configured : NServiceBusAcc
 
     class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint() =>
+        public Endpoint(bool enableContainerFromMessageExtractor) =>
             EndpointSetup<DefaultServer>((config, runDescriptor) =>
             {
                 config.EnableOutbox();
                 config.ConfigureTransport().TransportTransactionMode = TransportTransactionMode.ReceiveOnly;
-                PersistenceExtensions<CosmosPersistence> persistence = config.UsePersistence<CosmosPersistence>();
+                var persistence = config.UsePersistence<CosmosPersistence>();
                 persistence.DefaultContainer(defaultContainerName, SetupFixture.PartitionPathKey);
+                if (enableContainerFromMessageExtractor)
+                {
+#pragma warning disable CS0618 // Type or member is obsolete
+                    persistence.EnableContainerFromMessageExtractor();
+#pragma warning restore CS0618 // Type or member is obsolete
+                }
             });
 
         class MyMessageHandler : IHandleMessages<MyMessage>
