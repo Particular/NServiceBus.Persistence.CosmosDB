@@ -52,7 +52,7 @@ public static class CosmosPersistenceConfig
     }
 
     /// <summary>
-    /// Enables using extracted container information from the incoming message. Without this setting, only extracted container information from incoming message headers will be used
+    /// Enables using extracted container information from the incoming message in preference to the default container. Without this setting, only extracted container information from incoming message headers will be used
     /// </summary>
     [ObsoleteMetadata(
         Message = "Using extracted container information from the incoming message will become the default behavior starting in version 4.0, making this API redundant",
