@@ -2,6 +2,7 @@
 
 using NServiceBus.Features;
 using NServiceBus.Logging;
+using NServiceBus.Persistence.CosmosDB;
 
 class ContainerWarningFeature : Feature
 {
@@ -13,10 +14,10 @@ class ContainerWarningFeature : Feature
     protected override void Setup(FeatureConfigurationContext context)
     {
         var hasDefaultContainer = context.Settings.TryGet(out ContainerInformation _);
-        var persistenceEnabled = context.Settings.TryGet<PersistenceExtensions<CosmosPersistence>>(out var persistence);
+        var hasTransactionInformation = context.Settings.TryGet(out TransactionInformationConfiguration transactionInformation);
         var hasSetNewBehaviour = context.Settings.GetOrDefault<bool>(CosmosPersistenceConfig.EnableContainerFromMessageExtractorKey);
 
-        if (persistenceEnabled && persistence.TransactionInformation().HasCustomContainerMessageExtractors && hasDefaultContainer && !hasSetNewBehaviour)
+        if (hasTransactionInformation && transactionInformation.HasCustomContainerMessageExtractors && hasDefaultContainer && !hasSetNewBehaviour)
         {
             log.Warn("The current endpoint setup has both default container and message container extractors configured, but does not have `EnableContainerFromMessageExtractor` set.");
         }
