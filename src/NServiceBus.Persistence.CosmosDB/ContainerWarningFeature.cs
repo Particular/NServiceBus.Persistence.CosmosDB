@@ -13,10 +13,10 @@ class ContainerWarningFeature : Feature
     protected override void Setup(FeatureConfigurationContext context)
     {
         var hasDefaultContainer = context.Settings.TryGet(out ContainerInformation _);
-        var persistence = context.Settings.Get<PersistenceExtensions<CosmosPersistence>>();
+        var persistenceEnabled = context.Settings.TryGet<PersistenceExtensions<CosmosPersistence>>(out var persistence);
         var hasSetNewBehaviour = context.Settings.GetOrDefault<bool>(CosmosPersistenceConfig.EnableContainerFromMessageExtractorKey);
 
-        if (persistence.TransactionInformation().HasCustomContainerMessageExtractors && hasDefaultContainer && !hasSetNewBehaviour)
+        if (persistenceEnabled && persistence.TransactionInformation().HasCustomContainerMessageExtractors && hasDefaultContainer && !hasSetNewBehaviour)
         {
             log.Warn("The current endpoint setup has both default container and message container extractors configured, but does not have `EnableContainerFromMessageExtractor` set.");
         }
