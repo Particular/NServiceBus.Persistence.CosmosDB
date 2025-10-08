@@ -17,9 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\NServiceBus.Persistence.CosmosDB.TransactionalSession\NServiceBus.Persistence.CosmosDB.TransactionalSession.csproj" />
-    <ProjectReference Include="..\..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
-    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.Analyzers\NServiceBus.Persistence.CosmosDB.Analyzers.csproj" />
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.Analyzer\NServiceBus.Persistence.CosmosDB.Analyzer.csproj" />
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.TransactionalSession\NServiceBus.Persistence.CosmosDB.TransactionalSession.csproj" />
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB\NServiceBus.Persistence.CosmosDB.csproj" />
   </ItemGroup>
 
 </Project>

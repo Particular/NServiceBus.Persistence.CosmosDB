@@ -32,9 +32,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.Cos
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests", "NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests\NServiceBus.Persistence.CosmosDB.TransactionalSession.Tests.csproj", "{5043C20C-6C60-40A9-9201-0C557F820833}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.Analyzers", "NServiceBus.Persistence.CosmosDB.Analyzers\NServiceBus.Persistence.CosmosDB.Analyzers\NServiceBus.Persistence.CosmosDB.Analyzers.csproj", "{3B585D4C-EFE4-4D78-8423-D609BECBD159}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.Analyzer", "NServiceBus.Persistence.CosmosDB.Analyzer\NServiceBus.Persistence.CosmosDB.Analyzer.csproj", "{4325F7BF-C6E6-CA2B-83AE-88031282EF87}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.Analyzers.Test", "NServiceBus.Persistence.CosmosDB.Analyzers\NServiceBus.Persistence.CosmosDB.Analyzers.Test\NServiceBus.Persistence.CosmosDB.Analyzers.Test.csproj", "{C2D0BBAC-B7A5-46D6-9004-2C2B7C384EAF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Persistence.CosmosDB.Analyzer.Test", "NServiceBus.Persistence.CosmosDB.Analyzer.Test\NServiceBus.Persistence.CosmosDB.Analyzer.Test.csproj", "{898D89C4-DE57-7638-FF87-2DEB5FA24E01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -82,14 +82,14 @@ Global
 		{5043C20C-6C60-40A9-9201-0C557F820833}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5043C20C-6C60-40A9-9201-0C557F820833}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5043C20C-6C60-40A9-9201-0C557F820833}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3B585D4C-EFE4-4D78-8423-D609BECBD159}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3B585D4C-EFE4-4D78-8423-D609BECBD159}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3B585D4C-EFE4-4D78-8423-D609BECBD159}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3B585D4C-EFE4-4D78-8423-D609BECBD159}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C2D0BBAC-B7A5-46D6-9004-2C2B7C384EAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C2D0BBAC-B7A5-46D6-9004-2C2B7C384EAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C2D0BBAC-B7A5-46D6-9004-2C2B7C384EAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C2D0BBAC-B7A5-46D6-9004-2C2B7C384EAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4325F7BF-C6E6-CA2B-83AE-88031282EF87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4325F7BF-C6E6-CA2B-83AE-88031282EF87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4325F7BF-C6E6-CA2B-83AE-88031282EF87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4325F7BF-C6E6-CA2B-83AE-88031282EF87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{898D89C4-DE57-7638-FF87-2DEB5FA24E01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{898D89C4-DE57-7638-FF87-2DEB5FA24E01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{898D89C4-DE57-7638-FF87-2DEB5FA24E01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{898D89C4-DE57-7638-FF87-2DEB5FA24E01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

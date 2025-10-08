@@ -10,6 +10,9 @@
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class ContainerExtractorConfigurationAnalyzer : DiagnosticAnalyzer
     {
+        static string cosmosPersistenceExtension = "NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence>";
+        static string transactionInformationConfiguration = "NServiceBus.Persistence.CosmosDB.TransactionInformationConfiguration";
+
         public static readonly DiagnosticDescriptor MissingEnableContainerFromMessageExtractor = new DiagnosticDescriptor(
             "NSBC001",
             "EnableContainerFromMessageExtractor should be called when using both default container and message extractors",
@@ -69,20 +72,23 @@
                         // Check for DefaultContainer call on the correct type
                         if (methodName == "DefaultContainer")
                         {
-                            if (IsCosmosPersistenceExtensionMethod(context, memberAccess))
+                            if (IsCorrectObjectMethod(context, memberAccess, cosmosPersistenceExtension))
                             {
                                 hasDefaultContainer = true;
                             }
                         }
                         // Check for container extractor methods
-                        else if (methodName == "ExtractContainerInformationFromMessage")
+                        else if (methodName.StartsWith("ExtractContainerInformationFromMessage"))
                         {
-                            hasContainerExtractor = true;
+                            if (IsCorrectObjectMethod(context, memberAccess, transactionInformationConfiguration))
+                            {
+                                hasContainerExtractor = true;
+                            }
                         }
                         // Check for EnableContainerFromMessageExtractor call
                         else if (methodName == "EnableContainerFromMessageExtractor")
                         {
-                            if (IsCosmosPersistenceExtensionMethod(context, memberAccess))
+                            if (IsCorrectObjectMethod(context, memberAccess, cosmosPersistenceExtension))
                             {
                                 hasEnableContainerFromMessageExtractor = true;
                             }
@@ -102,12 +108,12 @@
             }
         }
 
-        static bool IsCosmosPersistenceExtensionMethod(SyntaxNodeAnalysisContext context, MemberAccessExpressionSyntax memberAccess)
+        static bool IsCorrectObjectMethod(SyntaxNodeAnalysisContext context, MemberAccessExpressionSyntax memberAccess, string correctObject)
         {
             var semanticModel = context.SemanticModel;
             var type = semanticModel.GetTypeInfo(memberAccess.Expression);
 
-            return type.Type.ToString() == "NServiceBus.PersistenceExtensions<NServiceBus.CosmosPersistence>";
+            return type.Type.ToString() == correctObject;
         }
     }
 

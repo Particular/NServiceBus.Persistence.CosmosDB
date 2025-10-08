@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\NServiceBus.Persistence.CosmosDB.Analyzers\NServiceBus.Persistence.CosmosDB.Analyzers\bin\Debug\netstandard2.0\NServiceBus.Persistence.CosmosDB.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/NServiceBus.Persistence.CosmosDB.Analyzers.dll" Visible="false" />
+    <None Include="..\NServiceBus.Persistence.CosmosDB.Analyzer\bin\$(Configuration)\netstandard2.0\NServiceBus.Persistence.CosmosDB.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/NServiceBus.Persistence.CosmosDB.Analyzer.dll" Visible="false" />
   </ItemGroup>
   
   <ItemGroup>
