@@ -34,5 +34,9 @@
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.Tests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.Analyzers\NServiceBus.Persistence.CosmosDB.Analyzers\NServiceBus.Persistence.CosmosDB.Analyzers.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 
 </Project>
