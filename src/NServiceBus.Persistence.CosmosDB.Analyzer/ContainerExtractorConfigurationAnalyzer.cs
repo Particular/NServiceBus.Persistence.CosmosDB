@@ -1,11 +1,11 @@
 ﻿namespace NServiceBus.Persistence.CosmosDB.Analyzers
 {
+    using System;
+    using System.Collections.Immutable;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Diagnostics;
-    using System.Collections.Immutable;
-    using System.Linq;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class ContainerExtractorConfigurationAnalyzer : DiagnosticAnalyzer
@@ -20,7 +20,8 @@
             "NServiceBus.Persistence.CosmosDB",
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
-            description: "When configuring both a default container and container message extractors, you should call EnableContainerFromMessageExtractor to ensure the message extractors take precedence.");
+            description: "When configuring both a default container and container message extractors, you should call EnableContainerFromMessageExtractor to ensure the message extractors take precedence.",
+            customTags: WellKnownDiagnosticTags.CompilationEnd);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(MissingEnableContainerFromMessageExtractor);
@@ -29,11 +30,35 @@
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.InvocationExpression);
+
+            context.RegisterCompilationStartAction(compilationContext =>
+            {
+                var state = new InvocationTracker();
+
+                compilationContext.RegisterSyntaxNodeAction(
+                    c => Analyze(c, state),
+                    SyntaxKind.InvocationExpression);
+
+                compilationContext.RegisterCompilationEndAction(c => OnCompilationEnd(c, state));
+            });
         }
 
-        static void Analyze(SyntaxNodeAnalysisContext context)
+        class InvocationTracker
         {
+            public bool FoundDefaultContainer { get; set; } = false;
+            public bool FoundEnableContainerFromMessageExtractor { get; set; } = false;
+            public bool FoundExtractContainerInformationFromMessage { get; set; } = false;
+            public Location ExtractorLocation { get; set; }
+        }
+
+        static void Analyze(SyntaxNodeAnalysisContext context, InvocationTracker state)
+        {
+            //if (ShouldReportDiagnostic(state))
+            //{
+            // No need to continue analyzing if we already know we should report a diagnostic
+            //    return;
+            //}
+
             if (!(context.Node is InvocationExpressionSyntax invocationExpression))
             {
                 return;
@@ -47,138 +72,41 @@
             var methodName = memberAccessExpression.Name.Identifier.ValueText;
 
             // Check for container extractor methods
-            if (!methodName.StartsWith("ExtractContainerInformationFromMessage") ||
-                !IsCorrectObjectMethod(context, memberAccessExpression, transactionInformationConfiguration))
+            if (methodName.StartsWith("ExtractContainerInformationFromMessage") &&
+                IsCorrectObjectMethod(context, memberAccessExpression, transactionInformationConfiguration))
             {
+                state.FoundExtractContainerInformationFromMessage = true;
+                state.ExtractorLocation = invocationExpression.GetLocation();
                 return;
             }
 
-            // Get nearest enclosing block/body for the invocation.
-            var body = GetContainingBody(invocationExpression);
-            if (body == null)
+            // Check for DefaultContainer call
+            if (methodName == "DefaultContainer" &&
+                IsCorrectObjectMethod(context, memberAccessExpression, cosmosPersistenceExtension))
             {
-                // Could be an expression-bodied member or outside a block; nothing to analyze.
+                state.FoundDefaultContainer = true;
                 return;
             }
 
-            if (ContainerConfigRequiresWarning(context, body))
+            // Check for EnableContainerFromMessageExtractor call
+            if (methodName == "EnableContainerFromMessageExtractor" &&
+                IsCorrectObjectMethod(context, memberAccessExpression, cosmosPersistenceExtension))
+            {
+                state.FoundEnableContainerFromMessageExtractor = true;
+                return;
+            }
+        }
+
+        static void OnCompilationEnd(CompilationAnalysisContext context, InvocationTracker state)
+        {
+            if (ShouldReportDiagnostic(state))
             {
                 var diagnostic = Diagnostic.Create(
                         MissingEnableContainerFromMessageExtractor,
-                        invocationExpression.GetLocation());
+                        state.ExtractorLocation);
 
                 context.ReportDiagnostic(diagnostic);
             }
-        }
-
-        static BlockSyntax GetContainingBody(SyntaxNode node)
-        {
-            if (node == null)
-            {
-                return null;
-            }
-
-            // Method body
-            var methodDecl = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-            if (methodDecl != null)
-            {
-                return methodDecl.Body;
-            }
-
-            // Constructor body
-            var ctorDecl = node.FirstAncestorOrSelf<ConstructorDeclarationSyntax>();
-            if (ctorDecl != null)
-            {
-                return ctorDecl.Body;
-            }
-
-            // Accessor body (get/set)
-            var accessor = node.FirstAncestorOrSelf<AccessorDeclarationSyntax>();
-            if (accessor != null)
-            {
-                return accessor.Body;
-            }
-
-            // Local function body
-            var localFunc = node.FirstAncestorOrSelf<LocalFunctionStatementSyntax>();
-            if (localFunc != null)
-            {
-                return localFunc.Body;
-            }
-
-            // Anonymous method: `delegate(...) { ... }`
-            var anonMethod = node.FirstAncestorOrSelf<AnonymousMethodExpressionSyntax>();
-            if (anonMethod != null)
-            {
-                return anonMethod.Block;
-            }
-
-            // Parenthesized lambda: `(...) => { ... }`
-            var parenLambda = node.FirstAncestorOrSelf<ParenthesizedLambdaExpressionSyntax>();
-            if (parenLambda != null)
-            {
-                return parenLambda.Block;
-            }
-
-            // Simple lambda: `x => { ... }` (Body can be ExpressionSyntax or BlockSyntax)
-            var simpleLambda = node.FirstAncestorOrSelf<SimpleLambdaExpressionSyntax>();
-            if (simpleLambda != null)
-            {
-                return simpleLambda.Body as BlockSyntax;
-            }
-
-            // No enclosing block found (could be in an expression-bodied member or top-level expression)
-            return null;
-        }
-
-        static bool ContainerConfigRequiresWarning(SyntaxNodeAnalysisContext context, BlockSyntax body)
-        {
-            if (body == null)
-            {
-                return false;
-            }
-
-            var statements = body.Statements;
-
-            var hasDefaultContainer = false;
-            var hasEnableContainerFromMessageExtractor = false;
-            var finished = false;
-            while (!finished && !hasDefaultContainer && !hasEnableContainerFromMessageExtractor)
-            {
-                foreach (var statement in statements)
-                {
-                    var expressionStatements = statement.DescendantNodesAndSelf()
-                        .OfType<InvocationExpressionSyntax>();
-
-                    foreach (var invocation in expressionStatements)
-                    {
-                        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
-                        {
-                            var methodName = memberAccess.Name.Identifier.ValueText;
-
-                            // Check for DefaultContainer call on the correct type
-                            if (methodName == "DefaultContainer")
-                            {
-                                if (IsCorrectObjectMethod(context, memberAccess, cosmosPersistenceExtension))
-                                {
-                                    hasDefaultContainer = true;
-                                }
-                            }
-                            // Check for EnableContainerFromMessageExtractor call
-                            else if (methodName == "EnableContainerFromMessageExtractor")
-                            {
-                                if (IsCorrectObjectMethod(context, memberAccess, cosmosPersistenceExtension))
-                                {
-                                    hasEnableContainerFromMessageExtractor = true;
-                                }
-                            }
-                        }
-                    }
-                }
-                finished = true;
-            }
-
-            return hasDefaultContainer && !hasEnableContainerFromMessageExtractor;
         }
 
         static bool IsCorrectObjectMethod(SyntaxNodeAnalysisContext context, MemberAccessExpressionSyntax memberAccess, string correctObject)
@@ -186,9 +114,12 @@
             var semanticModel = context.SemanticModel;
             var type = semanticModel.GetTypeInfo(memberAccess.Expression);
 
-            return type.Type.ToString() == correctObject;
+            return type.Type?.ToString() == correctObject;
         }
+
+        static bool ShouldReportDiagnostic(InvocationTracker state) =>
+            state.FoundDefaultContainer &&
+            state.FoundExtractContainerInformationFromMessage &&
+            !state.FoundEnableContainerFromMessageExtractor;
     }
-
-
 }
