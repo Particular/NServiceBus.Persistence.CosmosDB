@@ -48,7 +48,7 @@
             public bool FoundDefaultContainer { get; set; } = false;
             public bool FoundEnableContainerFromMessageExtractor { get; set; } = false;
             public bool FoundExtractContainerInformationFromMessage { get; set; } = false;
-            public Action ReportNode { get; set; }
+            public Location ExtractorLocation { get; set; }
         }
 
         static void Analyze(SyntaxNodeAnalysisContext context, InvocationTracker state)
@@ -76,14 +76,7 @@
                 IsCorrectObjectMethod(context, memberAccessExpression, transactionInformationConfiguration))
             {
                 state.FoundExtractContainerInformationFromMessage = true;
-                state.ReportNode = () =>
-                {
-                    var diagnostic = Diagnostic.Create(
-                        MissingEnableContainerFromMessageExtractor,
-                        invocationExpression.GetLocation());
-
-                    context.ReportDiagnostic(diagnostic);
-                };
+                state.ExtractorLocation = invocationExpression.GetLocation();
                 return;
             }
 
@@ -104,11 +97,15 @@
             }
         }
 
-        static void OnCompilationEnd(CompilationAnalysisContext _, InvocationTracker state)
+        static void OnCompilationEnd(CompilationAnalysisContext context, InvocationTracker state)
         {
             if (ShouldReportDiagnostic(state))
             {
-                state.ReportNode();
+                var diagnostic = Diagnostic.Create(
+                        MissingEnableContainerFromMessageExtractor,
+                        state.ExtractorLocation);
+
+                context.ReportDiagnostic(diagnostic);
             }
         }
 
@@ -123,7 +120,6 @@
         static bool ShouldReportDiagnostic(InvocationTracker state) =>
             state.FoundDefaultContainer &&
             state.FoundExtractContainerInformationFromMessage &&
-            !state.FoundEnableContainerFromMessageExtractor &&
-            state.ReportNode != null;
+            !state.FoundEnableContainerFromMessageExtractor;
     }
 }
