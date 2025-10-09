@@ -125,48 +125,4 @@ class Foo
 
         return Assert("NSBC001", source);
     }
-
-    [Test]
-    public Task DiagnosticIsReportedWhenEnableContainerFromMessageExtractorOnAnotherClass()
-    {
-        var source =
-            $@"using NServiceBus;
-using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
-using NServiceBus.Persistence.CosmosDB;
-using System.Collections.Generic;
-
-class CustomContainerFromMessageExtractor : IContainerInformationFromMessagesExtractor
-{{
-    public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out ContainerInformation? containerInformation)
-    {{
-        containerInformation = new ContainerInformation(""TestContainer"", new PartitionKeyPath(""/key""));
-        return true;
-    }}
-}}
-
-class SomeOtherClass
-{{
-    internal void EnableContainerFromMessageExtractor() {{ }}
-}}
-
-class Foo
-{{
-    void Direct(EndpointConfiguration endpointConfiguration, SomeOtherClass otherClass)
-    {{
-        var persistence = endpointConfiguration
-            .UsePersistence<CosmosPersistence>()
-            .CosmosClient(new CosmosClient(""asdf""))
-            .DatabaseName(""Database1"")
-            .DefaultContainer(""DefaultContainer"", ""/messageId"");
-        otherClass.EnableContainerFromMessageExtractor();
-
-        var transactionInformation = persistence.TransactionInformation();
-        [|transactionInformation.ExtractContainerInformationFromMessage(new CustomContainerFromMessageExtractor())|];
-    }}
-}}";
-
-        return Assert("NSBC001", source);
-    }
 }

@@ -49,16 +49,16 @@ public class AnalyzerTestFixture<TAnalyzer> where TAnalyzer : DiagnosticAnalyzer
         WriteAnalyzerDiagnostics(analyzerDiagnostics);
 
         var expectedSpansAndIds = expectedDiagnosticIds
-            //.SelectMany(id => markupSpans.Select(span => (span.file, span.span, id)))
-            .SelectMany(id => markupSpans.Select(span => (span.file, id)))
-            //.OrderBy(item => item.span)
-            //.ThenBy(item => item.id)
-            .OrderBy(item => item.id)
+            .SelectMany(id => markupSpans.Select(span => (span.file, span.span, id)))
+            //.SelectMany(id => markupSpans.Select(span => (span.file, id)))
+            .OrderBy(item => item.span)
+            .ThenBy(item => item.id)
+            //.OrderBy(item => item.id)
             .ToList();
 
         var actualSpansAndIds = analyzerDiagnostics
-            //.Select(diagnostic => (diagnostic.Location.SourceTree.FilePath, diagnostic.Location.SourceSpan, diagnostic.Id))
-            .Select(diagnostic => (diagnostic.Location.SourceTree.FilePath, diagnostic.Id))
+            .Select(diagnostic => (diagnostic.Location.SourceTree.FilePath, diagnostic.Location.SourceSpan, diagnostic.Id))
+            //.Select(diagnostic => (diagnostic.Location.SourceTree.FilePath, diagnostic.Id))
             .ToList();
 
         NUnit.Framework.Assert.That(actualSpansAndIds, Is.EqualTo(expectedSpansAndIds).AsCollection);
