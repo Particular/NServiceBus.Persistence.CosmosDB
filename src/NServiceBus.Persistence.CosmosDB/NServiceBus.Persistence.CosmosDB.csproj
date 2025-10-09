@@ -36,7 +36,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.Analyzer\NServiceBus.Persistence.CosmosDB.Analyzer.csproj" />
+    <ProjectReference Include="..\NServiceBus.Persistence.CosmosDB.Analyzer\NServiceBus.Persistence.CosmosDB.Analyzer.csproj" ReferenceOutputAssembly="false"/>
   </ItemGroup>
 
 </Project>
