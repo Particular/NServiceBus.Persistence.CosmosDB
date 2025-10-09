@@ -112,7 +112,7 @@
         static bool IsCorrectObjectMethod(SyntaxNodeAnalysisContext context, MemberAccessExpressionSyntax memberAccess, string correctObject)
         {
             var semanticModel = context.SemanticModel;
-            var type = semanticModel.GetTypeInfo(memberAccess.Expression);
+            var type = semanticModel.GetTypeInfo(memberAccess.Expression, context.CancellationToken);
 
             return type.Type?.ToString() == correctObject;
         }
