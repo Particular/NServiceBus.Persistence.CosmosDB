@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -23,6 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\NServiceBus.Persistence.CosmosDB.Analyzer\bin\$(Configuration)\netstandard2.0\NServiceBus.Persistence.CosmosDB.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/NServiceBus.Persistence.CosmosDB.Analyzer.dll" Visible="false" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.LogicalOutbox.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.NonTransactionalSagas.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.PersistenceTests" Key="$(NServiceBusTestsKey)" />
@@ -30,5 +34,5 @@
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.PhysicalOutbox.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Persistence.CosmosDB.Tests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
-
+  
 </Project>
