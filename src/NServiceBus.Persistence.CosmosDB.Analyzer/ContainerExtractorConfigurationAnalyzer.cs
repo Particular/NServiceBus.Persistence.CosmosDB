@@ -38,7 +38,7 @@
                     c => Analyze(c, state),
                     SyntaxKind.InvocationExpression);
 
-                compilationContext.RegisterCompilationEndAction(c => OnCompilationEnd(c, state));
+                // Using `RegisterCompilationEndAction` to report diagnostics with a node location results in the diagnostics not being reported, on the node or in the build log.
             });
         }
 
@@ -52,18 +52,18 @@
 
         static void Analyze(SyntaxNodeAnalysisContext context, InvocationTracker state)
         {
-            //if (ShouldReportDiagnostic(state))
-            //{
-            // No need to continue analyzing if we already know we should report a diagnostic
-            //    return;
-            //}
+            if (ShouldReportDiagnostic(state))
+            {
+                // No need to continue analyzing if we already know we should report a diagnostic
+                return;
+            }
 
-            if (!(context.Node is InvocationExpressionSyntax invocationExpression))
+            if (context.Node is not InvocationExpressionSyntax invocationExpression)
             {
                 return;
             }
 
-            if (!(invocationExpression.Expression is MemberAccessExpressionSyntax memberAccessExpression))
+            if (invocationExpression.Expression is not MemberAccessExpressionSyntax memberAccessExpression)
             {
                 return;
             }
@@ -76,7 +76,6 @@
             {
                 state.FoundExtractContainerInformationFromMessage = true;
                 state.ExtractorLocation = invocationExpression.GetLocation();
-                return;
             }
 
             // Check for DefaultContainer call
@@ -84,7 +83,6 @@
                 IsCorrectObjectMethod(context, memberAccessExpression, cosmosPersistenceExtension))
             {
                 state.FoundDefaultContainer = true;
-                return;
             }
 
             // Check for EnableContainerFromMessageExtractor call
@@ -92,12 +90,8 @@
                 IsCorrectObjectMethod(context, memberAccessExpression, cosmosPersistenceExtension))
             {
                 state.FoundEnableContainerFromMessageExtractor = true;
-                return;
             }
-        }
 
-        static void OnCompilationEnd(CompilationAnalysisContext context, InvocationTracker state)
-        {
             if (ShouldReportDiagnostic(state))
             {
                 var diagnostic = Diagnostic.Create(

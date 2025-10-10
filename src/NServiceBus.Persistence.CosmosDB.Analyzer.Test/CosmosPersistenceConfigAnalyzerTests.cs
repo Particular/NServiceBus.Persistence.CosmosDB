@@ -2,7 +2,6 @@ namespace NServiceBus.Persistence.CosmosDB.Analyzers.Test;
 
 using System.Threading.Tasks;
 using NUnit.Framework;
-//using static AzureFunctionsDiagnostics;
 
 [TestFixture]
 public class CosmosPersistenceConfigAnalyzerTests : AnalyzerTestFixture<ContainerExtractorConfigurationAnalyzer>
