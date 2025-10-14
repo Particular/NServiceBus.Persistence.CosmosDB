@@ -55,8 +55,7 @@ public static class CosmosPersistenceConfig
     {
         ArgumentNullException.ThrowIfNull(persistenceExtensions);
 
-        InstallerSettings installerSettings = persistenceExtensions.GetSettings().GetOrCreate<InstallerSettings>();
-        installerSettings.Disabled = true;
+        persistenceExtensions.GetSettings().Set(SettingsKeys.DisableInstaller, true);
     }
 
     /// <summary>
