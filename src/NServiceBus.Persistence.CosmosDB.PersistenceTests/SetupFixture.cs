@@ -29,10 +29,8 @@ public class SetupFixture
 
         var installer = new Installer(new CosmosClientProvidedByConfiguration { Client = CosmosDbClient }, new InstallerSettings
         {
-            ContainerName = ContainerName,
             DatabaseName = DatabaseName,
-            Disabled = false,
-            PartitionKeyPath = PartitionPathKey
+            ContainerInformation = new ContainerInformation(ContainerName, new PartitionKeyPath(PartitionPathKey))
         });
 
         await installer.Install("");

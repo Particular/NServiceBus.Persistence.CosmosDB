@@ -12,11 +12,6 @@ class Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
 {
     public async Task Install(string identity, CancellationToken cancellationToken = default)
     {
-        if (settings == null || settings.Disabled)
-        {
-            return;
-        }
-
         try
         {
             await CreateContainerIfNotExists(cancellationToken).ConfigureAwait(false);
@@ -36,7 +31,7 @@ class Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
         Database database = clientProvider.Client.GetDatabase(settings.DatabaseName);
 
         var containerProperties =
-            new ContainerProperties(settings.ContainerName, settings.PartitionKeyPath)
+            new ContainerProperties(settings.ContainerInformation.ContainerName, settings.ContainerInformation.PartitionKeyPath)
             {
                 // in order for individual items TTL to work (example outbox records)
                 DefaultTimeToLive = -1
