@@ -7,9 +7,9 @@ using Persistence.CosmosDB;
 /// <summary>
 /// Used to configure NServiceBus to use Cosmos DB persistence.
 /// </summary>
-public class CosmosPersistence : PersistenceDefinition
+public class CosmosPersistence : PersistenceDefinition, IPersistenceDefinitionFactory<CosmosPersistence>
 {
-    internal CosmosPersistence()
+    CosmosPersistence()
     {
         Defaults(s =>
         {
@@ -19,7 +19,9 @@ public class CosmosPersistence : PersistenceDefinition
             s.EnableFeatureByDefault<Transaction>();
         });
 
-        Supports<StorageType.Sagas>(s => s.EnableFeatureByDefault<SagaStorage>());
-        Supports<StorageType.Outbox>(s => s.EnableFeatureByDefault<OutboxStorage>());
+        Supports<StorageType.Sagas, SagaStorage>();
+        Supports<StorageType.Outbox, OutboxStorage>();
     }
+
+    static CosmosPersistence IPersistenceDefinitionFactory<CosmosPersistence>.Create() => new();
 }
