@@ -5,4 +5,5 @@ static class SettingsKeys
     const string BaseName = "CosmosDB.";
     public const string DatabaseName = nameof(BaseName) + nameof(DatabaseName);
     public const string OutboxTimeToLiveInSeconds = nameof(BaseName) + nameof(OutboxTimeToLiveInSeconds);
+    public const string DisableInstaller = nameof(BaseName) + nameof(DisableInstaller);
 }
