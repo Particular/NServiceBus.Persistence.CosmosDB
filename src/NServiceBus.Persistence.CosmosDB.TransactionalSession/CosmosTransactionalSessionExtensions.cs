@@ -36,7 +36,7 @@ public static class CosmosTransactionalSessionExtensions
             settings.Set(OutboxStorage.ProcessorEndpointKey, transactionalSessionOptions.ProcessorEndpoint);
         }
 
-        settings.EnableFeatureByDefault<CosmosTransactionalSession>();
+        settings.EnableFeature<CosmosTransactionalSession>();
 
         return persistenceExtensions;
     }
