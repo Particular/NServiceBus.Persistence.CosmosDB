@@ -5,15 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Sagas;
 
-class SagaStorage : Feature
+sealed class SagaStorage : Feature
 {
-    internal SagaStorage()
+    public SagaStorage()
     {
-        Defaults(s =>
-        {
-            s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator());
-            s.EnableFeature<SynchronizedStorage>();
-        });
+        Defaults(s => s.SetDefault<ISagaIdGenerator>(new SagaIdGenerator()));
+
+        Enable<SynchronizedStorage>();
 
         DependsOn<Sagas>();
         DependsOn<SynchronizedStorage>();
