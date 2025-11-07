@@ -5,16 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Outbox;
 
-class OutboxStorage : Feature
+sealed class OutboxStorage : Feature
 {
-    OutboxStorage()
+    public OutboxStorage()
     {
-        EnableByDefault<SynchronizedStorage>();
+        Enable<SynchronizedStorage>();
 
-        Defaults(s =>
-        {
-            s.SetDefault(new OutboxPersistenceConfiguration { PartitionKey = s.EndpointName() });
-        });
+        Defaults(s => s.SetDefault(new OutboxPersistenceConfiguration { PartitionKey = s.EndpointName() }));
 
         DependsOn<Outbox>();
         DependsOn<SynchronizedStorage>();
