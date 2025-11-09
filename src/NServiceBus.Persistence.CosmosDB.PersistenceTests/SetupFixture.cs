@@ -27,15 +27,13 @@ public class SetupFixture
 
         CosmosDbClient = builder.Build();
 
-        var installer = new Installer(new CosmosClientProvidedByConfiguration { Client = CosmosDbClient }, new InstallerSettings
+        await Installer.CreateContainerIfNotExists(new InstallerSettings
         {
             ContainerName = ContainerName,
             DatabaseName = DatabaseName,
             Disabled = false,
             PartitionKeyPath = PartitionPathKey
-        });
-
-        await installer.Install("");
+        }, CosmosDbClient, CancellationToken.None).ConfigureAwait(false);
 
         Database database = CosmosDbClient.GetDatabase(DatabaseName);
         Container = database.GetContainer(ContainerName);
