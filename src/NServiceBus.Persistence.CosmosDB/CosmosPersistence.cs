@@ -15,7 +15,7 @@ public class CosmosPersistence : PersistenceDefinition, IPersistenceDefinitionFa
         {
             s.SetDefault(SettingsKeys.DatabaseName, "NServiceBus");
             s.SetDefault<IProvideCosmosClient>(new ThrowIfNoCosmosClientIsProvided());
-            s.EnableFeature<InstallerFeature>();
+            s.Set(new InstallerSettings());
             s.EnableFeature<Transaction>();
         });
 

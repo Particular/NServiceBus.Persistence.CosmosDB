@@ -6,37 +6,46 @@ using System.Threading.Tasks;
 using Installation;
 using Logging;
 using Microsoft.Azure.Cosmos;
+using Settings;
 
-class Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
+class Installer(IProvideCosmosClient clientProvider, IReadOnlySettings settings)
     : INeedToInstallSomething
 {
     public async Task Install(string identity, CancellationToken cancellationToken = default)
     {
-        if (settings == null || settings.Disabled)
+        var installerSettings = settings.Get<InstallerSettings>();
+
+        string databaseName = settings.Get<string>(SettingsKeys.DatabaseName);
+
+        if (!settings.TryGet(out ContainerInformation containerInformation))
         {
             return;
         }
 
+        installerSettings.ContainerName = containerInformation.ContainerName;
+        installerSettings.DatabaseName = databaseName;
+        installerSettings.PartitionKeyPath = containerInformation.PartitionKeyPath;
+
         try
         {
-            await CreateContainerIfNotExists(cancellationToken).ConfigureAwait(false);
+            await CreateContainerIfNotExists(installerSettings, clientProvider.Client, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
-            log.Error("Could not complete the installation. ", e);
+            Log.Error("Could not complete the installation. ", e);
             throw;
         }
     }
 
-    async Task CreateContainerIfNotExists(CancellationToken cancellationToken)
+    internal static async Task CreateContainerIfNotExists(InstallerSettings installerSettings, CosmosClient client, CancellationToken cancellationToken = default)
     {
-        await clientProvider.Client.CreateDatabaseIfNotExistsAsync(settings.DatabaseName, cancellationToken: cancellationToken)
+        await client.CreateDatabaseIfNotExistsAsync(installerSettings.DatabaseName, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        Database database = clientProvider.Client.GetDatabase(settings.DatabaseName);
+        Database database = client.GetDatabase(installerSettings.DatabaseName);
 
         var containerProperties =
-            new ContainerProperties(settings.ContainerName, settings.PartitionKeyPath)
+            new ContainerProperties(installerSettings.ContainerName, installerSettings.PartitionKeyPath)
             {
                 // in order for individual items TTL to work (example outbox records)
                 DefaultTimeToLive = -1
@@ -46,5 +55,5 @@ class Installer(IProvideCosmosClient clientProvider, InstallerSettings settings)
             .ConfigureAwait(false);
     }
 
-    static ILog log = LogManager.GetLogger<Installer>();
+    static readonly ILog Log = LogManager.GetLogger<Installer>();
 }
