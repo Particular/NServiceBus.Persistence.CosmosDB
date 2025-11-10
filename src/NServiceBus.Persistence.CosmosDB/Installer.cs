@@ -13,11 +13,7 @@ class Installer(IProvideCosmosClient clientProvider, IReadOnlySettings settings)
 {
     public async Task Install(string identity, CancellationToken cancellationToken = default)
     {
-        InstallerSettings installerSettings = settings.Get<InstallerSettings>();
-        if (installerSettings.Disabled)
-        {
-            return;
-        }
+        var installerSettings = settings.Get<InstallerSettings>();
 
         string databaseName = settings.Get<string>(SettingsKeys.DatabaseName);
 
