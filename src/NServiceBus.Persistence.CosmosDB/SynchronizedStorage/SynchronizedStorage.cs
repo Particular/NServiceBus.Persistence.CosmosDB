@@ -14,7 +14,7 @@ class SynchronizedStorage : Feature
     {
         context.Services.TryAddSingleton(context.Settings.Get<IProvideCosmosClient>());
 
-        InstallerSettings installerSettings = context.Settings.Get<InstallerSettings>();
+        var installerSettings = context.Settings.Get<InstallerSettings>();
         if (!installerSettings.Disabled)
         {
             context.AddInstaller<Installer>();
