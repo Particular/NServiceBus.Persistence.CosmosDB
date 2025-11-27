@@ -51,7 +51,8 @@ public class When_custom_container_information_extractor_from_message_registered
                 return Task.CompletedTask;
             }
 
-            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) => mapper.ConfigureMapping<StartSaga1>(m => m.DataId).ToSaga(s => s.DataId);
+            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) =>
+                mapper.MapSaga(saga => saga.DataId).ToMessage<StartSaga1>(msg => msg.DataId);
         }
 
         public class CustomExtractor(Context testContext) : IContainerInformationFromMessagesExtractor

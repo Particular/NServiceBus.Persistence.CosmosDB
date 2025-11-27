@@ -91,7 +91,8 @@ class When_handling_migrated_saga : NServiceBusAcceptanceTest
                 return Task.CompletedTask;
             }
 
-            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<MigratingFromAsp2SagaData> mapper) => mapper.ConfigureMapping<StartSaga>(msg => msg.MyId).ToSaga(saga => saga.MyId);
+            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<MigratingFromAsp2SagaData> mapper) =>
+                mapper.MapSaga(saga => saga.MyId).ToMessage<StartSaga>(msg => msg.MyId);
         }
 
         public class MigratingFromAsp2SagaData : ContainSagaData
