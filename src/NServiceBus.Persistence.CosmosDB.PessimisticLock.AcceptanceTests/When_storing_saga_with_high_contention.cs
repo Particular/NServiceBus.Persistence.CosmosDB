@@ -69,11 +69,10 @@ public class When_storing_saga_with_high_contention : NServiceBusAcceptanceTest
 
         class HighContentionSaga(HighContentionScenario scenario) : Saga<HighContentionSaga.HighContentionSagaData>, IAmStartedByMessages<StartSaga>, IHandleMessages<ConcurrentMessage>
         {
-            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<HighContentionSagaData> mapper)
-            {
-                mapper.ConfigureMapping<StartSaga>(message => message.SomeId).ToSaga(data => data.SomeId);
-                mapper.ConfigureMapping<ConcurrentMessage>(message => message.SomeId).ToSaga(data => data.SomeId);
-            }
+            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<HighContentionSagaData> mapper) =>
+                mapper.MapSaga(saga => saga.SomeId)
+                    .ToMessage<StartSaga>(msg => msg.SomeId)
+                    .ToMessage<ConcurrentMessage>(msg => msg.SomeId);
 
             public async Task Handle(StartSaga message, IMessageHandlerContext context)
             {

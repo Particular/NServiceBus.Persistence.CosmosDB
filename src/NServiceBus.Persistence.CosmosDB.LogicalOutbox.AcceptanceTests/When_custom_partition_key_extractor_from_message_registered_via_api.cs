@@ -52,7 +52,8 @@ public class When_custom_partition_key_extractor_from_message_registered_via_api
                 return Task.CompletedTask;
             }
 
-            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) => mapper.ConfigureMapping<StartSaga1>(m => m.DataId).ToSaga(s => s.DataId);
+            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) =>
+                mapper.MapSaga(saga => saga.DataId).ToMessage<StartSaga1>(msg => msg.DataId);
         }
 
         public class CustomExtractor(Context testContext) : IPartitionKeyFromMessageExtractor
