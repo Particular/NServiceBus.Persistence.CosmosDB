@@ -71,7 +71,8 @@ public class When_fluent_extractor_registered_via_api : NServiceBusAcceptanceTes
                 return Task.CompletedTask;
             }
 
-            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) => mapper.ConfigureMapping<StartSaga1>(m => m.DataId).ToSaga(s => s.DataId);
+            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<JustASagaData> mapper) =>
+                mapper.MapSaga(saga => saga.DataId).ToMessage<StartSaga1>(msg => msg.DataId);
         }
 
         public class JustASagaData : ContainSagaData
