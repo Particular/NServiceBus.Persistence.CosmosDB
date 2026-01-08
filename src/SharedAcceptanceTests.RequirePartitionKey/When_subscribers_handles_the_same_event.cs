@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.AcceptanceTests.Outbox;
 
-using System;
 using System.Threading.Tasks;
 using AcceptanceTesting;
 using AcceptanceTesting.Customization;
@@ -20,7 +19,6 @@ public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
         var runSettings = new RunSettings();
         //NOTE this call is required to ensure that the default synthetic partition key is used. The override uses the TestRunId as the partition key which will cause this test to fail
         runSettings.DoNotRegisterDefaultPartitionKeyProvider();
-        runSettings.TestExecutionTimeout = TimeSpan.FromSeconds(30);
 
         var context = await Scenario.Define<Context>()
             .WithEndpoint<Publisher>(b =>
@@ -69,6 +67,8 @@ public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
 
         public bool Subscriber1GotTheEvent { get; set; }
         public bool Subscriber2GotTheEvent { get; set; }
+
+        public void MaybeMarkAsCompleted() => MarkAsCompleted(Subscriber1GotTheEvent, Subscriber2GotTheEvent);
     }
 
     public class Publisher : EndpointConfigurationBuilder
@@ -110,6 +110,7 @@ public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
             public Task Handle(MyEvent message, IMessageHandlerContext context)
             {
                 testContext.Subscriber1GotTheEvent = true;
+                testContext.MaybeMarkAsCompleted();
                 return Task.CompletedTask;
             }
         }
@@ -131,6 +132,7 @@ public class When_subscribers_handles_the_same_event : NServiceBusAcceptanceTest
             public Task Handle(MyEvent messageThatIsEnlisted, IMessageHandlerContext context)
             {
                 testContext.Subscriber2GotTheEvent = true;
+                testContext.MaybeMarkAsCompleted();
                 return Task.CompletedTask;
             }
         }
