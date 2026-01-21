@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.48.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="NServiceBus" Version="9.2.6" />
+    <PackageReference Include="NServiceBus" Version="9.2.8" />
   </ItemGroup>
 
   <ItemGroup>
