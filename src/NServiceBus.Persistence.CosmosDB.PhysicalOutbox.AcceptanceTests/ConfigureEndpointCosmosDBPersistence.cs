@@ -25,7 +25,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        if (endpointName.StartsWith(Conventions.EndpointNamingConvention(typeof(When_subscribers_handles_the_same_event.Publisher)).Split('.')[0]))
+        if (endpointName.StartsWith(Conventions.EndpointNamingConvention(typeof(When_outbox_is_used_by_multiple_subscribers_for_the_same_event.Publisher)).Split('.')[0]))
         {
             //NOTE this call is required to ensure that the default synthetic partition key is used. The override uses the TestRunId as the partition key which will cause this test to fail
             settings.DoNotRegisterDefaultPartitionKeyProvider();
