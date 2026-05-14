@@ -1,14 +1,15 @@
 namespace NServiceBus.TransactionalSession.AcceptanceTests;
 
-using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using AcceptanceTesting;
 using AcceptanceTesting.Customization;
 using Configuration.AdvancedExtensibility;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Persistence.CosmosDB;
 
 public class When_using_outbox_send_only : NServiceBusAcceptanceTest
 {
@@ -32,6 +33,11 @@ public class When_using_outbox_send_only : NServiceBusAcceptanceTest
             }))
             .WithEndpoint<AnotherEndpoint>()
             .WithEndpoint<ProcessorEndpoint>()
+            .WithServices(services =>
+            {
+                services.AddSingleton<IPartitionKeyFromHeadersExtractor>(sp =>
+                    new PartitionKeyProvider(sp.GetRequiredService<Context>()));
+            })
             .Done(c => c.MessageReceived)
             .Run();
 
@@ -80,5 +86,14 @@ public class When_using_outbox_send_only : NServiceBusAcceptanceTest
 
     class SampleMessage : ICommand
     {
+    }
+
+    class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromHeadersExtractor
+    {
+        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
+        {
+            partitionKey = new PartitionKey(scenarioContext.TestRunId.ToString());
+            return true;
+        }
     }
 }

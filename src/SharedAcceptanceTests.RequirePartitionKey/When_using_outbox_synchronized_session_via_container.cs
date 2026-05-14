@@ -14,7 +14,12 @@ public partial class When_using_outbox_synchronized_session_via_container : NSer
     public async Task Should_inject_synchronized_session_into_handler()
     {
         Context context = await Scenario.Define<Context>()
-            .WithEndpoint<Endpoint>(b => b.When(s => s.SendLocal(new MyMessage())))
+            .WithEndpoint<Endpoint>(b =>
+                b.Services(services =>
+                    {
+                        services.AddScoped<MyRepository>();
+                    })
+            .When(s => s.SendLocal(new MyMessage())))
             .Done(c => c.Done)
             .Run()
             .ConfigureAwait(false);
@@ -45,10 +50,10 @@ public partial class When_using_outbox_synchronized_session_via_container : NSer
             {
                 config.EnableOutbox();
                 config.ConfigureTransport().TransportTransactionMode = TransportTransactionMode.ReceiveOnly;
-                config.RegisterComponents(c =>
-                {
-                    c.AddScoped<MyRepository>();
-                });
+                //config.RegisterComponents(c =>
+                //{
+                //    c.AddScoped<MyRepository>();
+                //});
             });
 
         public class MyMessageHandler(MyRepository repository, Context context) : IHandleMessages<MyMessage>

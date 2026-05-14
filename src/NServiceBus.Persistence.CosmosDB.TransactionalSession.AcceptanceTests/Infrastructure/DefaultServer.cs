@@ -1,17 +1,13 @@
 namespace NServiceBus.TransactionalSession.AcceptanceTests;
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using AcceptanceTesting;
 using AcceptanceTesting.Customization;
 using AcceptanceTesting.Support;
 using Configuration.AdvancedExtensibility;
-using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
-using Persistence.CosmosDB;
 
 public class DefaultServer : IEndpointSetupTemplate
 {
@@ -42,8 +38,6 @@ public class DefaultServer : IEndpointSetupTemplate
 
         persistence.DefaultContainer(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
 
-        endpointConfiguration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
-
         if (runDescriptor.ScenarioContext is TransactionalSessionTestContext testContext)
         {
             endpointConfiguration.RegisterStartupTask(sp => new CaptureServiceProviderStartupTask(sp, testContext, endpointCustomization.EndpointName));
@@ -55,14 +49,5 @@ public class DefaultServer : IEndpointSetupTemplate
         endpointConfiguration.ScanTypesForTest(endpointCustomization);
 
         return endpointConfiguration;
-    }
-
-    class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromHeadersExtractor
-    {
-        public bool TryExtract(IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
-        {
-            partitionKey = new PartitionKey(scenarioContext.TestRunId.ToString());
-            return true;
-        }
     }
 }

@@ -19,7 +19,12 @@ public class When_custom_container_information_extractor_from_headers_registered
         runSettings.DoNotRegisterDefaultContainerInformationProvider();
 
         Context context = await Scenario.Define<Context>()
-            .WithEndpoint<EndpointWithCustomExtractor>(b => b.When(session => session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid() })))
+               .WithEndpoint<EndpointWithCustomExtractor>(b =>
+                   b.Services(services =>
+                       {
+                           services.AddSingleton<IContainerInformationFromHeadersExtractor>(b => new EndpointWithCustomExtractor.CustomExtractor(b.GetService<Context>()));
+                       })
+                       .When(session => session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid() })))
             .Done(c => c.SagaReceivedMessage)
             .Run(runSettings);
 
@@ -34,12 +39,7 @@ public class When_custom_container_information_extractor_from_headers_registered
 
     public class EndpointWithCustomExtractor : EndpointConfigurationBuilder
     {
-        public EndpointWithCustomExtractor() =>
-            EndpointSetup<DefaultServer>(config =>
-            {
-                config.RegisterComponents(c =>
-                    c.AddSingleton<IContainerInformationFromHeadersExtractor>(b => new CustomExtractor(b.GetService<Context>())));
-            });
+        public EndpointWithCustomExtractor() => EndpointSetup<DefaultServer>();
 
         public class JustASaga(Context testContext) : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
         {
