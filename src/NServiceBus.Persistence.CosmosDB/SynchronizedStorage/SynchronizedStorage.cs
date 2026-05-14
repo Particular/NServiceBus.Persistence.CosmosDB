@@ -2,7 +2,6 @@
 
 using Features;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 class SynchronizedStorage : Feature
 {
@@ -12,7 +11,7 @@ class SynchronizedStorage : Feature
 
     protected override void Setup(FeatureConfigurationContext context)
     {
-        context.Services.TryAddSingleton(context.Settings.Get<IProvideCosmosClient>());
+        context.Services.AddSingleton(context.Settings.Get<IProvideCosmosClient>());
 
         var installerSettings = context.Settings.Get<InstallerSettings>();
         if (!installerSettings.Disabled)

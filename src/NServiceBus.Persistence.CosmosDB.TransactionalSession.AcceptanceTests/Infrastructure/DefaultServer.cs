@@ -7,7 +7,9 @@ using AcceptanceTesting;
 using AcceptanceTesting.Customization;
 using AcceptanceTesting.Support;
 using Configuration.AdvancedExtensibility;
+using Microsoft.Azure.Cosmos;
 using NUnit.Framework;
+using Persistence.CosmosDB;
 
 public class DefaultServer : IEndpointSetupTemplate
 {
@@ -37,6 +39,9 @@ public class DefaultServer : IEndpointSetupTemplate
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
         persistence.DefaultContainer(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
+
+        persistence.TransactionInformation()
+            .ExtractPartitionKeyFromHeaders(headers => new PartitionKey(runDescriptor.ScenarioContext.TestRunId.ToString()));
 
         if (runDescriptor.ScenarioContext is TransactionalSessionTestContext testContext)
         {

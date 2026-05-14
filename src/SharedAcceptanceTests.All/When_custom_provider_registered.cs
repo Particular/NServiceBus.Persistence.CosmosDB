@@ -19,7 +19,7 @@ public class When_custom_provider_registered : NServiceBusAcceptanceTest
                   b.Services(services =>
                       {
                           services.AddSingleton<IProvideCosmosClient>(sp => new EndpointWithCustomProvider.CustomProvider(sp.GetRequiredService<Context>()));
-                      })
+                      }, afterStart: true)
                       .When(session => session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid() })))
             .Done(c => c.SagaReceivedMessage)
             .Run();
