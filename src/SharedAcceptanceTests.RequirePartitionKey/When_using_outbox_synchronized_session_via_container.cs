@@ -50,10 +50,6 @@ public partial class When_using_outbox_synchronized_session_via_container : NSer
             {
                 config.EnableOutbox();
                 config.ConfigureTransport().TransportTransactionMode = TransportTransactionMode.ReceiveOnly;
-                //config.RegisterComponents(c =>
-                //{
-                //    c.AddScoped<MyRepository>();
-                //});
             });
 
         public class MyMessageHandler(MyRepository repository, Context context) : IHandleMessages<MyMessage>
