@@ -8,7 +8,6 @@ using AcceptanceTesting.Customization;
 using AcceptanceTesting.Support;
 using Configuration.AdvancedExtensibility;
 using Microsoft.Azure.Cosmos;
-using Outbox;
 using Persistence.CosmosDB;
 
 public class DefaultServer : ServerWithNoDefaultPersistenceDefinitions
@@ -19,17 +18,12 @@ public class DefaultServer : ServerWithNoDefaultPersistenceDefinitions
         Func<EndpointConfiguration, Task> configurationBuilderCustomization) =>
         base.GetConfiguration(runDescriptor, endpointCustomizationConfiguration, async configuration =>
         {
+            await configuration.DefinePersistence(runDescriptor, endpointCustomizationConfiguration);
+
             if (!configuration.GetSettings().Get<bool>("Endpoint.SendOnly"))
             {
                 var settings = runDescriptor.Settings;
-                var endpointName = endpointCustomizationConfiguration.EndpointName;
                 var transactionInformation = configuration.UsePersistence<CosmosPersistence>().TransactionInformation();
-
-                if (endpointName.StartsWith(Conventions.EndpointNamingConvention(typeof(When_outbox_is_used_by_multiple_subscribers_for_the_same_event.Publisher)).Split('.')[0]))
-                {
-                    //NOTE this call is required to ensure that the default synthetic partition key is used. The override uses the TestRunId as the partition key which will cause this test to fail
-                    settings.DoNotRegisterDefaultPartitionKeyProvider();
-                }
 
                 if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
                 {
