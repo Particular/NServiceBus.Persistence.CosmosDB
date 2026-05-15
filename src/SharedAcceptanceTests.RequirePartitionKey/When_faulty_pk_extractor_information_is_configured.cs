@@ -18,7 +18,6 @@ public class When_faulty_pk_extractor_information_is_configured : NServiceBusAcc
     {
         var runSettings = new RunSettings();
         runSettings.DoNotRegisterDefaultPartitionKeyProvider();
-        runSettings.RegisterFaultyPartitionKeyProvider();
 
         if (!useContainerExtractor)
         {
@@ -29,14 +28,15 @@ public class When_faulty_pk_extractor_information_is_configured : NServiceBusAcc
             .WithEndpoint<Endpoint>(b =>
             {
                 b.DoNotFailOnErrorMessages();
-                if (!useContainerExtractor)
+                b.CustomConfig(cfg =>
                 {
-                    b.CustomConfig(cfg =>
+                    PersistenceExtensions<CosmosPersistence> persistence = cfg.UsePersistence<CosmosPersistence>();
+                    persistence.TransactionInformation().RegisterFaultyPartitionKeyExtractor();
+                    if (!useContainerExtractor)
                     {
-                        PersistenceExtensions<CosmosPersistence> persistence = cfg.UsePersistence<CosmosPersistence>();
                         persistence.DefaultContainer(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
-                    });
-                }
+                    }
+                });
                 b.When(s => s.SendLocal(new MyMessage()));
             })
             .Done(c => c.FailedMessages.Any())

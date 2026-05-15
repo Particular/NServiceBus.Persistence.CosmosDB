@@ -18,7 +18,6 @@ public class When_no_default_container_and_faulty_container_extractor_informatio
     {
         var runSettings = new RunSettings();
         runSettings.DoNotRegisterDefaultContainerInformationProvider();
-        runSettings.RegisterFaultyContainerInformationProvider();
 
         if (!usePKExtractor)
         {
@@ -29,6 +28,8 @@ public class When_no_default_container_and_faulty_container_extractor_informatio
             .WithEndpoint<Endpoint>(b =>
             {
                 b.DoNotFailOnErrorMessages();
+                b.CustomConfig(cfg =>
+                    cfg.UsePersistence<CosmosPersistence>().TransactionInformation().RegisterFaultyContainerInformationExtractor());
                 b.When(s => s.SendLocal(new MyMessage()));
             })
             .Done(c => c.FailedMessages.Any())

@@ -41,7 +41,7 @@ public class When_using_outbox_control_message : NServiceBusAcceptanceTest
             .WithEndpoint<Endpoint>(b => b.CustomConfig(cfg =>
                 cfg.UsePersistence<CosmosPersistence>()
                     .TransactionInformation()
-                    .ExtractPartitionKeyFromHeaders(new FaultyPartitionKeyProvider())))
+                    .RegisterFaultyPartitionKeyExtractor()))
             .Done(c => c.ProcessedControlMessage)
             .Run(runSettings)
             .ConfigureAwait(false);

@@ -16,7 +16,6 @@ public class When_default_container_and_faulty_container_extractor_information_i
     public async Task Should_fallback_to_default_container(bool usePKExtractor)
     {
         var runSettings = new RunSettings();
-        runSettings.RegisterFaultyContainerInformationProvider();
         runSettings.DoNotRegisterDefaultContainerInformationProvider();
 
         if (!usePKExtractor)
@@ -27,6 +26,8 @@ public class When_default_container_and_faulty_container_extractor_information_i
         Context context = await Scenario.Define<Context>()
             .WithEndpoint<Endpoint>(b =>
             {
+                b.CustomConfig(cfg =>
+                    cfg.UsePersistence<CosmosPersistence>().TransactionInformation().RegisterFaultyContainerInformationExtractor());
                 b.When(s => s.SendLocal(new MyMessage()));
             })
             .Done(c => c.Done)

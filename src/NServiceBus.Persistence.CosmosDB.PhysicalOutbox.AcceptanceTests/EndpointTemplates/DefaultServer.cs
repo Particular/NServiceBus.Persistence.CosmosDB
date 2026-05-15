@@ -29,16 +29,6 @@ public class DefaultServer : ServerWithNoDefaultPersistenceDefinitions
                 {
                     transactionInformation.ExtractContainerInformationFromHeaders(new ContainerInformationProvider());
                 }
-
-                if (settings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
-                {
-                    transactionInformation.ExtractPartitionKeyFromHeaders(new FaultyPartitionKeyProvider());
-                }
-
-                if (settings.TryGet<RegisterFaultyContainerProvider>(out _))
-                {
-                    transactionInformation.ExtractContainerInformationFromHeaders(new FaultyContainerInformationProvider());
-                }
             }
 
             await configurationBuilderCustomization(configuration);
