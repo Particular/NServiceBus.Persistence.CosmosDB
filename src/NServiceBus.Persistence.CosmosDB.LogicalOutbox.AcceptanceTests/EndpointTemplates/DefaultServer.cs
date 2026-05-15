@@ -21,14 +21,9 @@ public class DefaultServer : ServerWithNoDefaultPersistenceDefinitions
         {
             if (!configuration.GetSettings().Get<bool>("Endpoint.SendOnly"))
             {
-                var persistence = configuration.UsePersistence<CosmosPersistence>();
-                persistence.DisableContainerCreation();
-                persistence.CosmosClient(SetupFixture.CosmosDbClient);
-                persistence.DatabaseName(SetupFixture.DatabaseName);
-
                 var settings = runDescriptor.Settings;
                 var endpointName = endpointCustomizationConfiguration.EndpointName;
-                var transactionInformation = persistence.TransactionInformation();
+                var transactionInformation = configuration.UsePersistence<CosmosPersistence>().TransactionInformation();
 
                 if (endpointName.StartsWith(Conventions.EndpointNamingConvention(typeof(When_outbox_is_used_by_multiple_subscribers_for_the_same_event.Publisher)).Split('.')[0]))
                 {
