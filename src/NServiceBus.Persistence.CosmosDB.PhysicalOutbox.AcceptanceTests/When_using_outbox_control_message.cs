@@ -36,10 +36,12 @@ public class When_using_outbox_control_message : NServiceBusAcceptanceTest
     {
         var runSettings = new RunSettings();
         runSettings.DoNotRegisterDefaultPartitionKeyProvider();
-        runSettings.RegisterFaultyPartitionKeyProvider();
 
         Context context = await Scenario.Define<Context>()
-            .WithEndpoint<Endpoint>()
+            .WithEndpoint<Endpoint>(b => b.CustomConfig(cfg =>
+                cfg.UsePersistence<CosmosPersistence>()
+                    .TransactionInformation()
+                    .ExtractPartitionKeyFromHeaders(new FaultyPartitionKeyProvider())))
             .Done(c => c.ProcessedControlMessage)
             .Run(runSettings)
             .ConfigureAwait(false);
