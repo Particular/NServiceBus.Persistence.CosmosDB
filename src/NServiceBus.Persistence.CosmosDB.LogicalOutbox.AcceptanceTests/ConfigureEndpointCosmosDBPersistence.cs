@@ -32,43 +32,39 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             settings.DoNotRegisterDefaultPartitionKeyProvider();
         }
 
-        configuration.GetSettings().Set(settings);
-        configuration.EnableFeature<RegisterTestContainerAndPartitionKeyProviderFeature>();
+        if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
+        {
+            configuration.EnableFeature<PartitionKeyProviderFeature>();
+        }
+
+        if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
+        {
+            persistence.TransactionInformation().ExtractContainerInformationFromMessage(new ContainerInformationProvider());
+        }
+
+        if (settings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
+        {
+            persistence.TransactionInformation().ExtractPartitionKeyFromMessages(new FaultyPartitionKeyProvider());
+        }
+
+        if (settings.TryGet<RegisterFaultyContainerProvider>(out _))
+        {
+            persistence.TransactionInformation().ExtractContainerInformationFromMessage(new FaultyContainerInformationProvider());
+        }
+
 
         return Task.CompletedTask;
     }
 
     public Task Cleanup() => Task.CompletedTask;
 
-    class RegisterTestContainerAndPartitionKeyProviderFeature : Feature
+    class PartitionKeyProviderFeature : Feature
     {
         protected override void Setup(FeatureConfigurationContext context)
-        {
-            var runSettings = context.Settings.Get<RunSettings>();
-
-            if (!runSettings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
-            {
-                context.Services.AddSingleton<IPartitionKeyFromMessageExtractor, PartitionKeyProvider>();
-            }
-
-            if (!runSettings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
-            {
-                context.Services.AddSingleton<IContainerInformationFromMessagesExtractor, ContainerInformationProvider>();
-            }
-
-            if (runSettings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
-            {
-                context.Services.AddSingleton<IPartitionKeyFromMessageExtractor, FaultyPartitionKeyProvider>();
-            }
-
-            if (runSettings.TryGet<RegisterFaultyContainerProvider>(out _))
-            {
-                context.Services.AddSingleton<IContainerInformationFromMessagesExtractor, FaultyContainerInformationProvider>();
-            }
-        }
+            => context.Services.AddSingleton<IPartitionKeyFromMessageExtractor>(sp => new PartitionKeyExtractor(sp.GetRequiredService<ScenarioContext>()));
     }
 
-    class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromMessageExtractor
+    class PartitionKeyExtractor(ScenarioContext scenarioContext) : IPartitionKeyFromMessageExtractor
     {
         public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
