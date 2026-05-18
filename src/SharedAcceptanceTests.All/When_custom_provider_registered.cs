@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using AcceptanceTesting;
+using AcceptanceTesting.Support;
 using EndpointTemplates;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,14 +15,17 @@ public class When_custom_provider_registered : NServiceBusAcceptanceTest
     [Test]
     public async Task Should_be_used()
     {
-        Context context = await Scenario.Define<Context>()
+        var runSettings = new RunSettings();
+        runSettings.DoNotRegisterDefaultContainerInformationProvider();
+
+        var context = await Scenario.Define<Context>()
             .WithEndpoint<EndpointWithCustomProvider>(b =>
             {
                 b.Services(services => services.AddSingleton<IProvideCosmosClient>(sp => new EndpointWithCustomProvider.CustomProvider(sp.GetRequiredService<Context>())));
                 b.When(session => session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid() }));
             })
             .Done(c => c.SagaReceivedMessage)
-            .Run();
+            .Run(runSettings);
 
         Assert.That(context.ProviderWasCalled, Is.True);
     }
