@@ -34,42 +34,33 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
-            persistence.TransactionInformation().ExtractPartitionKeyFromHeaders(new PartitionKeyExtractor());
+            configuration.EnableFeature<PartitionKeyProviderFeature>();
         }
-        configuration.GetSettings().Set(settings);
-        configuration.EnableFeature<RegisterTestContainerAndPartitionKeyProviderFeature>();
+
+        if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
+        {
+            persistence.TransactionInformation().ExtractContainerInformationFromHeaders(new ContainerInformationProvider());
+        }
+
+        if (settings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
+        {
+            persistence.TransactionInformation().ExtractPartitionKeyFromHeaders(new FaultyPartitionKeyProvider());
+        }
+
+        if (settings.TryGet<RegisterFaultyContainerProvider>(out _))
+        {
+            persistence.TransactionInformation().ExtractContainerInformationFromHeaders(new FaultyContainerInformationProvider());
+        }
 
         return Task.CompletedTask;
     }
 
     public Task Cleanup() => Task.CompletedTask;
 
-    class RegisterTestContainerAndPartitionKeyProviderFeature : Feature
+    class PartitionKeyProviderFeature : Feature
     {
         protected override void Setup(FeatureConfigurationContext context)
-        {
-            var runSettings = context.Settings.Get<RunSettings>();
-
-            if (!runSettings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
-            {
-                context.Services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>();
-            }
-
-            if (!runSettings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
-            {
-                context.Services.AddSingleton<IContainerInformationFromHeadersExtractor, ContainerInformationProvider>();
-            }
-
-            if (runSettings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
-            {
-                context.Services.AddSingleton<IPartitionKeyFromHeadersExtractor, FaultyPartitionKeyProvider>();
-            }
-
-            if (runSettings.TryGet<RegisterFaultyContainerProvider>(out _))
-            {
-                context.Services.AddSingleton<IContainerInformationFromHeadersExtractor, FaultyContainerInformationProvider>();
-            }
-        }
+            => context.Services.AddSingleton<IPartitionKeyFromHeadersExtractor>(sp => new PartitionKeyProvider(sp.GetRequiredService<ScenarioContext>()));
     }
 
     class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromHeadersExtractor

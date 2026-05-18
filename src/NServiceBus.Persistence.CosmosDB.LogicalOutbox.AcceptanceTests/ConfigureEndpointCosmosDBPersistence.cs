@@ -52,7 +52,6 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             persistence.TransactionInformation().ExtractContainerInformationFromMessage(new FaultyContainerInformationProvider());
         }
 
-
         return Task.CompletedTask;
     }
 
