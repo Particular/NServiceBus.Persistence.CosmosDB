@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,8 @@ using NServiceBus.AcceptanceTests.Outbox;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Features;
 using NServiceBus.Persistence.CosmosDB;
+using NUnit.Framework;
+using NUnit.Framework.Internal;
 using Conventions = NServiceBus.AcceptanceTesting.Customization.Conventions;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
@@ -34,7 +37,12 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
-            configuration.EnableFeature<PartitionKeyProviderFeature>();
+            if (!TestExecutionContext.CurrentContext.TryGetRunDescriptor(out var runDescriptor))
+            {
+                throw new Exception("Could not find RunDescriptor in TestExecutionContext");
+            }
+
+            persistence.TransactionInformation().ExtractPartitionKeyFromHeaders(new PartitionKeyProvider(runDescriptor.ScenarioContext));
         }
 
         if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
@@ -56,12 +64,6 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
     }
 
     public Task Cleanup() => Task.CompletedTask;
-
-    class PartitionKeyProviderFeature : Feature
-    {
-        protected override void Setup(FeatureConfigurationContext context)
-            => context.Services.AddSingleton<IPartitionKeyFromHeadersExtractor>(sp => new PartitionKeyProvider(sp.GetRequiredService<ScenarioContext>()));
-    }
 
     class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromHeadersExtractor
     {
