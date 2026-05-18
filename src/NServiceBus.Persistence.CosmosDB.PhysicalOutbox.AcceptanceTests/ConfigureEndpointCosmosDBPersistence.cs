@@ -32,6 +32,10 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             settings.DoNotRegisterDefaultPartitionKeyProvider();
         }
 
+        if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
+        {
+            persistence.TransactionInformation().ExtractPartitionKeyFromHeaders(new PartitionKeyExtractor());
+        }
         configuration.GetSettings().Set(settings);
         configuration.EnableFeature<RegisterTestContainerAndPartitionKeyProviderFeature>();
 

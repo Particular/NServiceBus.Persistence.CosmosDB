@@ -8,9 +8,7 @@ using AcceptanceTesting;
 using AcceptanceTesting.Customization;
 using AcceptanceTesting.Support;
 using Configuration.AdvancedExtensibility;
-using Features;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Persistence.CosmosDB;
 
@@ -43,7 +41,7 @@ public class DefaultServer : IEndpointSetupTemplate
 
         persistence.DefaultContainer(SetupFixture.ContainerName, SetupFixture.PartitionPathKey);
 
-        endpointConfiguration.EnableFeature<PartitionKeyProviderFeature>();
+        persistence.TransactionInformation().ExtractPartitionKeyFromHeaders(new PartitionKeyProvider(runDescriptor.ScenarioContext));
 
         if (runDescriptor.ScenarioContext is TransactionalSessionTestContext testContext)
         {
@@ -56,11 +54,6 @@ public class DefaultServer : IEndpointSetupTemplate
         endpointConfiguration.ScanTypesForTest(endpointCustomization);
 
         return endpointConfiguration;
-    }
-
-    class PartitionKeyProviderFeature : Feature
-    {
-        protected override void Setup(FeatureConfigurationContext context) => context.Services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>();
     }
 
     class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromHeadersExtractor
