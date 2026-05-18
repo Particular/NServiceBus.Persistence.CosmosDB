@@ -20,7 +20,11 @@ public class When_custom_partition_key_extractor_from_headers_registered_via_di 
         runSettings.DoNotRegisterDefaultPartitionKeyProvider();
 
         Context context = await Scenario.Define<Context>()
-            .WithEndpoint<EndpointWithCustomExtractor>(b => b.When(session => session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid() })))
+            .WithEndpoint<EndpointWithCustomExtractor>(b =>
+            {
+                b.Services(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor>(sp => new EndpointWithCustomExtractor.CustomExtractor(sp.GetRequiredService<Context>())));
+                b.When(session => session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid() }));
+            })
             .Done(c => c.SagaReceivedMessage)
             .Run(runSettings);
 
@@ -35,12 +39,7 @@ public class When_custom_partition_key_extractor_from_headers_registered_via_di 
 
     public class EndpointWithCustomExtractor : EndpointConfigurationBuilder
     {
-        public EndpointWithCustomExtractor() =>
-            EndpointSetup<DefaultServer>(config =>
-            {
-                config.RegisterComponents(c =>
-                    c.AddSingleton<IPartitionKeyFromHeadersExtractor>(b => new CustomExtractor(b.GetService<Context>())));
-            });
+        public EndpointWithCustomExtractor() => EndpointSetup<DefaultServer>();
 
         public class JustASaga(Context testContext) : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
         {

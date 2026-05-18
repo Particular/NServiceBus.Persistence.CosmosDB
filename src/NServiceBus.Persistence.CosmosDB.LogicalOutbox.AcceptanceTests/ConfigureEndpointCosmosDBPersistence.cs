@@ -8,6 +8,7 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.AcceptanceTests.Outbox;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Features;
 using NServiceBus.Persistence.CosmosDB;
 using Conventions = NServiceBus.AcceptanceTesting.Customization.Conventions;
 
@@ -31,30 +32,41 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
             settings.DoNotRegisterDefaultPartitionKeyProvider();
         }
 
-        if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
-        {
-            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromMessageExtractor, PartitionKeyProvider>());
-        }
-
-        if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
-        {
-            configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromMessagesExtractor, ContainerInformationProvider>());
-        }
-
-        if (settings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
-        {
-            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromMessageExtractor, FaultyPartitionKeyProvider>());
-        }
-
-        if (settings.TryGet<RegisterFaultyContainerProvider>(out _))
-        {
-            configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromMessagesExtractor, FaultyContainerInformationProvider>());
-        }
+        configuration.GetSettings().Set(settings);
+        configuration.EnableFeature<RegisterTestContainerAndPartitionKeyProviderFeature>();
 
         return Task.CompletedTask;
     }
 
     public Task Cleanup() => Task.CompletedTask;
+
+    class RegisterTestContainerAndPartitionKeyProviderFeature : Feature
+    {
+        protected override void Setup(FeatureConfigurationContext context)
+        {
+            var runSettings = context.Settings.Get<RunSettings>();
+
+            if (!runSettings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
+            {
+                context.Services.AddSingleton<IPartitionKeyFromMessageExtractor, PartitionKeyProvider>();
+            }
+
+            if (!runSettings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
+            {
+                context.Services.AddSingleton<IContainerInformationFromMessagesExtractor, ContainerInformationProvider>();
+            }
+
+            if (runSettings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
+            {
+                context.Services.AddSingleton<IPartitionKeyFromMessageExtractor, FaultyPartitionKeyProvider>();
+            }
+
+            if (runSettings.TryGet<RegisterFaultyContainerProvider>(out _))
+            {
+                context.Services.AddSingleton<IContainerInformationFromMessagesExtractor, FaultyContainerInformationProvider>();
+            }
+        }
+    }
 
     class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromMessageExtractor
     {
