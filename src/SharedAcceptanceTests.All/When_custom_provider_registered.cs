@@ -14,8 +14,12 @@ public class When_custom_provider_registered : NServiceBusAcceptanceTest
     [Test]
     public async Task Should_be_used()
     {
-        Context context = await Scenario.Define<Context>()
-            .WithEndpoint<EndpointWithCustomProvider>(b => b.When(session => session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid() })))
+        var context = await Scenario.Define<Context>()
+            .WithEndpoint<EndpointWithCustomProvider>(b =>
+            {
+                b.Services(services => services.AddSingleton<IProvideCosmosClient>(sp => new EndpointWithCustomProvider.CustomProvider(sp.GetRequiredService<Context>())));
+                b.When(session => session.SendLocal(new StartSaga1 { DataId = Guid.NewGuid() }));
+            })
             .Done(c => c.SagaReceivedMessage)
             .Run();
 
@@ -30,12 +34,7 @@ public class When_custom_provider_registered : NServiceBusAcceptanceTest
 
     public class EndpointWithCustomProvider : EndpointConfigurationBuilder
     {
-        public EndpointWithCustomProvider() =>
-            EndpointSetup<DefaultServer>(config =>
-            {
-                config.RegisterComponents(c =>
-                    c.AddSingleton<IProvideCosmosClient>(b => new CustomProvider(b.GetService<Context>())));
-            });
+        public EndpointWithCustomProvider() => EndpointSetup<DefaultServer>();
 
         public class JustASaga(Context testContext) : Saga<JustASagaData>, IAmStartedByMessages<StartSaga1>
         {

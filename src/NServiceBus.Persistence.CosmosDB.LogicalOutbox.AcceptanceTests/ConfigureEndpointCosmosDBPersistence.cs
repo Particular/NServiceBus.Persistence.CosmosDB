@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +9,9 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.AcceptanceTests.Outbox;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Features;
 using NServiceBus.Persistence.CosmosDB;
+using NUnit.Framework.Internal;
 using Conventions = NServiceBus.AcceptanceTesting.Customization.Conventions;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
@@ -33,22 +36,27 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromMessageExtractor, PartitionKeyProvider>());
+            if (!TestExecutionContext.CurrentContext.TryGetRunDescriptor(out var runDescriptor))
+            {
+                throw new Exception("Could not find RunDescriptor in TestExecutionContext");
+            }
+
+            persistence.TransactionInformation().ExtractPartitionKeyFromMessages(new PartitionKeyExtractor(runDescriptor.ScenarioContext));
         }
 
         if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromMessagesExtractor, ContainerInformationProvider>());
+            persistence.TransactionInformation().ExtractContainerInformationFromMessage(new ContainerInformationProvider());
         }
 
         if (settings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromMessageExtractor, FaultyPartitionKeyProvider>());
+            persistence.TransactionInformation().ExtractPartitionKeyFromMessages(new FaultyPartitionKeyProvider());
         }
 
         if (settings.TryGet<RegisterFaultyContainerProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromMessagesExtractor, FaultyContainerInformationProvider>());
+            persistence.TransactionInformation().ExtractContainerInformationFromMessage(new FaultyContainerInformationProvider());
         }
 
         return Task.CompletedTask;
@@ -56,7 +64,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
     public Task Cleanup() => Task.CompletedTask;
 
-    class PartitionKeyProvider(ScenarioContext scenarioContext) : IPartitionKeyFromMessageExtractor
+    class PartitionKeyExtractor(ScenarioContext scenarioContext) : IPartitionKeyFromMessageExtractor
     {
         public bool TryExtract(object message, IReadOnlyDictionary<string, string> headers, out PartitionKey? partitionKey)
         {
