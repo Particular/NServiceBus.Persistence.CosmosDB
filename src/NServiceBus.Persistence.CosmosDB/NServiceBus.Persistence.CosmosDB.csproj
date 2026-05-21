@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup Label="Public dependencies">
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.59.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.60.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="NServiceBus" Version="10.2.0-alpha.12" />
+    <PackageReference Include="NServiceBus" Version="10.2.0" />
   </ItemGroup>
 
   <ItemGroup Label="Private dependencies">
