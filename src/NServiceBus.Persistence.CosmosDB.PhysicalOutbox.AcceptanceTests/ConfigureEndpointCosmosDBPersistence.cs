@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +9,10 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.AcceptanceTests.Outbox;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Features;
 using NServiceBus.Persistence.CosmosDB;
+using NUnit.Framework;
+using NUnit.Framework.Internal;
 using Conventions = NServiceBus.AcceptanceTesting.Customization.Conventions;
 
 public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecution
@@ -25,7 +29,7 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
         persistence.CosmosClient(SetupFixture.CosmosDbClient);
         persistence.DatabaseName(SetupFixture.DatabaseName);
 
-        if (endpointName.StartsWith(Conventions.EndpointNamingConvention(typeof(When_subscribers_handles_the_same_event.Publisher)).Split('.')[0]))
+        if (endpointName.StartsWith(Conventions.EndpointNamingConvention(typeof(When_outbox_is_used_by_multiple_subscribers_for_the_same_event.Publisher)).Split('.')[0]))
         {
             //NOTE this call is required to ensure that the default synthetic partition key is used. The override uses the TestRunId as the partition key which will cause this test to fail
             settings.DoNotRegisterDefaultPartitionKeyProvider();
@@ -33,22 +37,27 @@ public class ConfigureEndpointCosmosDBPersistence : IConfigureEndpointTestExecut
 
         if (!settings.TryGet<DoNotRegisterDefaultPartitionKeyProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, PartitionKeyProvider>());
+            if (!TestExecutionContext.CurrentContext.TryGetRunDescriptor(out var runDescriptor))
+            {
+                throw new Exception("Could not find RunDescriptor in TestExecutionContext");
+            }
+
+            persistence.TransactionInformation().ExtractPartitionKeyFromHeaders(new PartitionKeyProvider(runDescriptor.ScenarioContext));
         }
 
         if (!settings.TryGet<DoNotRegisterDefaultContainerInformationProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromHeadersExtractor, ContainerInformationProvider>());
+            persistence.TransactionInformation().ExtractContainerInformationFromHeaders(new ContainerInformationProvider());
         }
 
         if (settings.TryGet<RegisterFaultyPartitionKeyProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IPartitionKeyFromHeadersExtractor, FaultyPartitionKeyProvider>());
+            persistence.TransactionInformation().ExtractPartitionKeyFromHeaders(new FaultyPartitionKeyProvider());
         }
 
         if (settings.TryGet<RegisterFaultyContainerProvider>(out _))
         {
-            configuration.RegisterComponents(services => services.AddSingleton<IContainerInformationFromHeadersExtractor, FaultyContainerInformationProvider>());
+            persistence.TransactionInformation().ExtractContainerInformationFromHeaders(new FaultyContainerInformationProvider());
         }
 
         return Task.CompletedTask;
