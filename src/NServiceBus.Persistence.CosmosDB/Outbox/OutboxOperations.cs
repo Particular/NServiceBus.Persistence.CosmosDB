@@ -68,5 +68,13 @@ sealed class OutboxDelete(OutboxRecord record, PartitionKey partitionKey, JsonSe
         transactionalBatch.UpsertItemStream(stream, options);
     }
 
-    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The outbox record with id '{record.Id}' could not be marked as dispatched. Response status code: {result.StatusCode}.", result);
+    public override void Conflict(TransactionalBatchOperationResult result)
+    {
+        if ((int)result.StatusCode == 424) // HttpStatusCode.FailedDependency: another operation in the batch failed
+        {
+            return;
+        }
+
+        throw new TransactionalBatchOperationException($"The outbox record with id '{record.Id}' could not be marked as dispatched. Response status code: {result.StatusCode}.", result);
+    }
 }
