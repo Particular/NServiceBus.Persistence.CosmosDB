@@ -62,7 +62,15 @@ abstract class SagaOperation(IContainSagaData sagaData, PartitionKey partitionKe
 sealed class SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
     : SagaOperation(sagaData, partitionKey, serializer, context)
 {
-    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be created. Response status code: {result.StatusCode}.", result);
+    public override void Conflict(TransactionalBatchOperationResult result)
+    {
+        if ((int)result.StatusCode == 424) // HttpStatusCode.FailedDependency: another operation in the batch failed
+        {
+            return;
+        }
+
+        throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be created because a saga with the same id already exists, which happens when another message started this saga concurrently. Response status code: {result.StatusCode}.", result);
+    }
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
@@ -78,7 +86,15 @@ sealed class SagaSave(IContainSagaData sagaData, PartitionKey partitionKey, Json
 sealed class SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, JsonSerializer serializer, ContextBag context)
     : SagaOperation(sagaData, partitionKey, serializer, context)
 {
-    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be updated. Response status code: {result.StatusCode}.", result);
+    public override void Conflict(TransactionalBatchOperationResult result)
+    {
+        if ((int)result.StatusCode == 424) // HttpStatusCode.FailedDependency: another operation in the batch failed
+        {
+            return;
+        }
+
+        throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be updated because it was modified by another message after this message read it (optimistic concurrency conflict). Response status code: {result.StatusCode}.", result);
+    }
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
@@ -101,7 +117,15 @@ sealed class SagaUpdate(IContainSagaData sagaData, PartitionKey partitionKey, Js
 sealed class SagaDelete(IContainSagaData sagaData, PartitionKey partitionKey, ContextBag context)
     : SagaOperation(sagaData, partitionKey, null, context)
 {
-    public override void Conflict(TransactionalBatchOperationResult result) => throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be completed. Response status code: {result.StatusCode}.", result);
+    public override void Conflict(TransactionalBatchOperationResult result)
+    {
+        if ((int)result.StatusCode == 424) // HttpStatusCode.FailedDependency: another operation in the batch failed
+        {
+            return;
+        }
+
+        throw new TransactionalBatchOperationException($"The '{sagaData.GetType().Name}' saga with id '{sagaData.Id}' could not be completed because it was modified by another message after this message read it (optimistic concurrency conflict). Response status code: {result.StatusCode}.", result);
+    }
 
     public override void Apply(TransactionalBatch transactionalBatch, PartitionKeyPath partitionKeyPath)
     {
