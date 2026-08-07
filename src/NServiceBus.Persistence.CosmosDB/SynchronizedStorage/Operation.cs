@@ -38,7 +38,9 @@ abstract class Operation(PartitionKey partitionKey, JsonSerializer serializer, C
     {
     }
 
-    public virtual void Conflict(TransactionalBatchOperationResult result)
+    public virtual void Conflict(TransactionalBatchOperationResult result) => HandleConflict(result);
+
+    public static void HandleConflict(TransactionalBatchOperationResult result, string conflictMessage = "")
     {
         if ((int)result.StatusCode == 424) // HttpStatusCode.FailedDependency:
         {
@@ -49,7 +51,7 @@ abstract class Operation(PartitionKey partitionKey, JsonSerializer serializer, C
         throw result.StatusCode switch
         {
             HttpStatusCode.BadRequest => new TransactionalBatchOperationException("Bad request. Likely the partition key did not match.", result),
-            HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => new TransactionalBatchOperationException("Concurrency conflict.", result),
+            HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => new TransactionalBatchOperationException($"Concurrency conflict. {conflictMessage}", result),
             _ => new TransactionalBatchOperationException(result)
         };
 #pragma warning restore IDE0072
